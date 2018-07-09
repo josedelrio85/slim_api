@@ -33,3 +33,7 @@ $container['db_webservice'] = function($c){
 $container['funciones'] = function($c){
     return new \App\Functions\Functions();
 };
+
+$container['utilities'] = function($c){
+    return new \App\Functions\Utilities();
+};

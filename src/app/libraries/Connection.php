@@ -265,11 +265,8 @@ class Connection implements IConnection{
     }
     
     public function select($query, $data, $format) {
-        // Connect to the database
-        $db = $this->connect();
-
         //Prepare our query for binding
-        $stmt = $db->prepare($query);
+        $stmt = $this->prepare($query);
 
         //Normalize format
         $format = implode('', $format); 
@@ -287,6 +284,7 @@ class Connection implements IConnection{
         //Fetch results
         $result = $stmt->get_result();
 
+        $results = null;
         //Create results object
         while ($row = $result->fetch_object()) {
                 $results[] = $row;

@@ -120,7 +120,14 @@ $app->post('/consultaTimetableC2C', function(Request $request, Response $respons
     if($request->isPost()){
         $data = $request->getParsedBody();
         
-        
-	
+        $db = $this->db_webservice;
+        $elements = $this->funciones->consultaTimeTableC2C($data,$db);
+        if(is_array($elements)){
+	    exit(json_encode(['success'=> true, 'data' => $elements]));	
+	}else{
+	    exit(json_encode(['success'=> false, 'data' => null]));	
+	}
     } 
 });
+
+

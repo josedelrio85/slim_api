@@ -29,3 +29,7 @@ $container['db_webservice'] = function($c){
     $password = $dbSettings['password'];
     return new \App\Libraries\Connection($server, $username, $password, $database);    
 };
+
+$container['funciones'] = function($c){
+    return new \App\Functions\Functions();
+};

@@ -29,6 +29,7 @@ return [
             "user" => "root",
             "password" => "root_bsc"
         ],        
+        
         'db_crmti' => [
             "host" => "127.0.0.1",
             "dbname" => "crmti",

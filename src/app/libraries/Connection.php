@@ -177,7 +177,7 @@ class Connection implements IConnection{
         }
 
         // Connect to the database
-        $db = $this->connect();
+//        $db = $this->connect();
 
         // Cast $data and $format to arrays
         $data = (array) $data;
@@ -192,7 +192,7 @@ class Connection implements IConnection{
         // Prepend $format onto $values
         array_unshift($values, $format); 
         // Prepary our query for binding
-        $stmt = $db->prepare("INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})");
+        $stmt = $this->prepare("INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})");
         // Dynamically bind values
         call_user_func_array( array( $stmt, 'bind_param'), $this->ref_values($values));
 

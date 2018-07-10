@@ -49,7 +49,7 @@ class Functions {
             $i = 0;
             $indice = "primerDia";
             
-            foreach($r as $key => $obj){
+            foreach($r as $obj){
                 if($i == 0){
                     $elements[$indice][$i] = $obj;
                 }else{

@@ -29,11 +29,6 @@ $app->get('/prueba', function (Request $request, Response $response, array $args
     
     $sql = 'SELECT * FROM webservice.c2c_timetable WHERE sou_id=?;';
     
-//    $result = $this->db_webservice->Query($sql);
-//    
-//    while($r = $result->fetch_assoc()){
-//        var_dump($r);
-//    }
     $stmt = $this->db_webservice->Prepare($sql);
     $sou_id = 6;
     $stmt->bind_param("s", $sou_id);
@@ -66,8 +61,13 @@ $app->post('/incoming_C2C_RCable', function (Request $request, Response $respons
         $data = $request->getParsedBody();
         $phone = $data['phone'];
         
-        $url = $request->getServerParams('HTTP_REFERER');
-        $ip = $request->getServerParams('REMOTE_ADDR');
+        $serverParams = $request->getServerParams();
+        $url = "????";
+        if(array_key_exists("HTTP_REFERER", $serverParams)){
+            $url = $serverParams["HTTP_REFERER"];            
+        }
+        $ip = $serverParams["REMOTE_ADDR"];
+//        $url = $request->getServerParams('HTTP_REFERER');
 
         $conn = $this->db_webservice;
         
@@ -80,29 +80,37 @@ $app->post('/incoming_C2C_RCable', function (Request $request, Response $respons
             $type = 1;
         }
         
+        $datos = ["lea_phone" => $phone,
+            "lea_url" => $url,
+            "lea_ip" => $ip,
+            "lea_destiny" => "TEST",
+            "sou_id" => 5,
+            "leatype_id" => $type,
+            "lea_status" => "TEST"];
         
-      	if(array_key_exists('test', $data)){
-            $query = "INSERT INTO leads (lea_phone, lea_url, lea_ip, lea_destiny, sou_id, leatype_id, lea_status) VALUES ('{$phone}', '{$url}', '{$ip}', 'TEST', 5, {$type}, 'TEST');";
-	}else{
-            $query = "INSERT INTO leads (lea_phone, lea_url, lea_ip, lea_destiny, sou_id, leatype_id) VALUES ('{$phone}', '{$url}', '{$ip}', 'LEONTEL', 5, {$type});";
-	}
-	
-	$sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
-
-	$result = $conn->Query($sp);
-
-        if($conn->AffectedRows() > 0){
-            
-            //sustituir llamada
-            exec("php /var/www/html/Leontel/RCable/sendLeadToLeontel.php >/dev/null 2>&1 &");
-
-            exit(json_encode(['success'=> true, 'message'=> $result->fetch_assoc()]));
-
-        }else{
-
-            exit(json_encode(['success'=> false, 'message'=> 'KO-'.$conn->LastError()]));
+        $formato = $this->utilities->get_format_prepared_sql($datos);
+        $conn->insert("leads",$datos,$formato);
         
-        }
+        
+//      if(array_key_exists('test', $data)){
+//            $query = "INSERT INTO leads (lea_phone, lea_url, lea_ip, lea_destiny, sou_id, leatype_id, lea_status) VALUES ('{$phone}', '{$url}', '{$ip}', 'TEST', 5, {$type}, 'TEST');";
+//	}else{
+//            $query = "INSERT INTO leads (lea_phone, lea_url, lea_ip, lea_destiny, sou_id, leatype_id) VALUES ('{$phone}', '{$url}', '{$ip}', 'LEONTEL', 5, {$type});";
+//	}
+//	
+//	$sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
+//
+//	$result = $conn->Query($sp);
+//
+//        if($conn->AffectedRows() > 0){
+//            //sustituir llamada
+//            exec("php /var/www/html/Leontel/RCable/sendLeadToLeontel.php >/dev/null 2>&1 &");
+//
+//            exit(json_encode(['success'=> true, 'message'=> $result->fetch_assoc()]));
+//
+//        }else{
+//            exit(json_encode(['success'=> false, 'message'=> 'KO-'.$conn->LastError()]));       
+//        }
     }
 });
 

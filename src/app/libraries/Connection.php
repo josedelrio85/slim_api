@@ -176,9 +176,6 @@ class Connection implements IConnection{
                 return false;
         }
 
-        // Connect to the database
-//        $db = $this->connect();
-
         // Cast $data and $format to arrays
         $data = (array) $data;
         $format = (array) $format;
@@ -193,20 +190,40 @@ class Connection implements IConnection{
         array_unshift($values, $format); 
         // Prepary our query for binding
         $stmt = $this->prepare("INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})");
+        
         // Dynamically bind values
         call_user_func_array( array( $stmt, 'bind_param'), $this->ref_values($values));
 
-        // Execute the query
         $stmt->execute();
 
         // Check for successful insertion
         if ( $stmt->affected_rows ) {
                 return true;
         }
-
         return false;
     }
     
+    /* Devuelve instrucción sql preparada para ejecutar */
+    public function insertStatement($table, $data, $format) {
+        // Check for $table or $data not set
+        if ( empty( $table ) || empty( $data ) ) {
+                return false;
+        }
+
+        // Cast $data and $format to arrays
+        $data = (array) $data;
+        $format = (array) $format;
+
+        // Build format string
+        $format = implode('', $format); 
+        $format = str_replace('%', '', $format);
+
+        list( $fields, $placeholders, $values ) = $this->prep_query($data);
+
+        $valores = $this->ref_values($values);
+        return "INSERT INTO {$table} ({$fields}) VALUES ({$this->bindParams($valores)})";
+    }
+        
     public function update($table, $data, $format, $where, $where_format) {
         // Check for $table or $data not set
         if ( empty( $table ) || empty( $data ) ) {
@@ -344,4 +361,27 @@ class Connection implements IConnection{
         }
         return $refs; 
     }
+    
+    /*
+        concatena en un string los valores contenidos en el array pasado por parametro, uniendolos con comas.
+    */
+    private function bindParams($arr){
+        if(is_array($arr)){
+            $salida = "";
+            $tam = count($arr) - 1;
+            foreach ($arr as $key => $value){
+                if(is_string($value)){
+                    $salida = $salida. "'".$value."'";
+                }else{
+                    $salida = $salida.$value;
+                }
+                if($key < $tam){
+                    $salida .= ",";
+                }
+            }
+            return $salida;
+        }
+        return null;
+    }
+
 }

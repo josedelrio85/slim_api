@@ -3,6 +3,16 @@
 use Slim\Http\Request;
 use Slim\Http\Response;
 
+//Middleware
+//$app->add(new \App\Prueba\ExampleMiddleware());
+$config=[
+    //    'origin'=>'*.example.com' // allow all hosts ending example.com
+    'origin'    =>'*localhost',
+    'allowMethods'  => 'GET, POST, OPTIONS',
+    'allowHeaders'  => ['Accept', 'Accept-Language', 'Authorization', 'Content-Type','DNT','Keep-Alive','User-Agent','X-Requested-With','If-Modified-Since','Cache-Control','Origin'],
+];
+$app->add(new \Bairwell\MiddlewareCors($config));
+
 // Routes
 
 //$app->get('/[{name}]', function (Request $request, Response $response, array $args) {
@@ -18,12 +28,15 @@ $app->get('/', function (Request $request, Response $response, array $args) {
     $this->logger->info("Slim-Skeleton '/' route");
 
     // Render index view
-    return $this->renderer->render($response, 'index.phtml', $args);
+    //    return $this->renderer->render($response, 'index.phtml', $args);
+    var_dump($request->getServerParams());
+    $response->getBody()->write(" Hola ");
+    return $response;
 });
 
 
-$app->get('/prueba', function (Request $request, Response $response, array $args){
-    
+$app->post('/prueba', function (Request $request, Response $response, array $args){
+       
     //prueba mensaje log
     $this->logger->info("Primera ruta creada con Slim => '/prueba' ");
     
@@ -38,11 +51,9 @@ $app->get('/prueba', function (Request $request, Response $response, array $args
     $result = $stmt->get_result();
        
     $data = $result->fetch_all(MYSQLI_ASSOC);
-    var_dump(json_encode($data));
-   
-    die();
-    //echo json_encode($result->fetch_assoc());
-});
+    
+    return $response->withJson($data);
+});     
 
 
 /*
@@ -67,10 +78,9 @@ $app->post('/incoming_C2C_RCable', function (Request $request, Response $respons
             $url = $serverParams["HTTP_REFERER"];            
         }
         $ip = $serverParams["REMOTE_ADDR"];
-//        $url = $request->getServerParams('HTTP_REFERER');
-
-        $conn = $this->db_webservice;
         
+        $conn = $this->db_webservice;
+
         $diaSemana = intval(date('N'));
         $horaActual = date('H:i');
         $datos = ["sou_id" => 6, "hora" => $horaActual, "num_dia" => $diaSemana];
@@ -85,32 +95,27 @@ $app->post('/incoming_C2C_RCable', function (Request $request, Response $respons
             "lea_ip" => $ip,
             "lea_destiny" => "TEST",
             "sou_id" => 5,
-            "leatype_id" => $type,
-            "lea_status" => "TEST"];
+            "leatype_id" => $type];
+        
+        if(array_key_exists('test', $data)){
+            $datos["lea_status"] = "TEST";
+        }
         
         $formato = $this->utilities->get_format_prepared_sql($datos);
-        $conn->insert("leads",$datos,$formato);
+        $query = $conn->insertStatement("leads",$datos,$formato);
+	$sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
+
+	$result = $conn->Query($sp);
         
-        
-//      if(array_key_exists('test', $data)){
-//            $query = "INSERT INTO leads (lea_phone, lea_url, lea_ip, lea_destiny, sou_id, leatype_id, lea_status) VALUES ('{$phone}', '{$url}', '{$ip}', 'TEST', 5, {$type}, 'TEST');";
-//	}else{
-//            $query = "INSERT INTO leads (lea_phone, lea_url, lea_ip, lea_destiny, sou_id, leatype_id) VALUES ('{$phone}', '{$url}', '{$ip}', 'LEONTEL', 5, {$type});";
-//	}
-//	
-//	$sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
-//
-//	$result = $conn->Query($sp);
-//
-//        if($conn->AffectedRows() > 0){
-//            //sustituir llamada
+        if($conn->AffectedRows() > 0){
+            //sustituir llamada
 //            exec("php /var/www/html/Leontel/RCable/sendLeadToLeontel.php >/dev/null 2>&1 &");
-//
-//            exit(json_encode(['success'=> true, 'message'=> $result->fetch_assoc()]));
-//
-//        }else{
-//            exit(json_encode(['success'=> false, 'message'=> 'KO-'.$conn->LastError()]));       
-//        }
+
+            exit(json_encode(['success'=> true, 'message'=> $result->fetch_assoc()]));
+
+        }else{
+            exit(json_encode(['success'=> false, 'message'=> 'KO-'.$conn->LastError()]));       
+        }
     }
 });
 
@@ -139,3 +144,12 @@ $app->post('/consultaTimetableC2C', function(Request $request, Response $respons
 });
 
 
+
+
+
+// Catch-all route to serve a 404 Not Found page if none of the routes match
+// NOTE: make sure this route is defined last
+$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function($req, $res) {
+    $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
+    return $handler($req, $res);
+});

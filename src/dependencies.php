@@ -30,10 +30,10 @@ $container['db_webservice'] = function($c){
     return new \App\Libraries\Connection($server, $username, $password, $database);    
 };
 
-$container['funciones'] = function($c){
+$container['funciones'] = function(){
     return new \App\Functions\Functions();
 };
 
-$container['utilities'] = function($c){
+$container['utilities'] = function(){
     return new \App\Functions\Utilities();
 };

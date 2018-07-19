@@ -3,26 +3,6 @@
 use Slim\Http\Request;
 use Slim\Http\Response;
 
-//Middleware
-//$app->add(new \App\Prueba\ExampleMiddleware());
-$config=[
-    //    'origin'=>'*.example.com' // allow all hosts ending example.com
-    'origin'    =>'*localhost',
-    'allowMethods'  => 'GET, POST, OPTIONS',
-    'allowHeaders'  => ['Accept', 'Accept-Language', 'Authorization', 'Content-Type','DNT','Keep-Alive','User-Agent','X-Requested-With','If-Modified-Since','Cache-Control','Origin'],
-];
-$app->add(new \Bairwell\MiddlewareCors($config));
-
-// Routes
-
-//$app->get('/[{name}]', function (Request $request, Response $response, array $args) {
-//    // Sample log message
-//    $this->logger->info("Slim-Skeleton '/' route");
-//
-//    // Render index view
-//    return $this->renderer->render($response, 'index.phtml', $args);
-//});
-
 $app->get('/', function (Request $request, Response $response, array $args) {
     // Sample log message
     $this->logger->info("Slim-Skeleton '/' route");
@@ -56,7 +36,7 @@ $app->post('/prueba', function (Request $request, Response $response, array $arg
 });     
 
 
-$app->group('/RCable/', function(){
+$app->group('/RCable', function(){
     
     /*
      * Función para gestionar la info asociada a un evento C2C para LP de RCable. Devuelve un array JSON {result:boolean, message:objConexion}
@@ -66,7 +46,7 @@ $app->group('/RCable/', function(){
      *    "url": "XXXX",
      * }
      *   */
-    $app->post('/incomingC2C', function (Request $request, Response $response, array $args){
+    $this->post('/incomingC2C', function (Request $request, Response $response, array $args){
 
         $this->logger->info("WS incoming C2C RCable");
 
@@ -130,7 +110,7 @@ $app->group('/RCable/', function(){
      *    "hora": "16:00"
      * }
      *   */
-    $app->post('/consultaTimetableC2C', function(Request $request, Response $response, array $args){
+    $this->post('/consultaTimetableC2C', function(Request $request, Response $response, array $args){
 
         if($request->isPost()){
             $data = $request->getParsedBody();

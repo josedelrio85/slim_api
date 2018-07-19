@@ -1,4 +1,16 @@
 <?php
 // Application middleware
 
-// e.g: $app->add(new \Slim\Csrf\Guard);
+//Middleware
+$config=[
+    'origin'=>'*.example.com', // allow all hosts ending example.com
+//    'origin'    =>'*localhost',
+    'allowMethods'  => 'GET, POST, OPTIONS',
+    'allowHeaders'  => ['Accept', 'Accept-Language', 'Authorization', 'Content-Type','DNT','Keep-Alive','User-Agent','X-Requested-With','If-Modified-Since','Cache-Control','Origin'],
+];
+//Estable criterios para permitir acceder a una request
+$app->add(new \Bairwell\MiddlewareCors($config));
+
+
+//Forzar a que el content-type sea application/json
+$app->add(new App\Middleware\JSONContentMiddleware());

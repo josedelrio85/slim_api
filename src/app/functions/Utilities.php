@@ -72,36 +72,3 @@ class Utilities {
         return $salida;
     }
 }
-
-
-//class objetoDatos {
-//    private $orden;
-//    private $valor;
-//    
-//    function getOrden() {
-//        return $this->orden;
-//    }
-//
-//    function getValor() {
-//        return $this->valor;
-//    }
-//
-//    function setOrden($orden) {
-//        $this->orden = $orden;
-//    }
-//
-//    function setValor($valor) {
-//        $this->valor = $valor;
-//    }
-//    
-//       
-//    public function setPar($valor, $orden){
-//        $this->setValor($valor);
-//        $this->setOrden($orden);
-//    }
-//    
-//    public function getArray(){
-//        return (array)$this;
-//    }
-//    
-//}

@@ -63,7 +63,7 @@ class Utilities {
     public static function get_format_prepared_sql($array){
         $salida = array();
         foreach($array as $key => $value){
-            if(is_int($value)){
+            if(is_int($value) || is_double($value)){
                 array_push($salida, "%d");
             }else if(is_string($value)){
                 array_push($salida, "%s");

@@ -8,6 +8,7 @@
 
 namespace App\Functions;
 
+use App\Libraries\UtilitiesConnection;
 
 class Functions {
       
@@ -40,9 +41,8 @@ class Functions {
             or num_dia = (select max(num_dia) from webservice.c2c_timetable where laborable = ? and sou_id= ? ));";
         }
         
-        $format = \App\Functions\Utilities::get_format_prepared_sql($datos);
-        
-        $r = $db->select($sql, $datos, $format);
+        $format = UtilitiesConnection::getFormatPreparedSql($datos);
+        $r = $db->selectPrepared($sql, $datos, $format);
         
         if(!is_null($r)){
             $aux = 0;

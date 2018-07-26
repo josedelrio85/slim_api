@@ -170,143 +170,127 @@ class Connection implements IConnection{
     
     
     /************************************************************************/
-    public function insert($table, $data, $format) {
-        // Check for $table or $data not set
-        if ( empty( $table ) || empty( $data ) ) {
-                return false;
-        }
-
-        // Cast $data and $format to arrays
-        $data = (array) $data;
-        $format = (array) $format;
-
-        // Build format string
-        $format = implode('', $format); 
-        $format = str_replace('%', '', $format);
-
-        list( $fields, $placeholders, $values ) = $this->prep_query($data);
-
-        // Prepend $format onto $values
-        array_unshift($values, $format); 
-        // Prepary our query for binding
-        $stmt = $this->prepare("INSERT INTO {$table} ({$fields}) VALUES ({$placeholders})");
-        
-        // Dynamically bind values
-        call_user_func_array( array( $stmt, 'bind_param'), $this->ref_values($values));
-
-        $stmt->execute();
-
-        // Check for successful insertion
-        if ( $stmt->affected_rows ) {
-                return true;
-        }
-        return false;
-    }
-    
-    /* Devuelve instrucción sql preparada para ejecutar */
-    public function insertStatement($table, $data, $format) {
-        // Check for $table or $data not set
-        if ( empty( $table ) || empty( $data ) ) {
-                return false;
-        }
-
-        // Cast $data and $format to arrays
-        $data = (array) $data;
-        $format = (array) $format;
-
-        // Build format string
-        $format = implode('', $format); 
-        $format = str_replace('%', '', $format);
-
-        list( $fields, $placeholders, $values ) = $this->prep_query($data);
-
-        $valores = $this->ref_values($values);
-        return "INSERT INTO {$table} ({$fields}) VALUES ({$this->bindParams($valores)})";
-    }
-        
-    public function update($table, $data, $format, $where, $where_format) {
-        // Check for $table or $data not set
-        if ( empty( $table ) || empty( $data ) ) {
-                return false;
-        }
-
-        // Connect to the database
-        $db = $this->connect();
-
-        // Cast $data and $format to arrays
-        $data = (array) $data;
-        $format = (array) $format;
-
-        // Build format array
-        $format = implode('', $format); 
-        $format = str_replace('%', '', $format);
-        $where_format = implode('', $where_format); 
-        $where_format = str_replace('%', '', $where_format);
-        $format .= $where_format;
-
-        list( $fields, $placeholders, $values ) = $this->prep_query($data, 'update');
-
-        //Format where clause
-        $where_clause = '';
-        $where_values = '';
-        $count = 0;
-
-        foreach ( $where as $field => $value ) {
-                if ( $count > 0 ) {
-                        $where_clause .= ' AND ';
-                }
-
-                $where_clause .= $field . '=?';
-                $where_values[] = $value;
-
-                $count++;
-        }
-        // Prepend $format onto $values
-        array_unshift($values, $format);
-        $values = array_merge($values, $where_values);
-        // Prepary our query for binding
-        $stmt = $db->prepare("UPDATE {$table} SET {$placeholders} WHERE {$where_clause}");
-
-        // Dynamically bind values
-        call_user_func_array( array( $stmt, 'bind_param'), $this->ref_values($values));
-
-        // Execute the query
-        $stmt->execute();
-
-        // Check for successful insertion
-        if ( $stmt->affected_rows ) {
-                return true;
-        }
-
-        return false;
-    }
-    
-    public function select($query, $data, $format) {
+    /*
+     * @query: Parte selectiva de la consulta
+     * @data: array con los valores del where
+     * @format: formato correspondiente de los valores del where
+     */
+    public function selectPrepared($query, $data, $format) {
         //Prepare our query for binding
         $stmt = $this->prepare($query);
 
-        //Normalize format
-        $format = implode('', $format); 
-        $format = str_replace('%', '', $format);
-
-        // Prepend $format onto $values
+        $format = UtilitiesConnection::getStringFormato($format);
+        // Añade format al inicio de data (en el indice 0)
         array_unshift($data, $format);
 
-        //Dynamically bind values
-        call_user_func_array( array( $stmt, 'bind_param'), $this->ref_values($data));
+        //data es un array, elemento 0 es el formato, y los siguientes son los datos
+        call_user_func_array( array( $stmt, 'bind_param'), $data);
 
-        //Execute the query
         $stmt->execute();
-
-        //Fetch results
         $result = $stmt->get_result();
-
         $results = null;
-        //Create results object
         while ($row = $result->fetch_object()) {
-                $results[] = $row;
+            $results[] = $row;
         }
         return $results;
+    }
+    
+    /*
+     * @table: nombre de la tabla a actualizar
+     * @parametros:
+     *      "datos" => (array) $datos,
+     *      "formatoDatos" => (array) $formato,
+     *      "where" => (array) $where,
+     *      "formatoWhere" => (array) $formatoWhere
+     * 
+     * - camposActualizar: Obtiene un string con la parte de la sentencia referente a qué campos se actualizan
+     * - valores: array que contiene cadena con formato parámetros y valores de los mismos, para pasarsela a bind_param de mysqli
+     */
+    public function updatePrepared($table, $parametros) {
+        
+        if ( empty( $table ) || empty( $parametros["datos"]) || empty( $parametros["formatoDatos"] )) {
+            return false;
+        }
+        
+        // campos => lista de campos concatenados con ,
+        // camposActualizar => campos con asignacion =? => lea_extracted=?,lea_crmid=?,lea_status=?
+        // valores => array con valores a actualizar
+        list( $campos, $camposActualizar, $valores ) = UtilitiesConnection::preparaElementosCRUD($parametros, 'update'); 
+        list($where_clause, $where_values) = UtilitiesConnection::getParametrosWhere($parametros["where"]);
+
+        //  array 0 => valores de formato, resto valores
+        $valores = array_merge($valores, $where_values);       
+      
+        $stmt = $this->Prepare("UPDATE {$table} SET {$camposActualizar} WHERE {$where_clause}");
+
+        // Dynamically bind values
+        call_user_func_array( array( $stmt, 'bind_param'), UtilitiesConnection::ref_values($valores));
+
+        $stmt->execute();
+        if ( $stmt->affected_rows ) {
+            return json_encode(['success'=> true, 'message'=> $stmt->affected_rows]);
+
+        }
+        return json_encode(['success'=> false, 'message'=> $stmt->error]);
+    }
+
+    /*
+     * @table: nombre de la tabla a actualizar
+     * @parametros:
+     *      "datos" => (array) $datos,
+     *      "formatoDatos" => (array) $formato,
+     * 
+     * - campos: string con los nombres de campos que van a ser utilizados en la inserción
+     * - camposActualizar: Obtiene un string con la parte de la sentencia referente a qué campos se insertan
+     * - valores: array que contiene cadena con formato parámetros y valores de los mismos, para pasarsela a bind_param de mysqli
+     */
+    public function insertPrepared($table, $parametros){
+
+        if ( empty( $table ) || empty( $parametros["datos"]) || empty( $parametros["formatoDatos"] )) {
+            return false;
+        }
+        
+        // campos => lista de campos concatenados con ,
+        // camposActualizar => campos con asignacion =? => lea_extracted=?,lea_crmid=?,lea_status=?
+        // valores => array con valores a actualizar
+        list( $campos, $camposActualizar, $valores ) = UtilitiesConnection::preparaElementosCRUD($parametros, 'insert'); 
+
+
+        $stmt = $this->prepare("INSERT INTO {$table} ({$campos}) VALUES ({$camposActualizar})");
+        call_user_func_array( array( $stmt, 'bind_param'), UtilitiesConnection::ref_values($valores));
+        
+        $stmt->execute();
+        if ( $stmt->affected_rows ) {
+            return json_encode(['success'=> true, 'message'=> $stmt->insert_id]);
+        }
+        return json_encode(['success'=> false, 'message'=> $stmt->error]);
+    }
+    
+    /*
+     * @table: nombre de la tabla a actualizar
+     * @parametros:
+     *      "datos" => (array) $datos,
+     *      "formatoDatos" => (array) $formato,
+     * 
+     * - campos: string con los nombres de campos que van a ser utilizados en la inserción
+     * - camposActualizar: Obtiene un string con la parte de la sentencia referente a qué campos se insertan
+     * - valores: array que contiene cadena con formato parámetros y valores de los mismos, para pasarsela a bind_param de mysqli
+     */
+    public function insertStatementPrepared($table, $parametros){
+        if ( empty( $table ) || empty( $parametros["datos"]) || empty( $parametros["formatoDatos"] )) {
+            return false;
+        }
+        
+        // campos => lista de campos concatenados con ,
+        // camposActualizar => campos con asignacion =? => lea_extracted=?,lea_crmid=?,lea_status=?
+        // valores => array con valores a actualizar
+        list( $campos, $camposActualizar, $valores ) = UtilitiesConnection::preparaElementosCRUD($parametros, 'insert'); 
+
+        //eliminar el primer elemento, que representa la lista de parámetros adjuntados (útil para prepared statement, aquí sobra)
+        array_shift($valores);
+        $strinValores = UtilitiesConnection::bindParams($valores);
+        return "INSERT INTO {$table} ({$campos}) VALUES ({$stringValores})";
+
     }
     
     public function delete($table, $id) {
@@ -326,62 +310,6 @@ class Connection implements IConnection{
         if ( $stmt->affected_rows ) {
                 return true;
         }
-    }
-    
-    private function prep_query($data, $type='insert') {
-        // Instantiate $fields and $placeholders for looping
-        $fields = '';
-        $placeholders = '';
-        $values = array();
-
-        // Loop through $data and build $fields, $placeholders, and $values			
-        foreach ( $data as $field => $value ) {
-                $fields .= "{$field},";
-                $values[] = $value;
-
-                if ( $type == 'update') {
-                        $placeholders .= $field . '=?,';
-                } else {
-                        $placeholders .= '?,';
-                }
-
-        }
-
-        // Normalize $fields and $placeholders for inserting
-        $fields = substr($fields, 0, -1);
-        $placeholders = substr($placeholders, 0, -1);
-
-        return array( $fields, $placeholders, $values );
-    }
-    
-    private function ref_values($array) {
-        $refs = array();
-        foreach ($array as $key => $value) {
-                $refs[$key] = &$array[$key]; 
-        }
-        return $refs; 
-    }
-    
-    /*
-        concatena en un string los valores contenidos en el array pasado por parametro, uniendolos con comas.
-    */
-    private function bindParams($arr){
-        if(is_array($arr)){
-            $salida = "";
-            $tam = count($arr) - 1;
-            foreach ($arr as $key => $value){
-                if(is_string($value)){
-                    $salida = $salida. "'".$value."'";
-                }else{
-                    $salida = $salida.$value;
-                }
-                if($key < $tam){
-                    $salida .= ",";
-                }
-            }
-            return $salida;
-        }
-        return null;
     }
 
 }

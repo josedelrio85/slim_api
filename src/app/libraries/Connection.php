@@ -184,7 +184,7 @@ class Connection implements IConnection{
         array_unshift($data, $format);
 
         //data es un array, elemento 0 es el formato, y los siguientes son los datos
-        call_user_func_array( array( $stmt, 'bind_param'), $data);
+        call_user_func_array( array( $stmt, 'bind_param'), UtilitiesConnection::ref_values($data));
 
         $stmt->execute();
         $result = $stmt->get_result();

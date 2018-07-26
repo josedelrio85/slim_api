@@ -54,21 +54,5 @@ class Utilities {
         return $array;
     }
     
-/*
-    Genera un array con los formatos necesarios en función 
-    del tipo de variable de cada indice del array
-    @array      el array de parametros en función del cual habrá 
-                que generar los parámetros correspondientes
- */    
-    public static function get_format_prepared_sql($array){
-        $salida = array();
-        foreach($array as $key => $value){
-            if(is_int($value) || is_double($value)){
-                array_push($salida, "%d");
-            }else if(is_string($value)){
-                array_push($salida, "%s");
-            }      
-        }
-        return $salida;
-    }
+
 }

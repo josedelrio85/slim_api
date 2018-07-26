@@ -3,6 +3,8 @@
 use Slim\Http\Request;
 use Slim\Http\Response;
 
+use App\Libraries\UtilitiesConnection;
+
 $app->get('/', function (Request $request, Response $response, array $args) {
     // Sample log message
     $this->logger->info("Slim-Skeleton '/' route");
@@ -79,12 +81,18 @@ $app->group('/RCable', function(){
                 "sou_id" => 5,
                 "leatype_id" => $type];
 
-            if(array_key_exists('test', $data)){
+            if(array_key_exists('TEST', $data)){
                 $datos["lea_status"] = "TEST";
             }
 
-            $formato = $this->utilities->get_format_prepared_sql($datos);
-            $query = $conn->insertStatement("leads",$datos,$formato);
+//            $formato = $this->utilities->get_format_prepared_sql($datos);
+//            $query = $conn->insertStatement("leads", $datos, $formato);
+            
+            $format = UtilitiesConnection::getFormatPreparedSql($datos);
+            $parametros = UtilitiesConnection::getArrayParametrosUpdate($datos, $format);
+
+            $r = $db->insertStatementPrepared("leads", $parametros);
+                    //selectPrepared($sql, $datos, $format);
             $sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
 
             $result = $conn->Query($sp);
@@ -127,6 +135,123 @@ $app->group('/RCable', function(){
 });
 
 
+$app->post('/pruebaSelect', function (Request $request, Response $response, array $args){
+       
+    //prueba mensaje log
+    $this->logger->info("Prueba consulta select libreria mysql prepared' ");
+    
+    $data = $request->getParsedBody();
+    
+    $datos = [
+        0 => "LEONTEL",
+        1 => NULL,
+        2 => NULL,
+        3 => $data['sou_id'],
+    ];
+
+    $query = "SELECT "
+        . "l.lea_id,"
+        . "l.lea_phone,"
+        . "s.sou_idcrm 'source',"
+        . "lt.leatype_idcrm 'type',"
+        . "l.lea_name,"
+        . "l.lea_mail,"
+        . "l.lea_url,"
+        . "l.lea_aux1,"
+        . "l.lea_aux2 "
+        . "FROM webservice.leads l "
+        . "INNER JOIN webservice.sources s ON l.sou_id = s.sou_id "
+        . "INNER JOIN webservice.leadtypes lt ON l.leatype_id = lt.leatype_id "
+        . "WHERE "
+        . "l.lea_destiny = ? "
+        . "AND l.lea_extracted <=> ? "
+        . "AND l.lea_status <=> ? "
+        . "AND l.sou_id = ? "
+        . "ORDER BY l.lea_id DESC LIMIT 1;";
+
+    $format = UtilitiesConnection::getFormatPreparedSql($datos);
+
+    $db = $this->db_webservice;
+    $r = $db->selectPrepared($query, $datos, $format);    
+
+    
+    return $response->withJson($r);
+}); 
+
+
+$app->post('/pruebaUpdate', function(Request $request, Response $response, array $args){
+
+    $datos = [
+        "lea_extracted" => date("Y-m-d H:i:s"),
+        "lea_crmid" => 9999,
+        "lea_status" => "PRUEBA"
+    ];
+    
+    $formato = UtilitiesConnection::getFormatPreparedSql($datos);
+    $where = ["lea_id" => 118182];
+    $formatoWhere = UtilitiesConnection::getFormatPreparedSql($where);
+    $parametros = UtilitiesConnection::getArrayParametrosUpdate($datos, $formato, $where, $formatoWhere);
+
+    $tabla = "webservice.leads";
+    $db = $this->db_webservice;
+    $result = $db->updatePrepared($tabla, $parametros);
+
+    $r = json_decode($result);
+
+    if($r->success){
+        exit(json_encode(['success'=> true, 'message'=> $r->message]));
+    }else{
+        exit(json_encode(['success'=> false, 'message'=> $r->message]));
+    }
+});
+
+
+$app->post('/pruebaInsert', function(Request $request, Response $response, Array $args){
+    
+    $data = $request->getParsedBody();
+    $serverParams = $request->getServerParams();
+    $url = "????";
+    if(array_key_exists("HTTP_REFERER", $serverParams)){
+        $url = $serverParams["HTTP_REFERER"];            
+    }
+    $ip = $serverParams["REMOTE_ADDR"];
+    
+    $datos = [
+        "lea_phone" => $data["phone"],
+        "lea_url" => $url,
+        "lea_ip" => $ip,
+        "lea_destiny" => "TEST",
+        "sou_id" => $data["sou_id"],
+        "leatype_id" => 1
+    ];
+
+    $format = UtilitiesConnection::getFormatPreparedSql($datos);
+    $parametros = UtilitiesConnection::getArrayParametrosUpdate($datos, $format);
+    
+    $db = $this->db_webservice;
+    $z = $db->insertStatementPrepared("leads", $parametros);
+
+    $result = $db->insertPrepared("leads", $parametros);
+    
+    $r = json_decode($result);
+    
+    if($r->success){
+        exit(json_encode(['success'=> true, 'message'=> $r->message]));
+    }else{
+        exit(json_encode(['success'=> false, 'message'=> $r->message]));
+    }
+});
+
+
+$app->post('/sendLeadToLeontel', function(Request $request, Response $response, array $args){
+    
+    if($request->isPost()){
+        $data = $request->getParsedBody();
+        $db = $this->db_webservice;
+        App\Functions\LeadLeontel::sendLead($data, $db);
+    }
+    
+});
 
 
 // Catch-all route to serve a 404 Not Found page if none of the routes match

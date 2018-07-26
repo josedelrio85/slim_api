@@ -6,7 +6,7 @@ $config=[
     'origin'=>'*.example.com', // allow all hosts ending example.com
 //    'origin'    =>'*localhost',
     'allowMethods'  => 'GET, POST, OPTIONS',
-    'allowHeaders'  => ['Accept', 'Accept-Language', 'Authorization', 'Content-Type','DNT','Keep-Alive','User-Agent','X-Requested-With','If-Modified-Since','Cache-Control','Origin'],
+    'allowHeaders'  => ['Accept', 'Accept-Language', 'Authorization', 'Content-Type','DNT','Keep-Alive','User-Agent','X-Requested-With','Cache-Control','Origin'],
 ];
 //Estable criterios para permitir acceder a una request
 $app->add(new \Bairwell\MiddlewareCors($config));

@@ -117,9 +117,9 @@ sou_id                              sou_idcrm
             $query .= $queryFromWhere; 
             $query .= " ORDER BY l.lea_id DESC LIMIT 1;";
             
-            $format = UtilitiesConnection::getFormatPreparedSql($datos);
         
-            $r = $db->selectPrepared($query, $datos, $format);
+            $r = $db->selectPrepared($query, $datos);
+            
             
             if(!is_null($r)){
                 
@@ -229,10 +229,8 @@ sou_id                              sou_idcrm
                         ];
                 }
                 
-                $formato = UtilitiesConnection::getFormatPreparedSql($datos);
                 $where = ["lea_id" => $lea_id];
-                $formatoWhere = UtilitiesConnection::getFormatPreparedSql($where);
-                $parametros = UtilitiesConnection::getArrayParametrosUpdate($datos, $formato, $where, $formatoWhere);
+                $parametros = UtilitiesConnection::getParametros($datos, $where);
                 
                 $result = $db->updatePrepared("webservice.leads", $parametros);               
                 $r = json_decode($result);

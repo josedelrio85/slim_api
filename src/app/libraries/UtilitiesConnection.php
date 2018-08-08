@@ -39,8 +39,11 @@ class UtilitiesConnection {
      * Devuelve un array con 4 indices que forman los elementos que se necesitarán para montar
      * una sentencia update con prepared_statement de mysqli
      */
-    public static function getArrayParametrosUpdate($datos, $formato, $where = null, $formatoWhere  = null){
-
+    public static function getParametros($datos, $where = null){
+        $formato = UtilitiesConnection::getFormatPreparedSql($datos);
+        if($where != null)
+            $formatoWhere = UtilitiesConnection::getFormatPreparedSql($where);
+        
         return [
             "datos" => (array) $datos,
             "formatoDatos" => (array) $formato,

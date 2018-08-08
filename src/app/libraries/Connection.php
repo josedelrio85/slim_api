@@ -173,13 +173,14 @@ class Connection implements IConnection{
     /*
      * @query: Parte selectiva de la consulta
      * @data: array con los valores del where
-     * @format: formato correspondiente de los valores del where
      */
-    public function selectPrepared($query, $data, $format) {
+    public function selectPrepared($query, $data) {
         //Prepare our query for binding
         $stmt = $this->prepare($query);
 
-        $format = UtilitiesConnection::getStringFormato($format);
+        $formato = UtilitiesConnection::getFormatPreparedSql($data);
+        $format = UtilitiesConnection::getStringFormato($formato);
+        
         // Añade format al inicio de data (en el indice 0)
         array_unshift($data, $format);
 
@@ -229,7 +230,6 @@ class Connection implements IConnection{
         $stmt->execute();
         if ( $stmt->affected_rows ) {
             return json_encode(['success'=> true, 'message'=> $stmt->affected_rows]);
-
         }
         return json_encode(['success'=> false, 'message'=> $stmt->error]);
     }
@@ -288,7 +288,7 @@ class Connection implements IConnection{
 
         //eliminar el primer elemento, que representa la lista de parámetros adjuntados (útil para prepared statement, aquí sobra)
         array_shift($valores);
-        $strinValores = UtilitiesConnection::bindParams($valores);
+        $stringValores = UtilitiesConnection::bindParams($valores);
         return "INSERT INTO {$table} ({$campos}) VALUES ({$stringValores})";
 
     }
@@ -311,5 +311,4 @@ class Connection implements IConnection{
                 return true;
         }
     }
-
 }

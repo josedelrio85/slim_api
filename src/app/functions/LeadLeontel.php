@@ -36,6 +36,7 @@ sou_id                              sou_idcrm
 1	CREDITEA ABANDONADOS        2
 2	CREDITEA STAND              3
 4	CREDITEA TIMEOUT            5
+5	R CABLE                     6
 9	CREDITEA END TO END         13
 10	CREDITEA FB                 14
 11	CREDITEA RASTREATOR         15
@@ -44,6 +45,7 @@ sou_id                              sou_idcrm
 2	CREDITEA ABANDONOS          
 3	CREDITEA STAND	
 5	CREDITEA TIMEOUT	
+6	R CABLE	
 9	CREDITEA RECEPCION	
 10	CREDITEA RECEPCION NO CLI	
 13	CREDITEA END TO END	
@@ -88,7 +90,11 @@ sou_id                              sou_idcrm
                         . "l.lea_ip";
                     $tam = count($datos);
                     $datos[$tam] = $data["leatype_id"];
-                    break;                    
+                    break;       
+                case 5:
+                    $querySource = "l.lea_mail,"
+                        . "l.lea_url";
+                    break;
                 default;
             }
             
@@ -114,6 +120,15 @@ sou_id                              sou_idcrm
                 $queryFromWhere .= " AND l.leatype_id = ? ";
             }
             
+            if($data["sou_id"] == 5){
+                $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208','94.143.76.28";
+                $datos[5] = "";
+
+                $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
+
+                $queryFromWhere .= " AND l.lea_phone <> ? ";
+            }
+            
             $query .= $queryFromWhere; 
             $query .= " ORDER BY l.lea_id DESC LIMIT 1;";
             
@@ -133,7 +148,7 @@ sou_id                              sou_idcrm
                     case 1:
                         //Abandonos
                         $apellidos = $r[0]->lea_surname;
-        		$dninie = $r[0]->lea_aux1;
+        		//$dninie = $r[0]->lea_aux1;
                         $url = $r[0]->lea_url;
                         $ip = $r[0]->lea_ip;
                         $asnef = $r[0]->asnef;
@@ -142,7 +157,7 @@ sou_id                              sou_idcrm
                             'TELEFONO' => $phone,
                             'nombre' => $nombre,
                             'apellido1' => $apellidos,
-                            'dninie' => $dninie,
+                            //'dninie' => $dninie,
                             'asnef' => $asnef,
                             'url' => $url,
                             'ip' => $ip,
@@ -180,7 +195,7 @@ sou_id                              sou_idcrm
                     case 11:
                         //Rastreator
                         $observaciones = "DNI: ".$r[0]->lea_aux4." Ingresos netos: ".$r[0]->lea_aux3." Tipo contrato: ".$r[0]->lea_aux2." Cantidad solicitada: ".$r[0]->lea_aux1;
-                        $name = $reg['lea_name'];
+                        $name = $r[0]->lea_name;
 
                         $lead = [
                                 'TELEFONO' => $phone,
@@ -190,11 +205,11 @@ sou_id                              sou_idcrm
                         ];
                         break;
                     case 2:
-                        $apellidos = $reg[0]->lea_surname;
-                        $dninie = $reg[0]->dninie;
-                        $asnef = $reg[0]->asnef;
-                        $url = $reg[0]->lea_url;
-                        $ip = $reg[0]->lea_ip;
+                        $apellidos = $r[0]->lea_surname;
+                        $dninie = $r[0]->dninie;
+                        $asnef = $r[0]->asnef;
+                        $url = $r[0]->lea_url;
+                        $ip = $r[0]->lea_ip;
 
                         $lead = [
                                 'TELEFONO' => $phone,
@@ -206,7 +221,19 @@ sou_id                              sou_idcrm
                                 'ip' => $ip,
                                 'wsid' => $lea_id
                         ];
-                        break;                    
+                        break;            
+                    case 5:
+                        $url = $r[0]->lea_url;
+                        $email = $r[0]->lea_mail;
+                        
+                        $lead = [
+                                'TELEFONO' => $phone,
+                                'nombre' => $nombre,
+                                'Email' => $email,
+                                'url' => $url,
+                                'wsid' => $lea_id
+                        ];
+                        break;
                     default;
                 }
             
@@ -234,14 +261,12 @@ sou_id                              sou_idcrm
                 
                 $result = $db->updatePrepared("webservice.leads", $parametros);               
                 $r = json_decode($result);
-               
-                if($r->success){
-                    exit(json_encode(['success'=> true, 'message'=> $r->message]));
-                }else{
-                    exit(json_encode(['success'=> false, 'message'=> $r->message]));
-                }
+  
+                return json_encode(['success'=> $r->success, 'message'=> $r->message]);      
+
+
             }
-            exit(json_encode(['success'=> false, 'message'=> 'No results']));
+            return json_encode(['success'=> false, 'message'=> 'No results']);
         }
     }
     

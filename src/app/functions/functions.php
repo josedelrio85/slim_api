@@ -41,8 +41,7 @@ class Functions {
             or num_dia = (select max(num_dia) from webservice.c2c_timetable where laborable = ? and sou_id= ? ));";
         }
         
-        $format = UtilitiesConnection::getFormatPreparedSql($datos);
-        $r = $db->selectPrepared($sql, $datos, $format);
+        $r = $db->selectPrepared($sql, $datos);
         
         if(!is_null($r)){
             $aux = 0;

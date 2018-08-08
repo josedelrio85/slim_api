@@ -41,6 +41,7 @@ class UtilitiesConnection {
      */
     public static function getParametros($datos, $where = null){
         $formato = UtilitiesConnection::getFormatPreparedSql($datos);
+        $formatoWhere = array();
         if($where != null)
             $formatoWhere = UtilitiesConnection::getFormatPreparedSql($where);
         
@@ -48,7 +49,7 @@ class UtilitiesConnection {
             "datos" => (array) $datos,
             "formatoDatos" => (array) $formato,
             "where" => (array) $where,
-            "formatoWhere" => (array) $formatoWhere
+            "formatoWhere" => $formatoWhere
         ];
     }
     

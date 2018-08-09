@@ -30,6 +30,16 @@ $container['db_webservice'] = function($c){
     return new \App\Libraries\Connection($server, $username, $password, $database);    
 };
 
+
+$container['db_crmti'] = function($c){
+    $dbSettings = $c->get('settings')['db_crmti'];
+    $server = $dbSettings['host'];
+    $database = $dbSettings['dbname'];
+    $username = $dbSettings['user'];
+    $password = $dbSettings['password'];
+    return new \App\Libraries\Connection($server, $username, $password, $database);    
+};
+
 $container['funciones'] = function(){
     return new \App\Functions\Functions();
 };

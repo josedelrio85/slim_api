@@ -129,6 +129,111 @@ class LeadLeontel {
         }
     }
     
+    public static function sendLeadEvo($data, $db){
+               
+        if(array_key_exists('sou_id', $data)){
+           
+            $datos = [
+                0 => "LEONTEL",
+                1 => NULL,
+                2 => NULL,
+                3 => ''
+            ];
+            
+//            original
+//            $query = "SELECT "
+//                . "even_id,"
+//                . "PERSONMOBILEPHONE,"
+//                . "CLIENT_ESTADO__C,"
+//                . "URL_SALESFORCE";
+            
+            $query = "SELECT "
+                . "even_id,"
+                . "PERSONMOBILEPHONE,"
+                . "CLIENT_ESTADO__C,"
+                . "URL_SALESFORCE,"
+                . "LOGALTY_ESTADO__C,"
+                . "STEPID";
+
+            $queryFromWhere = " FROM evo_events_sf_v2_pro "
+                . "WHERE "
+                . "even_destiny = ? "
+                . "AND even_extracted <=> ? "
+                . "AND even_status <=> ? "
+                . "AND PERSONMOBILEPHONE <> ? ";
+            
+            $query .= $queryFromWhere;
+            $query .= " ORDER BY even_id LIMIT 1;";
+        
+            $r = $db->selectPrepared($query, $datos);
+            
+            if(!is_null($r)){
+                
+                $id_origen_leontel = 4;
+                
+                $lea_id = $r[0]->even_id;
+		$phone = $r[0]->PERSONMOBILEPHONE;
+		$client_estado_c = $r[0]->CLIENT_ESTADO__C;
+		$url_salesforce = $r[0]->URL_SALESFORCE;
+                
+                $stepid = $r[0]->STEPID;   
+                $logalty_estado_c = $r[0]->LOGALTY_ESTADO__C;
+                
+                $id_tipo_leontel = getIdTipoLeontel($logalty_estado_c, $client_estado_c, $stepid);
+                
+                $lead = [
+                    'TELEFONO' => $phone,
+//                    'observaciones' => $stepid,
+                    'observaciones' => $client_estado_c,
+                    'url' => $url_salesforce,
+                    'wsid' => $lea_id
+                ];
+                
+                $this->wsCred = self::invokeWSLeontelWithCredentials();                
+                $data = $this->wsCred->getLeadLastStatus($id_origen_leontel,$id_tipo_leontel,$phone);
+
+                if($data["success"]){
+                    $datosDup = ["even_status" => "DUPLICATED"];
+                    $whereDup = ["even_id" => $lea_id];
+                    $parametrosDup = UtilitiesConnection::getParametros($datosDup, $whereDup);
+                
+                    $resultDup = $db->updatePrepared("webservice.evo_events_sf_v2_pro", $parametrosDup);
+                    $res = json_decode($resultDup);
+                    
+                }else{
+                    if(is_null($this->ws)){
+                        $this->ws = self::invokeWSLeontel();
+                    }
+                    //$retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+                    $retorno["success"] = true;                
+                    $retorno["id"] = 9999;
+                    
+                    if($retorno["success"]){
+                        $datos = [
+                            "even_extracted" => date("Y-m-d H:i:s"),
+                            "even_crmid" => $retorno["id"],
+                            "even_status" => "PRUEBA"
+                            //"even_status" => "SENT"
+                        ];
+                    }else{
+                        $datos = [
+                            "even_crmid" => "ERROR",
+                            "even_status" => "ERROR"
+                        ];
+                    }
+
+                    $where = ["even_id" => $lea_id];
+                    $parametros = UtilitiesConnection::getParametros($datos, $where);
+
+                    $result = $db->updatePrepared("webservice.evo_events_sf_v2_pro", $parametros);               
+                    $res = json_decode($result);
+                }
+                return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
+            }
+            return json_encode(['success'=> false, 'message'=> 'No results']);
+        }
+    }
+    
     private static function invokeWSLeontel($params = null){
         
         $params = $params ? $params : ["location" => self::$locationWs, "uri" => self::$uriWs];
@@ -355,114 +460,11 @@ class LeadLeontel {
             return $lead;
         }
         return [];
-    }
+    }  
     
-    public static function sendLeadEvo($data, $db){
-               
-        if(array_key_exists('sou_id', $data)){
-           
-            $datos = [
-                0 => "LEONTEL",
-                1 => NULL,
-                2 => NULL,
-                3 => ''
-            ];
-            
-//            original
-//            $query = "SELECT "
-//                . "even_id,"
-//                . "PERSONMOBILEPHONE,"
-//                . "CLIENT_ESTADO__C,"
-//                . "URL_SALESFORCE";
-            
-            $query = "SELECT "
-                . "even_id,"
-                . "PERSONMOBILEPHONE,"
-                . "CLIENT_ESTADO__C,"
-                . "URL_SALESFORCE,"
-                . "LOGALTY_ESTADO__C,"
-                . "STEPID";
-
-            $queryFromWhere = " FROM evo_events_sf_v2_pro "
-                . "WHERE "
-                . "even_destiny = ? "
-                . "AND even_extracted <=> ? "
-                . "AND even_status <=> ? "
-                . "AND PERSONMOBILEPHONE <> ? ";
-            
-            $query .= $queryFromWhere;
-            $query .= " ORDER BY even_id LIMIT 1;";
-        
-            $r = $db->selectPrepared($query, $datos);
-            
-            if(!is_null($r)){
-                
-                $id_origen_leontel = 4;
-                
-                $lea_id = $r[0]->even_id;
-		$phone = $r[0]->PERSONMOBILEPHONE;
-		$client_estado_c = $r[0]->CLIENT_ESTADO__C;
-		$url_salesforce = $r[0]->URL_SALESFORCE;
-                
-                $stepid = $r[0]->STEPID;   
-                $logalty_estado_c = $r[0]->LOGALTY_ESTADO__C;
-                
-                $id_tipo_leontel = getIdTipoLeontel($logalty_estado_c, $client_estado_c, $stepid);
-                
-                $lead = [
-                    'TELEFONO' => $phone,
-//                    'observaciones' => $stepid,
-                    'observaciones' => $client_estado_c,
-                    'url' => $url_salesforce,
-                    'wsid' => $lea_id
-                ];
-                
-                $this->wsCred = self::invokeWSLeontelWithCredentials();                
-                $data = $this->wsCred->getLeadLastStatus($id_origen_leontel,$id_tipo_leontel,$phone);
-
-                if($data["success"]){
-                    $datosDup = ["even_status" => "DUPLICATED"];
-                    $whereDup = ["even_id" => $lea_id];
-                    $parametrosDup = UtilitiesConnection::getParametros($datosDup, $whereDup);
-                
-                    $resultDup = $db->updatePrepared("webservice.evo_events_sf_v2_pro", $parametrosDup);
-                    $res = json_decode($resultDup);
-                    
-                }else{
-                    if(is_null($this->ws)){
-                        $this->ws = self::invokeWSLeontel();
-                    }
-                    //$retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                    $retorno["success"] = true;                
-                    $retorno["id"] = 9999;
-                    
-                    if($retorno["success"]){
-                        $datos = [
-                            "even_extracted" => date("Y-m-d H:i:s"),
-                            "even_crmid" => $retorno["id"],
-                            "even_status" => "PRUEBA"
-                            //"even_status" => "SENT"
-                        ];
-                    }else{
-                        $datos = [
-                            "even_crmid" => "ERROR",
-                            "even_status" => "ERROR"
-                        ];
-                    }
-
-                    $where = ["even_id" => $lea_id];
-                    $parametros = UtilitiesConnection::getParametros($datos, $where);
-
-                    $result = $db->updatePrepared("webservice.evo_events_sf_v2_pro", $parametros);               
-                    $res = json_decode($result);
-                }
-                return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
-            }
-            return json_encode(['success'=> false, 'message'=> 'No results']);
-        }
-    }
-    
-    
+    /*
+     * Devuelve en función de los parámetros de entrada el id_tipo_leontel correspondiente.
+     */
     function getIdTipoLeontel($LOGALTY_ESTADO__C, $CLIENT_ESTADO__C, $STEPID){
 	
 	/*

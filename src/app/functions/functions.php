@@ -178,4 +178,32 @@ class Functions {
         }
         return json_encode(['success'=> false, 'message'=> '??']);
     }
+    
+    /*
+     * Encapsulación de la lógica de inserción de lead Evo Banco (inserción en webservice.evo_events_sf_v2_pro 
+     * + envío a la cola de Leontel a través de WS SOAP de Leontel con credenciales).
+     * params:
+     * @datos: array con conjunto de datos a insertar en bd
+     * @db: instancia bd
+     * @tabla: por si hay que hacer la inserción en otra tabla
+     */
+    public function prepareAndSendLeadEvoBancoLeontel($datos,$db,$tabla = null){
+        
+        if(is_array($datos) && !is_null($db)){
+
+            $parametros = UtilitiesConnection::getParametros($datos,null); 
+            $result = $db->insertPrepared("evo_events_sf_v2_pro", $parametros);
+
+            $r = json_decode($result);
+
+            if($r->success){   
+                LeadLeontel::sendLeadEvo($datos,$db);
+                exit(json_encode(['success'=> true, 'message'=> $r->message]));
+            }else{
+                exit(json_encode(['success'=> false, 'message'=> $r->message]));
+            }
+        }else{
+            return json_encode(['success'=> false, 'message'=> '??']);
+        }
+    }
 }

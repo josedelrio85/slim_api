@@ -263,8 +263,6 @@ sou_id                              sou_idcrm
                 $r = json_decode($result);
   
                 return json_encode(['success'=> $r->success, 'message'=> $r->message]);      
-
-
             }
             return json_encode(['success'=> false, 'message'=> 'No results']);
         }

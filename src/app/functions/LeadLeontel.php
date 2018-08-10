@@ -179,7 +179,8 @@ class LeadLeontel {
                 $stepid = $r[0]->STEPID;   
                 $logalty_estado_c = $r[0]->LOGALTY_ESTADO__C;
                 
-                $id_tipo_leontel = getIdTipoLeontel($logalty_estado_c, $client_estado_c, $stepid);
+                $array_tipo_leontel = self::getIdTipoLeontel($logalty_estado_c, $client_estado_c, $stepid);
+                $id_tipo_leontel = $array_tipo_leontel["idTipoLeontel"];
                 
                 $lead = [
                     'TELEFONO' => $phone,
@@ -465,7 +466,7 @@ class LeadLeontel {
     /*
      * Devuelve en función de los parámetros de entrada el id_tipo_leontel correspondiente.
      */
-    function getIdTipoLeontel($LOGALTY_ESTADO__C, $CLIENT_ESTADO__C, $STEPID){
+    public static function getIdTipoLeontel($LOGALTY_ESTADO__C, $CLIENT_ESTADO__C, $STEPID){
 	
 	/*
 	- SI EL PASO ES metodo-validacion y el estado cliente es potencial o pendiente revisión captación -> lo enviamos a INCOMPLETOS. si el estado cliente es activo u otro NO lo enviamos
@@ -480,11 +481,13 @@ class LeadLeontel {
                 switch($CLIENT_ESTADO__C) {
                     case 'Potencial':
                     case 'Pendiente revisión Captación':
-//                      return ["destiny"=> "LEONTEL",
-//                          "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelIncompletosV2.php"
-//			];
-                        return 22;
+                        return ["destiny"=> "LEONTEL",
+                            // "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelIncompletosV2.php",
+                            "idTipoLeontel" => 22
+			];
                     break;
+                    default:
+                        return null;
                 }
             break;
 		
@@ -492,11 +495,13 @@ class LeadLeontel {
                 switch($CLIENT_ESTADO__C) {
                     case 'Potencial':
                     case 'Pendiente revisión Captación':
-//			return ["destiny"=> "LEONTEL",
+			return ["destiny"=> "LEONTEL",
 //                          "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteElectronicaIDV2.php"
-//			];
-                        return 19;
+                            "idTipoLeontel" => 19
+			];
                     break;
+                    default:
+                        return null;                
                 }
             break;
 
@@ -504,11 +509,13 @@ class LeadLeontel {
                 switch($CLIENT_ESTADO__C) {
                     case 'Potencial':
                     case 'Pendiente revisión Captación':
-//              	return ["destiny"=> "LEONTEL",
-//                      	"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteConfirmaV2.php"
-//			];
-                        return 20;
+                        return ["destiny"=> "LEONTEL",
+                            //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteConfirmaV2.php"
+                            "idTipoLeontel" => 20
+                        ];
                     break;
+                    default:
+                        return null;                
                 }
             break;
 
@@ -528,13 +535,15 @@ class LeadLeontel {
                             case 'Cancela Cliente':
                             case 'Error de Validación OTP Logalty':
                             case 'Pendiente Firma OTP':
-//                              return ["destiny"=> "LEONTEL",
+                                return ["destiny"=> "LEONTEL",
 //                                  "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
-//				];
-                                return 18;
+                                    "idTipoLeontel" => 18
+				];
                             break;
                         }
                     break;
+                    default:
+                        return null;                
                 }
             break;
 

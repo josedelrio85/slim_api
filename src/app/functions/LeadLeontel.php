@@ -64,11 +64,12 @@ class LeadLeontel {
             
             if($data["sou_id"] == 2){
                 $queryFromWhere .= " AND l.leatype_id = ? ";
+                $datos[4] = $data["leatype_id"];
             }
             
             if($data["sou_id"] == 5){
                 $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208','94.143.76.28'";
-                $datos[5] = "";
+                $datos[5] = "''";
 
                 $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
 
@@ -78,6 +79,13 @@ class LeadLeontel {
             if($data["sou_id"] == 14){
                 $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208'";
                 $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
+            }
+            
+            if($data["sou_id"] == 3){
+                $queryFromWhere .= " AND l.leatype_id <> ? ";
+                $queryFromWhere .= " AND l.lea_phone <> ? ";
+                $datos[4] = 3;
+                $datos[5] = "''";
             }
             
             $query .= $queryFromWhere; 
@@ -266,16 +274,22 @@ class LeadLeontel {
     private function queryLead($sou_id){
         /*  
             * webservice
-           sou_id                              sou_idcrm
-           1	CREDITEA ABANDONADOS        2
-           2	CREDITEA STAND              3
-           4	CREDITEA TIMEOUT            5
-           5	R CABLE                     6
-           9	CREDITEA END TO END         13
-           10	CREDITEA FB                 14
-           11	CREDITEA RASTREATOR         15
-           12  EUSKALTEL                   16
-
+            2   CREDITEA STAND                  3
+            3	EVO BANCO                       4
+            4	CREDITEA TIMEOUT                5
+            5	R CABLE                         6
+            6	BYSIDECAR                       7
+            7	HERCULES                        8
+            8	SEGURO PARA MOVIL               11
+            9	CREDITEA END TO END             13
+            10	CREDITEA FB                     14
+            11	CREDITEA RASTREATOR             15
+            12	EUSKALTEL                       16
+            13	ADESLAS                         19
+            14	R CABLE EMPRESAS                20
+            15	PRUEBA BySidecar                23
+            16	EVO BANCO FIRMADOS NO FORMALIZ	24
+         * 
             * crmti
            2	CREDITEA ABANDONOS          
            3	CREDITEA STAND	
@@ -428,6 +442,7 @@ class LeadLeontel {
                     break;            
                 case 5:
                 case 14:
+                case 3:
                     $url = $r[0]->lea_url;
                     $email = $r[0]->lea_mail;
 

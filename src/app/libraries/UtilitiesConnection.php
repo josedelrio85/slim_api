@@ -167,4 +167,33 @@ class UtilitiesConnection {
         }
         return null;
     }
+    
+    /*
+     * Convierte un array con valores en un string con cada valor separado por comas.
+     * Por ahora está recibiendo un array de objetos stdClass, que hay que desmontar en un array asociativo y obtener el valor a través del parametro
+     * Usado para utilizar como prepared statement
+     * $array => array clave => valor  [0 => "X"]
+     * $salida => string separado por comas => "X,Y,Z"
+     */
+    public static function arrayToPreparedParam($array){
+        if(is_array($array)){
+            $salida = "";
+            $tam = count($array) - 1;
+            foreach($array as $k => $v){
+                if(is_object($v)){
+                    $v = json_decode(json_encode($v),true);
+                }
+                $z = key($v);
+                $a = $v[$z];
+                //$salida .= $v[$k];
+                $salida .= $a;
+                if($k < $tam){
+                    $salida .= ",";
+                }
+            }
+            return $salida;
+        }
+        return "";
+    }
+    
 }

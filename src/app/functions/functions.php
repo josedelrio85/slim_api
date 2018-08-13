@@ -167,7 +167,7 @@ class Functions {
                 $result->close();
                 $db->NextResult();
 
-                LeadLeontel::sendLead($datos,$db);
+                $resultado = LeadLeontel::sendLead($datos,$db);
                 
                 $db->close();
                 //Hay que devolver el resultado de la inserción en webservice.leads, no el update de Leontel

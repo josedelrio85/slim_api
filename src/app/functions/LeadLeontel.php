@@ -49,7 +49,7 @@ class LeadLeontel {
                 . "l.lea_phone,"
                 . "l.lea_name,";
             
-            $querySource = queryLead($data["sou_id"]);
+            $querySource = self::queryLead($data["sou_id"]);
 
             $query .= $querySource;
 
@@ -101,12 +101,9 @@ class LeadLeontel {
 		$id_tipo_leontel = $r[0]->type;
 		$lea_id = $r[0]->lea_id;
 
+                $lead = self::paramsLead($r, $data["sou_id"]);
                 
-                $lead = paramsLead($r, $data["sou_id"]);
-                
-                if(is_null($this->ws)){
-                    $this->ws = self::invokeWSLeontel();
-                }
+                $ws = self::invokeWSLeontel();
 //                $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
                 $retorno["success"] = true;                
                 $retorno["id"] = 9999;
@@ -129,9 +126,9 @@ class LeadLeontel {
                 $parametros = UtilitiesConnection::getParametros($datos, $where);
                 
                 $result = $db->updatePrepared("webservice.leads", $parametros);               
-                $r = json_decode($result);
+                $res = json_decode($result);
   
-                return json_encode(['success'=> $r->success, 'message'=> $r->message]);      
+                return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
             }
             return json_encode(['success'=> false, 'message'=> 'No results']);
         }
@@ -147,13 +144,6 @@ class LeadLeontel {
                 2 => NULL,
                 3 => ''
             ];
-            
-//            original
-//            $query = "SELECT "
-//                . "even_id,"
-//                . "PERSONMOBILEPHONE,"
-//                . "CLIENT_ESTADO__C,"
-//                . "URL_SALESFORCE";
             
             $query = "SELECT "
                 . "even_id,"
@@ -236,8 +226,9 @@ class LeadLeontel {
 
                     $result = $db->updatePrepared("webservice.evo_events_sf_v2_pro", $parametros);               
                     $res = json_decode($result);
+                    return json_encode(['success'=> $res->success, 'message'=> $res->message]);
                 }
-                return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
+                return json_encode(['success'=> false, 'message'=> 'Last status false.']);      
             }
             return json_encode(['success'=> false, 'message'=> 'No results']);
         }
@@ -274,6 +265,7 @@ class LeadLeontel {
     private function queryLead($sou_id){
         /*  
             * webservice
+            1	CREDITEA ABANDONADOS            2
             2   CREDITEA STAND                  3
             3	EVO BANCO                       4
             4	CREDITEA TIMEOUT                5
@@ -343,7 +335,7 @@ class LeadLeontel {
                     break;       
                 default:
                     /* case 5: case 12: case 7:case 14:case 8: case 6:*/
-                    //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar
+                    //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar + EvoBanco (sendC2CToLeontel)
                     $querySource = "l.lea_mail,"
                         . "l.lea_url";
             }
@@ -479,7 +471,7 @@ class LeadLeontel {
     }  
     
     /*
-     * Devuelve en función de los parámetros de entrada el id_tipo_leontel correspondiente.
+     * Devuelve en función de los parámetros de entrada el destino y el id_tipo_leontel correspondiente.
      */
     public static function getIdTipoLeontel($LOGALTY_ESTADO__C, $CLIENT_ESTADO__C, $STEPID){
 	

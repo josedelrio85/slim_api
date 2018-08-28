@@ -164,8 +164,8 @@ class Functions {
             if($db->AffectedRows() > 0){
                 $resultSP = $result->fetch_assoc();
                 $lastid = $resultSP["@result"];
-                $result->close();
                 $db->NextResult();
+                $result->close();
 
                 $resultado = LeadLeontel::sendLead($datos,$db);
                 

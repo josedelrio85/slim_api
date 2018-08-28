@@ -473,7 +473,7 @@ class LeadLeontel {
     /*
      * Devuelve en función de los parámetros de entrada el destino y el id_tipo_leontel correspondiente.
      */
-    public static function getIdTipoLeontel($LOGALTY_ESTADO__C, $CLIENT_ESTADO__C, $STEPID){
+    public static function getIdTipoLeontel($LOGALTY_ESTADO__C, $CLIENT_ESTADO__C, $STEPID, $CONTRACTSTATUS){
 	
 	/*
 	- SI EL PASO ES metodo-validacion y el estado cliente es potencial o pendiente revisión captación -> lo enviamos a INCOMPLETOS. si el estado cliente es activo u otro NO lo enviamos
@@ -484,19 +484,19 @@ class LeadLeontel {
 	*/
 	
 	switch($STEPID){
-            case 'metodo-validacion':
-                switch($CLIENT_ESTADO__C) {
-                    case 'Potencial':
-                    case 'Pendiente revisión Captación':
-                        return ["destiny"=> "LEONTEL",
-                            // "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelIncompletosV2.php",
-                            "idTipoLeontel" => 22
-			];
-                    break;
-                    default:
-                        return null;
-                }
-            break;
+//            case 'metodo-validacion':
+//                switch($CLIENT_ESTADO__C) {
+//                    case 'Potencial':
+//                    case 'Pendiente revisión Captación':
+//                        return ["destiny"=> "LEONTEL",
+//                            // "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelIncompletosV2.php",
+//                            "idTipoLeontel" => 22
+//			];
+//                    break;
+//                    default:
+//                        return null;
+//                }
+//            break;
 		
             case 'identificacion-video':
                 switch($CLIENT_ESTADO__C) {
@@ -506,9 +506,10 @@ class LeadLeontel {
 //                          "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteElectronicaIDV2.php"
                             "idTipoLeontel" => 19
 			];
-                    break;
+                        break;
                     default:
-                        return null;                
+                        return null; 
+                        break;
                 }
             break;
 
@@ -520,9 +521,10 @@ class LeadLeontel {
                             //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteConfirmaV2.php"
                             "idTipoLeontel" => 20
                         ];
-                    break;
+                        break;
                     default:
-                        return null;                
+                        return null;
+                        break;
                 }
             break;
 
@@ -542,17 +544,32 @@ class LeadLeontel {
                             case 'Cancela Cliente':
                             case 'Error de Validación OTP Logalty':
                             case 'Pendiente Firma OTP':
-                                return ["destiny"=> "LEONTEL",
-//                                  "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
-                                    "idTipoLeontel" => 18
-				];
-                            break;
+                                switch ($CONTRACTSTATUS){
+                                    case 'Pre-firma':
+                                        return ["destiny" => "LEONTEL",
+                                            //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
+                                            "idTipoLeontel" => 18];
+                                        break;
+                                    case 'Firma':
+                                        return ["destiny" => "LEONTEL",
+                                            //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
+                                            "idTipoLeontel" => 18];
+                                        break;
+                                    default:
+                                        return NULL;
+                                        break;
+                                }
+                                break;
+                            default:
+                               return NULL;
+                               break;
                         }
-                    break;
+                        break;
                     default:
                         return null;                
+                        break;
                 }
-            break;
+                break;
 
             default:
                 return NULL;

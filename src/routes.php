@@ -239,7 +239,7 @@ $app->group('/creditea', function(){
      */
     $this->post('/almacenaLeadNoValido', function(Request $request, Response $response, array $args){
         
-        $this->logger->info("WS Creditea E2E almacena lead no válido.");
+        $this->logger->info("WS C2C Creditea E2E almacena lead no válido.");
 
         if($request->isPost()){
 
@@ -337,8 +337,7 @@ $app->group('/creditea', function(){
                     "lea_aux2" => $data["cantidadsolicitada"]
                 ];
                 
-                $resultLeontel = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
-                return json_decode($resultLeontel);                
+                return $this->funciones->prepareAndSendLeadLeontel($datos,$db);
             }
             return json_encode(['result' => false, 'message' => $rAsnef->message]);
         }
@@ -428,9 +427,11 @@ $app->group('/evobanco', function(){
                 "PRODUCT_CODE" => $data["productCode"],
                 "IDCONTRACT" => $data["idContract"],
                 "CLIENT" => $data["client"],
+                "METODO_ENTRADA" => $data["metodoEntrada"],
+                "MOTIVO_DESESTIMACION" => $data["motivoDesestimacion"]
             ];
             
-            $array_tipo_leontel = App\Functions\LeadLeontel::getIdTipoLeontel($datos["LOGALTY_ESTADO__C"], $datos["CLIENT_ESTADO__C"], $datos["STEPID"]);
+            $array_tipo_leontel = App\Functions\LeadLeontel::getIdTipoLeontel($datos["LOGALTY_ESTADO__C"], $datos["CLIENT_ESTADO__C"], $datos["STEPID"], $datos["CONTRACTSTATUS"]);
             $destinyF = $array_tipo_leontel["destiny"];
 		
             $destiny = $destinyF === NULL || $datos["STEPID"] == "registro" || $datos["STEPID"] == "confirmacion-otp-primer-paso" 
@@ -443,7 +444,8 @@ $app->group('/evobanco', function(){
             }
 
             $db = $this->db_webservice;            
-            $result = prepareAndSendLeadEvoBancoLeontel($datos,$db);
+            $result = App\Functions\Functions::prepareAndSendLeadEvoBancoLeontel($datos,$db);
+            //$result = prepareAndSendLeadEvoBancoLeontel($datos,$db);
             $r = json_decode($result);
             
             return json_encode(['success'=> $r->success, 'message'=> $r->message]);
@@ -473,7 +475,7 @@ $app->group('/evobanco', function(){
             $data = $request->getParsedBody();
             $typ = $data["type"];
             $type = ($typ == 2 || $typ == "2") ? 3 : 1;
-            $codRecommendation = array_key_exists("codRecommendation", $data) ? $data["codRecommendation"] : NULL;
+            $codRecommendation = array_key_exists("codRecommendation", $data) ? $data["codRecommendation"] : "";
             $lea_destiny = array_key_exists("test", $data) ? 'TEST' : 'LEONTEL';
             
             $serverParams = $request->getServerParams();
@@ -500,10 +502,11 @@ $app->group('/evobanco', function(){
                 "lea_ip" => $ip,
                 "stepid" => $data["stepId"],
                 "sou_id" => 3,
-                "leatype_id" => $type
+                "leatype_id" => $type,
                 "codRecommendation" =>  $codRecommendation
             ];
 
+            $db = $this->db_webservice;
             $parametros = UtilitiesConnection::getParametros($datos,null);    
             $query = $db->insertStatementPrepared("leads", $parametros);            
             
@@ -519,21 +522,61 @@ $app->group('/evobanco', function(){
             
             if($db->AffectedRows() > 0){
                 $resultSP = $result->fetch_assoc();
-                $result->close();
+                $lastid = $resultSP["@result"];
                 $db->NextResult();
+                $result->close();
 
                 if($type != 3){
-                    LeadLeontel::sendLead($datos,$db);
+                    \App\Functions\LeadLeontel::sendLead($datos,$db);
                 }
                 
                 $db->close();
-                return json_encode(['success'=> true, 'message'=> $resultSP]);
+                return json_encode(['success'=> true, 'message'=> $lastid]);
             }else{
                 return json_encode(['success'=> false, 'message'=> $db->LastError()]);
             }            
         }        
     });
     
+    /*
+     * Proceso cambio a FullOnline leads Evo Banco
+     * params:
+     * @JSON salida:
+     *      success:boolean
+     *      message:string
+     */
+    $this->post('/setFullOnline', function (Request $request, Response $response, array $args){
+       $this->logger->info("WS Set Full Online Evo Banco");
+       
+       if($request->isPost()){
+           $data->request->getParsedBody();
+           
+            $sql = "UPDATE
+                    webservice.leads wl
+                    INNER JOIN (
+                        SELECT
+                            l.lea_id
+			FROM
+			webservice.leads l
+			INNER JOIN webservice.leads_evo_duplicados d ON l.lea_phone = d.lea_phone
+			WHERE
+                            TIMESTAMPDIFF(MINUTE, d.lea_ts, now()) < 59
+                            AND l.lea_destiny = 'LEONTEL'
+                            AND l.lea_status IS NULL
+			GROUP BY
+			l.lea_phone) tab ON wl.lea_id = tab.lea_id
+                    SET wl.lea_status = 'FULLONLINE'";
+            
+            $db = $this->db_webservice->Query($sql);
+            
+            if($db->AffectedRows() > 0){
+                return json_encode(['success'=> true, 'message'=> $db->AffectedRows()]);
+            }else{
+                return json_encode(['success'=> false, 'message'=> $db->LastError()]);
+            }
+
+       }
+    });
 });
 
 

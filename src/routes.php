@@ -579,6 +579,64 @@ $app->group('/evobanco', function(){
     });
 });
 
+$app->group('/yoigo', function(){
+    $this->post('incomingC2C', function(Request $request, Response $response, array $args){
+        $this->logger->info("WS incoming C2C Yoigo");
+        
+        if($request->isPost()){
+            $data = $request->getParsedBody();
+                       
+            $serverParams = $request->getServerParams();
+            $url = "????";
+            if(array_key_exists("HTTP_REFERER", $serverParams)){
+                $url = $serverParams["HTTP_REFERER"];            
+            }
+            $ip = $serverParams["REMOTE_ADDR"];
+            $lea_destiny = array_key_exists("test", $data) ? 'TEST' : 'LEONTEL';
+            
+            
+            //LOGICA SOU_ID EN FUNCIÓN PARAM utm_source
+            //Pruebas
+            $sou_id = 15;
+            
+            $lea_aux3 = $data["cobertura"]."//".$data["impuesto"];
+                    
+            $datos = [
+                "lea_phone" => $data["phone"],
+                "lea_url" => $url,
+                "lea_ip" => $ip,
+                "lea_aux2" =>  $data["producto"],
+                "observations" => $data["producto"],
+                "lea_aux3" => $lea_aux3,
+                "lea_destiny" => $lea_destiny,
+                "sou_id" => $sou_id,
+                "leatype_id" => 1                
+            ];
+
+            $db = $this->db_webservice;
+            $parametros = UtilitiesConnection::getParametros($datos,null);    
+            $query = $db->insertStatementPrepared("leads", $parametros);            
+            
+            $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';                
+            $result = $db->Query($sp);           
+            
+            
+            if($db->AffectedRows() > 0){
+                $resultSP = $result->fetch_assoc();
+                $lastid = $resultSP["@result"];
+                $db->NextResult();
+                $result->close();
+
+                \App\Functions\LeadLeontel::sendLead($datos,$db);
+                
+                $db->close();
+                return json_encode(['success'=> true, 'message'=> $lastid]);
+            }else{
+                return json_encode(['success'=> false, 'message'=> $db->LastError()]);
+            }
+        }       
+    });
+});
 
 
 

@@ -332,7 +332,18 @@ class LeadLeontel {
                         . "l.lea_ip";
                     $tam = count($datos);
                     $datos[$tam] = $data["leatype_id"];
-                    break;       
+                    break; 
+                case 25:
+                case 26:
+                case 27:
+                case 28:
+                    // Yoigo
+                    $querySource = "l.lea_aux2,"
+                        . "l.lea_aux3,"
+                        . "l.lea_url,"
+                        . "l.lea_ip";
+                    break;
+                
                 default:
                     /* case 5: case 12: case 7:case 14:case 8: case 6:*/
                     //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar + EvoBanco (sendC2CToLeontel)
@@ -461,6 +472,23 @@ class LeadLeontel {
                     $lead = [
                         'TELEFONO' => $phone,
                         'wsid' => $lea_id
+                    ];
+                    break;
+                case 25:
+                case 26:
+                case 27:
+                case 28:
+                    $observaciones = $r[0]->lea_aux2;
+                    $url = $r[0]->lea_url;
+                    $observaciones2 = $r[0]->lea_aux3;
+                    
+                    $lead = [
+                        'TELEFONO' => $phone,
+                        'url' => $url,
+                        'wsid' => $lea_id,
+                        'ip' => $ip,
+                        'observaciones' => $observaciones,
+                        'observaciones2' => $observaciones2
                     ];
                     break;
                 default;

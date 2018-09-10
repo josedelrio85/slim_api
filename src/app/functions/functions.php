@@ -106,7 +106,6 @@ class Functions {
         $resultSI = $db->selectPrepared($sqlPrevIds, $datosPrevIds);
         $paramPrevIds = UtilitiesConnection::arrayToPreparedParam($resultSI);
         
-//        $hoxe = date("Y-m-d H:i:s"); 
         $hoxe = "2018-06-01";
         $fecha = new \DateTime($hoxe);
         $fecha->sub(new \DateInterval('P1M')); // 1 mes

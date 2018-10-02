@@ -38,7 +38,7 @@ class NifNieCifValidator {
     */
     public static function isValidIdNumber( $docNumber ) {
         $fixedDocNumber = strtoupper( $docNumber );
-        return isValidNIF( $fixedDocNumber ) || isValidNIE( $fixedDocNumber ) || isValidCIF( $fixedDocNumber );
+        return self::isValidNIF( $fixedDocNumber ) || self::isValidNIE( $fixedDocNumber ) || self::isValidCIF( $fixedDocNumber );
     }
     
     
@@ -82,8 +82,8 @@ class NifNieCifValidator {
 
         $writtenDigit = strtoupper(substr( $docNumber, -1, 1 ));
 
-        if( isValidNIFFormat( $fixedDocNumber ) ) {
-            $correctDigit = getNIFCheckDigit( $fixedDocNumber );
+        if( self::isValidNIFFormat( $fixedDocNumber ) ) {
+            $correctDigit = self::getNIFCheckDigit( $fixedDocNumber );
 
             if( $writtenDigit == $correctDigit ) {
                 $isValid = TRUE;
@@ -128,7 +128,7 @@ class NifNieCifValidator {
             $fixedDocNumber = strtoupper( $docNumber );
         }
 
-        if( isValidNIEFormat( $fixedDocNumber ) ) {
+        if( self::isValidNIEFormat( $fixedDocNumber ) ) {
             if( substr( $fixedDocNumber, 1, 1 ) == "T" ) {
                 $isValid = TRUE;
             } else {
@@ -142,7 +142,7 @@ class NifNieCifValidator {
                 $numberWithoutLast = str_replace('X', '0', $numberWithoutLast);
                 $numberWithoutLast = str_replace('Z', '2', $numberWithoutLast);
                 $fixedDocNumber = $numberWithoutLast . $lastDigit;
-                $isValid = isValidNIF( $fixedDocNumber );
+                $isValid = self::isValidNIF( $fixedDocNumber );
             }
         }
 
@@ -184,8 +184,8 @@ class NifNieCifValidator {
         $fixedDocNumber = strtoupper( $docNumber );
         $writtenDigit = substr( $fixedDocNumber, -1, 1 );
 
-        if( isValidCIFFormat( $fixedDocNumber ) == 1 ) {
-            $correctDigit = getCIFCheckDigit( $fixedDocNumber );
+        if( self::isValidCIFFormat( $fixedDocNumber ) == 1 ) {
+            $correctDigit = self::getCIFCheckDigit( $fixedDocNumber );
 
             if( $writtenDigit == $correctDigit ) {
                 $isValid = TRUE;
@@ -216,7 +216,7 @@ class NifNieCifValidator {
     *       TRUE
     */
     private function isValidNIFFormat( $docNumber ) {
-        return respectsDocPattern(
+        return self::respectsDocPattern(
             $docNumber,
             '/^[KLM0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][a-zA-Z0-9]/' );
     }
@@ -245,7 +245,7 @@ class NifNieCifValidator {
     *       TRUE
     */
     private function isValidNIEFormat( $docNumber ) {
-        return respectsDocPattern(
+        return self::respectsDocPattern(
             $docNumber,
             '/^[XYZT][0-9][0-9][0-9][0-9][0-9][0-9][0-9][A-Z0-9]/' );
     }
@@ -275,11 +275,11 @@ class NifNieCifValidator {
     */
     private function isValidCIFFormat( $docNumber ) {
         return
-            respectsDocPattern(
+            self::respectsDocPattern(
                 $docNumber,
                 '/^[PQSNWR][0-9][0-9][0-9][0-9][0-9][0-9][0-9][A-Z0-9]/' )
         or
-            respectsDocPattern(
+            self::respectsDocPattern(
                 $docNumber,
                 '/^[ABCDEFGHJUV][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]/' );
     }
@@ -320,10 +320,10 @@ class NifNieCifValidator {
             $fixedDocNumber = strtoupper( $docNumber );
         }
 
-        if( isValidNIFFormat( $fixedDocNumber ) ) {
+        if( self::isValidNIFFormat( $fixedDocNumber ) ) {
             $writtenLetter = substr( $fixedDocNumber, -1 );
 
-            if( isValidNIFFormat( $fixedDocNumber ) ) {
+            if( self::isValidNIFFormat( $fixedDocNumber ) ) {
                 $fixedDocNumber = str_replace( 'K', '0', $fixedDocNumber );
                 $fixedDocNumber = str_replace( 'L', '0', $fixedDocNumber );
                 $fixedDocNumber = str_replace( 'M', '0', $fixedDocNumber );
@@ -373,7 +373,7 @@ class NifNieCifValidator {
 
         $fixedDocNumber = strtoupper( $docNumber );
 
-        if( isValidCIFFormat( $fixedDocNumber ) ) {
+        if( self::isValidCIFFormat( $fixedDocNumber ) ) {
             $firstChar = substr( $fixedDocNumber, 0, 1 );
             $centralChars = substr( $fixedDocNumber, 1, 7 );
 
@@ -539,9 +539,9 @@ class NifNieCifValidator {
         $docTypeDescription = "";
         $firstChar = substr( $docNumber, 0, 1 );
 
-        if( isValidNIFFormat( $docNumber ) or
-            isValidNIEFormat( $docNumber ) or
-            isValidCIFFormat( $docNumber ) ) {
+        if( self::isValidNIFFormat( $docNumber ) or
+            self::isValidNIEFormat( $docNumber ) or
+            self::isValidCIFFormat( $docNumber ) ) {
 
             $docTypeDescription = $identificationType[ $firstChar ];
         }

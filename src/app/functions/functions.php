@@ -15,10 +15,14 @@ class Functions {
     /*
      * Función para obtener horario de atención para C2C.
      * Params: 
-     * @data: array que puede contener sou_id + num_dia + hora => para consultar si hay atención en un momento determinado
+     * @data: (1) array que puede contener sou_id + num_dia + hora => para consultar si hay atención en un momento determinado
      *  ó bien
-     * array que contiene sou_id => obtener horario de la semana
+     * (2) array que contiene sou_id => obtener horario de la semana
      * @db => instancia bd
+     * return:
+     * si (1)  => array
+     * si (2) => array que contiene horario con indices 'primerDia' y 'ultimoDia' en caso de que exista horario para el sou_id, hora y dia recibido, 
+     * o null en caso contrario
      */
     public function consultaTimeTableC2C($data, $db){
         

@@ -246,12 +246,5 @@ class Functions {
             return false;
 	} 
     }
-    
+   
 }
-
-
-
-/*
- * 
-
- * **/

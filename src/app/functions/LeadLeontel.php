@@ -281,18 +281,33 @@ class LeadLeontel {
             14	R CABLE EMPRESAS                20
             15	PRUEBA BySidecar                23
             16	EVO BANCO FIRMADOS NO FORMALIZ	24
+            17	YOIGO NEGOCIOS DERIVACION YOIG	25
+            18	YOIGO NEGOCIOS SEO              26
+            19	YOIGO NEGOCIOS SEM              27
+            20	YOIGO NEGOCIOS EMAILING         28
          * 
             * crmti
-           2	CREDITEA ABANDONOS          
-           3	CREDITEA STAND	
-           5	CREDITEA TIMEOUT	
-           6	R CABLE	
-           9	CREDITEA RECEPCION	
-           10	CREDITEA RECEPCION NO CLI	
-           13	CREDITEA END TO END	
-           14	CREDITEA FB	
-           15	CREDITEA RASTREATOR	
-           17	CREDITEA DISPOSICION DE EFECTIVO	
+            2	CREDITEA ABANDONOS          
+            3	CREDITEA STAND	
+            5	CREDITEA TIMEOUT	
+            6	R CABLE	
+            9	CREDITEA RECEPCION	
+            10	CREDITEA RECEPCION NO CLI	
+            13	CREDITEA END TO END	
+            14	CREDITEA FB	
+            15	CREDITEA RASTREATOR	
+            17	CREDITEA DISPOSICION DE EFECTIVO	
+            18	EUSKALTEL ATENCION AL CLIENTE	
+            19	ADESLAS	
+            20	R CABLE EMPRESAS	
+            21	DINERO VELOZ RECEPCION	
+            22	DINERO VELOZ RECEPCION NO CLI	
+            23	PRUEBA BySidecar	
+            24	EVO BANCO FIRMADOS NO FORMALIZADOS	
+            25	YOIGO NEGOCIOS DERIVACION YOIGO	
+            26	YOIGO NEGOCIOS SEO	
+            27	YOIGO NEGOCIOS SEM	
+            28	YOIGO NEGOCIOS EMAILING	
         */		
         if(!is_null($sou_id) && $sou_id!= ""){         
             switch($sou_id){
@@ -333,10 +348,10 @@ class LeadLeontel {
                     $tam = count($datos);
                     $datos[$tam] = $data["leatype_id"];
                     break; 
-                case 25:
-                case 26:
-                case 27:
-                case 28:
+                case 17:
+                case 18:
+                case 19:
+                case 20:
                     // Yoigo
                     $querySource = "l.lea_aux2,"
                         . "l.lea_aux3,"
@@ -474,10 +489,10 @@ class LeadLeontel {
                         'wsid' => $lea_id
                     ];
                     break;
-                case 25:
-                case 26:
-                case 27:
-                case 28:
+                case 17:
+                case 18:
+                case 19:
+                case 20:
                     $observaciones = $r[0]->lea_aux2;
                     $url = $r[0]->lea_url;
                     $observaciones2 = $r[0]->lea_aux3;

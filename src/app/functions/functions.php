@@ -205,4 +205,53 @@ class Functions {
             return json_encode(['success'=> false, 'message'=> '??']);
         }
     }
+    
+    /*
+     * Obtiene el sou_id de crmti en función del sou_id de webservice
+     * params:
+     * @sou_id: sou_id de webservice
+     * @db: instancia bd
+     * return:
+     * @sou_idcrm (sou_id de crmti)
+     */
+    public function getSouIdcrm($sou_id, $db){
+        if(!empty($sou_id)){
+            $datos = [ 0 => $sou_id];
+            
+            $sql = "SELECT sou_idcrm FROM webservice.sources WHERE sou_id = ?;";
+            
+            $r = $db->selectPrepared($sql, $datos);
+            
+            if(!is_null($r)){
+                return $r[0]->sou_idcrm;
+            }
+            return null;
+        }
+    }
+    
+    /*
+     * Valida si el formato de un número de teléfono es válido.
+     * Criterios: 9 números, empezando por 5,6,7,8 o 9
+     * param:
+     * @valor: nº telefono a validar
+     * return:
+     * @boolean
+     */
+    public function phoneFormatValidator($valor){
+        $expresion = '/^[9|6|7|8|5][0-9]{8}$/'; 
+
+	if(preg_match($expresion, $valor)){ 
+            return true;
+	}else{ 
+            return false;
+	} 
+    }
+    
 }
+
+
+
+/*
+ * 
+
+ * **/

@@ -37,7 +37,7 @@ class Functions {
                 3 => $data['hora'], 
                 4 => $data['hora']];
             
-            $sql = "SELECT * FROM webservice.c2c_timetable WHERE  laborable = ? and sou_id  = ? and num_dia = ? and h_ini <= ? and h_fin >= ? ;";
+            $sql = "SELECT * FROM report_panel.c2c_timetable WHERE  laborable = ? and sou_id  = ? and num_dia = ? and h_ini <= ? and h_fin >= ? ;";
         }else{                       
 
             $datos = [
@@ -48,9 +48,9 @@ class Functions {
                 4 => $laborable, 
                 5 => $data['sou_id']];
 
-            $sql = "SELECT * FROM webservice.c2c_timetable WHERE laborable = ? and sou_id  = ? and
-            (num_dia = (select min(num_dia) from webservice.c2c_timetable where laborable = ? and sou_id= ? )
-            or num_dia = (select max(num_dia) from webservice.c2c_timetable where laborable = ? and sou_id= ? ));";
+            $sql = "SELECT * FROM report_panel.c2c_timetable WHERE laborable = ? and sou_id  = ? and
+            (num_dia = (select min(num_dia) from report_panel.c2c_timetable where laborable = ? and sou_id= ? )
+            or num_dia = (select max(num_dia) from report_panel.c2c_timetable where laborable = ? and sou_id= ? ));";
         }
         
         $r = $db->selectPrepared($sql, $datos);

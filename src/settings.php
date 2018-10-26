@@ -16,8 +16,14 @@ return [
             'level' => \Monolog\Logger::DEBUG,
         ],
         
-        // Database configuration
         'db_webservice' => [
+            "host" => "192.168.50.20",
+            "dbname" => "webservice",
+            "user" => "webservice",
+            "password" => "xp5555"
+        ],
+        
+        'db_webservice_dev' => [
             "host" => "127.0.0.1",
             "dbname" => "webservice",
             "user" => "root",
@@ -25,13 +31,27 @@ return [
         ],
         
         'db_report_panel' => [
-            "host" => "127.0.0.1",
+            "host" => "192.168.50.21",
+            "dbname" => "report_panel",
+            "user" => "admin",
+            "password" => "dalema22"
+        ],        
+        
+        'db_report_panel_dev' => [
+             "host" => "127.0.0.1",            
             "dbname" => "report_panel",
             "user" => "root",
             "password" => "root_bsc"
         ],        
         
         'db_crmti' => [
+            "host" => "192.168.50.109",
+            "dbname" => "crmti",
+            "user" => "crmti",
+            "password" => "xp2222"
+        ],        
+        
+        'db_crmti_dev' => [
             "host" => "127.0.0.1",
             "dbname" => "crmti",
             "user" => "root",

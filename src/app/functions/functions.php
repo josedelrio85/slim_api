@@ -145,6 +145,95 @@ class Functions {
     }
     
     /*
+     *  Se evalúa en la tabla crmti.lea_leads y crmti.his_history la existencia de algún registro 
+     * 	que cumpla con las siguiente condiciones:
+     * 		- lea_source perteneciente al sou_id recibido por parametro
+     * 		- lea_ts periodo inferior a 1 mes
+     * 		- lea asnef = SI ó his_sub dentro del rango indicado
+     * 		- que existe algún lead para el dni o telefono
+     * 	@parametros:
+     * 		- sou_id del origen a evaluar
+     * 		- dni valido
+     * 		- telefono valido
+     * 	@returns:
+     *  	- En caso de que exista algún registro que cumpla las condiciones, devuelve objeto JSON:
+     * 			{
+     *                      "result":true,
+     *                      "data": "KO-notValid"
+     * 			}
+     * 		- En caso contrario de que no haya resultados, devuelve objeto JSON:
+     * 			{
+     *                      "result":false,
+     *                      "data": true
+     * 			}
+     */
+    public function checkAsnefDoctorDinero($data, $db){
+        $a = $data["sou_id"];
+        $b = $data["documento"];
+        $c = $data["phone"];
+        
+        if(!empty($a) && !empty($b) && !empty($c)){
+            //db tiene que ser report panel        
+            $previa = [
+                0 => $data["sou_id"]
+            ];
+            $sqlPrevia = "select distinct(left(sou_description,5)) 'categoria' from crmti.sou_sources where sou_id = ?;";      
+            $previaSC = $db->selectPrepared($sqlPrevia, $previa);
+            $categ = $previaSC[0]->categoria;
+
+            if(!empty($categ)){
+                $sqlPrevSources = "select sou_id from crmti.sou_sources where sou_description like ? ";
+                $resultSC = $db->selectPrepared($sqlPrevSources, [0 => $categ]);
+                $paramPrevSources = UtilitiesConnection::arrayToPreparedParam($resultSC);
+
+                $datosPrevIds = [
+                    0 => "%".$data["documento"]."%",
+                    1 => $data["phone"]        
+                ];
+
+                $sqlPrevIds = "SELECT lea_id FROM crmti.lea_leads where dninie like ? OR TELEFONO = ?";
+                $resultSI = $db->selectPrepared($sqlPrevIds, $datosPrevIds);
+                $paramPrevIds = UtilitiesConnection::arrayToPreparedParam($resultSI);
+
+                $hoxe = "2018-06-01";
+                $fecha = new \DateTime($hoxe);
+                $fecha->sub(new \DateInterval('P1M')); // 1 mes
+                $dateMySql  = $fecha->format('Y-m-d H:i:s');
+
+                $datos = [
+                    0 => $paramPrevSources,
+                    1 => $dateMySql,
+                    2 => 'SI',
+                    3 => '383,385,386,387,388,389,390,391,393,394,400,402,403,404,405,407,411,499,501,502,503,504,505,507,508,510,511,512,513,514,515,516,519,521,522,523,524,525,526,527,528,530,531,532,533,536,537,542,543,544,549,550,553,556,557,616,617,618,620,621,622,623,624,625,646,647,648,649,650,674,675,676,677,678,679,680,681,682,683,684,686,687',
+                    4 => $paramPrevIds
+                ];
+
+                $sql = "SELECT * "
+                    . "FROM crmti.lea_leads ll "
+                    . "INNER JOIN crmti.his_history hh ON ll.lea_id = hh.his_lead "
+                    . "WHERE "
+                    . "ll.lea_source IN (?) "
+                    . "AND ll.lea_ts >  ? "
+                    . "AND (ll.asnef = ? "
+                    . "OR "
+                    . "hh.his_sub in(?) "
+                    . ") "
+                    . "AND hh.his_lead in (?);";        
+
+                $result = $db->selectPrepared($sql, $datos);
+
+                if(!is_null($result)){
+                    return json_encode(['success'=> true, 'message' => 'KO-notValid']);
+                }else{
+                    return json_encode(['success'=> true, 'message' => true]);
+                }
+            }  
+        }else{
+            return json_encode(['result'=> true, 'data' => 'KO-paramsNeeded']);
+        }
+    }
+    
+    /*
      * Encapsulación de la lógica de inserción de lead (inserción en webservice.leads 
      * a través de stored procedure + envío a la cola de Leontel a través de WS SOAP de Leontel).
      * params:
@@ -152,14 +241,16 @@ class Functions {
      * @db: instancia bd
      * @tabla: por si hay que hacer la inserción en otra tabla
      */
-    public function prepareAndSendLeadLeontel($datos,$db,$tabla = null){
+    public function prepareAndSendLeadLeontel($datos,$db,$tabla = null, $leontel = true){
         
         if(is_array($datos) && !is_null($db)){
-            if($tabla == null)
+            if($tabla == null){
                 $tabla = "leads";
+            }
 
             $parametros = UtilitiesConnection::getParametros($datos,null);    
             $query = $db->insertStatementPrepared($tabla, $parametros);
+//            $query = "INSERT INTO webservice.leads(lea_phone) values (".$datos["lea_phone"].");";
             $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
 
             $result = $db->Query($sp);           
@@ -169,8 +260,8 @@ class Functions {
                 $lastid = $resultSP["@result"];
                 $db->NextResult();
                 $result->close();
-
-                $resultado = LeadLeontel::sendLead($datos,$db);
+                
+                $leontel ? LeadLeontel::sendLead($datos,$db) : null;
                 
                 $db->close();
                 //Hay que devolver el resultado de la inserción en webservice.leads, no el update de Leontel
@@ -192,10 +283,14 @@ class Functions {
      */
     public function prepareAndSendLeadEvoBancoLeontel($datos,$db,$tabla = null){
         
+        if($tabla == null){
+            $tabla = "evo_events_sf_v2_pro";
+        }
+        
         if(is_array($datos) && !is_null($db)){
 
             $parametros = UtilitiesConnection::getParametros($datos,null); 
-            $result = $db->insertPrepared("evo_events_sf_v2_pro", $parametros);
+            $result = $db->insertPrepared($tabla, $parametros);
 
             $r = json_decode($result);
 
@@ -250,5 +345,58 @@ class Functions {
             return false;
 	} 
     }
-   
+    
+    
+    public function flujoLeadDoctorDinero($data, $db){
+
+        $datosAsnef = array(
+            "sou_id" => $data["sou_idcrm"],
+            "documento" => $data["dninie"],
+            "phone" => $data["telf"]                
+        );
+
+        $rAsnef = self::checkAsnefDoctorDinero($datosAsnef, $db);
+        $r = json_decode($rAsnef);
+
+        $datos = [
+            "sou_id" => $data["sou_id"],
+            "leatype_id" => $data["leatype_id"],
+            "utm_source" => $data["utm_source"],
+            "lea_phone" => $data["telf"],
+            "lea_url" => $data["url"],
+            "lea_ip" => $data["ip"],
+            "lea_aux1" => $data["dninie"],
+            "observations" => $data["observations"],
+            "lea_aux3" => $data['lea_aux3']
+        ];
+        
+        if(!$r->success){
+            $datos["lea_destiny"] = 'LEONTEL';
+            return self::prepareAndSendLeadLeontel($datos,$db, null, false);
+            
+        }else{      
+            // lead_no_valido asnef_yacliente
+            $datos["lea_aux3"] = "asnef_yacliente_notValid";
+            self::leadNoValido($datos, $db);
+            return json_encode(['result' => false, 'message' => 'KO-notValid']);	
+        }   
+    }
+    
+    public function leadNoValido($data, $db){
+        
+        $datos = [
+            "sou_id" => $data["sou_id"],
+            "leatype_id" => $data["leatype_id"],
+            "utm_source" => $data["utm_source"],
+            "lea_phone" => $data["telf"],
+            "lea_url" => $data["url"],
+            "lea_ip" => $data["ip"],
+            "lea_aux1" => $data["dninie"],
+            "observations" => $data["observations"],
+            "lea_aux3" => $data['lea_aux3'],
+            "lea_destiny" => ''
+        ];        
+        return self::prepareAndSendLeadLeontel($datos,$db, null, false);
+        
+    }
 }

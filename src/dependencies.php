@@ -49,6 +49,35 @@ $container['db_report_panel'] = function($c){
     return new \App\Libraries\Connection($server, $username, $password, $database);    
 };
 
+
+$container['db_webservice_dev'] = function($c){
+    $dbSettings = $c->get('settings')['db_webservice_dev'];
+    $server = $dbSettings['host'];
+    $database = $dbSettings['dbname'];
+    $username = $dbSettings['user'];
+    $password = $dbSettings['password'];
+    return new \App\Libraries\Connection($server, $username, $password, $database);    
+};
+
+
+$container['db_crmti_dev'] = function($c){
+    $dbSettings = $c->get('settings')['db_crmti_dev'];
+    $server = $dbSettings['host'];
+    $database = $dbSettings['dbname'];
+    $username = $dbSettings['user'];
+    $password = $dbSettings['password'];
+    return new \App\Libraries\Connection($server, $username, $password, $database);    
+};
+
+$container['db_report_panel_dev'] = function($c){
+    $dbSettings = $c->get('settings')['db_report_panel_dev'];
+    $server = $dbSettings['host'];
+    $database = $dbSettings['dbname'];
+    $username = $dbSettings['user'];
+    $password = $dbSettings['password'];
+    return new \App\Libraries\Connection($server, $username, $password, $database);    
+};
+
 $container['funciones'] = function(){
     return new \App\Functions\Functions();
 };

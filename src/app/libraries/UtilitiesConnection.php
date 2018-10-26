@@ -117,13 +117,15 @@ class UtilitiesConnection {
         
         // Loop through $data and build $fields, $placeholders, and $values			
         foreach ( $data as $field => $value ) {
-            $fields .= "{$field},";
-            $values[] = $value;
+            if($value != null){
+                $fields .= "{$field},";
+                $values[] = $value;
 
-            if ( $type == 'update') {
-                    $placeholders .= $field . '=?,';
-            } else {
-                    $placeholders .= '?,';
+                if ( $type == 'update') {
+                        $placeholders .= $field . '=?,';
+                } else {
+                        $placeholders .= '?,';
+                }
             }
         }
 

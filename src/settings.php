@@ -56,6 +56,8 @@ return [
             "dbname" => "crmti",
             "user" => "root",
             "password" => "root_bsc"
-        ],        
+        ],    
+        
+        'sou_id_test' => 15,
     ],
 ];

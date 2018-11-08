@@ -85,3 +85,7 @@ $container['funciones'] = function(){
 $container['utilities'] = function(){
     return new \App\Functions\Utilities();
 };
+
+$container['sou_id_test'] = function(){
+    return $c->get('settings')['sou_id_test'];
+};

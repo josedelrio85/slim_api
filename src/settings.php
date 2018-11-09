@@ -38,7 +38,7 @@ return [
         ],        
         
         'db_report_panel_dev' => [
-             "host" => "127.0.0.1",            
+            "host" => "127.0.0.1",            
             "dbname" => "report_panel",
             "user" => "root",
             "password" => "root_bsc"
@@ -57,10 +57,7 @@ return [
             "user" => "root",
             "password" => "root_bsc"
         ],    
-        
-//        'sou_id_test' => [
-//            'value' => 15
-//        ],
+
         'sou_id_test' => 15,
     ],
 ];

@@ -8,6 +8,8 @@
 
 namespace App\Libraries;
 
+use App\Libraries\CustomException;
+
 /**
  * Description of Connection
  *
@@ -33,13 +35,6 @@ class Connection implements IConnection{
      */
     public $mysql = null;
     
-    /*
-    const server = 'localhost';
-    const username = 'root';
-    const password = 'root_bsc';
-    const database = 'webservice';
-    */
-    
     function __construct($server, $username, $password, $database) {
 
         if (\is_null(self::$mysqli)) {
@@ -49,7 +44,7 @@ class Connection implements IConnection{
 
 
             if (self::$mysqli->connect_errno) {
-                throw new Exception("Fallo al conectar a la bbdd " . self::database, self::$mysqli->connect_errno);
+                throw new \Exception("Fallo al conectar a la bbdd " . $database, self::$mysqli->connect_errno);
                 //sendMailNoReplyBys("ERROR WS LEADS {$source}", [0=>"alfonsosanchez@bysidecar.com"], "Fallo al conectar a la bbdd " . self::database, self::$mysqli->connect_errno);
             }
         }
@@ -57,9 +52,7 @@ class Connection implements IConnection{
         self::$mysqli->set_charset("utf8");
 
         self::$instances++;
-    }
-
-    
+    }    
     
     /*
      * Ejecuta la conulta pasada por parametrro
@@ -67,11 +60,16 @@ class Connection implements IConnection{
      * @return \mysqli_result|true|false Devuelve un objeto mysqli_result con consultas que devuelvan un resultado, true para las consultas
      * correctas que no devuelven un resultado y false para las consultas fallidas
      */
-
     public function Query($query) {
-        return \is_null($this->mysql) ? self::$mysqli->query($query) : $this->mysql->query($query);
+//        return \is_null($this->mysql) ? self::$mysqli->query($query) : $this->mysql->query($query);
+        $res = \is_null($this->mysql) ? self::$mysqli->query($query) : $this->mysql->query($query);
+        if(false===$res){
+            $error = $this->LastError();
+            $errno = self::$mysqli->connect_errno;
+            throw new \App\Libraries\CustomException($error, $errno);
+        }
+        return $res;
     }
-    
     
     /*
      * Ejecuta la multiconsula pasada por parametrro
@@ -79,12 +77,9 @@ class Connection implements IConnection{
      * @return \mysqli_result|true|false Devuelve un objeto mysqli_result con consultas que devuelvan un resultado, true para las consultas
      * correctas que no devuelven un resultado y false para las consultas fallidas
      */
-
     public function MultiQuery($query) {
         return \is_null($this->mysql) ? self::$mysqli->multi_query($query) : $this->mysql->multi_query($query);
-    }
-    
-    
+    }    
     
     /**
      * Devuelve el last_insert_id, el último id autonumérico asignado en la última consulta tipo INSERT, REPLACE, etc.
@@ -95,16 +90,13 @@ class Connection implements IConnection{
         return \is_null($this->mysql) ? self::$mysqli->insert_id : $this->mysql->insert_id;
     }
     
-    
     /**
      *  Devuelve el numero de filas afectadas en la ultima consulta
      *
      */
     public function AffectedRows() {
         return \is_null($this->mysql) ? self::$mysqli->affected_rows : $this->mysql->affected_rows;
-    }
-    
-    
+    }   
     
     /**
      *  Devuelve el ultimo error
@@ -112,9 +104,7 @@ class Connection implements IConnection{
      */
     public function LastError() {
         return \is_null($this->mysql) ? self::$mysqli->error : $this->mysql->error;
-    }
-    
-    
+    }    
     
     /**
      *  Escapa los caracteres especiales de una cadena para usarla en una sentencia SQL
@@ -123,7 +113,6 @@ class Connection implements IConnection{
     public function RealScapeString($escapestr) {
         return \is_null($this->mysql) ? self::$mysqli->real_escape_string($escapestr) : $this->mysql->real_escape_string($escapestr);
     }
-    
     
     /**
      *  Transfiere un conjunto de resulados de la última consulta
@@ -140,10 +129,15 @@ class Connection implements IConnection{
     public function NextResult() {
         return \is_null($this->mysql) ? self::$mysqli->next_result() : $this->mysql->next_result();
     }
-
     
     public function Prepare($sql){
-        return \is_null($this->mysql) ? self::$mysqli->prepare($sql) : $this->mysql->prepare($sql);
+        $res = \is_null($this->mysql) ? self::$mysqli->prepare($sql) : $this->mysql->prepare($sql);
+        if(false===$res){
+            $error = $this->LastError();
+            $errno = self::$mysqli->connect_errno;
+            throw new \App\Libraries\CustomException($error, $errno);
+        }
+        return $res;
     }
     
     /**
@@ -170,6 +164,8 @@ class Connection implements IConnection{
     
     
     /************************************************************************/
+    
+    
     /*
      * @query: Parte selectiva de la consulta
      * @data: array con los valores del where
@@ -177,7 +173,7 @@ class Connection implements IConnection{
     public function selectPrepared($query, $data) {
         //Prepare our query for binding
         $stmt = $this->prepare($query);
-
+        
         $formato = UtilitiesConnection::getFormatPreparedSql($data);
         $format = UtilitiesConnection::getStringFormato($formato);
         
@@ -226,8 +222,10 @@ class Connection implements IConnection{
 
         // Dynamically bind values
         call_user_func_array( array( $stmt, 'bind_param'), UtilitiesConnection::ref_values($valores));
+        
 
-        $stmt->execute();
+        $rc = $stmt->execute();
+
         if ( $stmt->affected_rows ) {
             return json_encode(['success'=> true, 'message'=> $stmt->affected_rows]);
         }

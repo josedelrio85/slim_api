@@ -32,7 +32,8 @@ class LeadLeontel {
     
     
     public static function sendLead($data, $db){
-               
+        //data tiene que tener nombres de parametro como lea_leads
+        
         if(array_key_exists('sou_id', $data)){
             
             $datos = [
@@ -256,7 +257,6 @@ class LeadLeontel {
        $webservice = new SoapClient(null,$credentials);
        return $webservice;
     }
-    
     
     /*
      * Devuelve parte de la query que se realiza en función del sou_id 

@@ -80,6 +80,21 @@ class Functions {
         return null;
     }
     
+    public function horarioEntradaLeads($sou_id, $db){
+        $diaSemana = intval(date('N'));
+        $horaActual = date('H:i');
+
+        //sou_id de report_panel!!!
+        $data = ['sou_id'=> $sou_id, 'num_dia'=> $diaSemana, 'hora'=> $horaActual];
+
+        $result = $this->consultaTimeTableC2C($data, $db);
+
+        if(is_array($result)){
+            return true;
+        }
+        return false;
+    }
+
     /*
      * Comprobación de si es cliente o tiene asnef bajo los siguientes condicionantes:
      * - que la fecha de inserción del lead sea inferior a 1 mes
@@ -110,7 +125,7 @@ class Functions {
         $resultSI = $db->selectPrepared($sqlPrevIds, $datosPrevIds);
         $paramPrevIds = UtilitiesConnection::arrayToPreparedParam($resultSI);
         
-        $hoxe = "2018-06-01";
+        $hoxe = "2018-11-01";
         $fecha = new \DateTime($hoxe);
         $fecha->sub(new \DateInterval('P1M')); // 1 mes
         $dateMySql  = $fecha->format('Y-m-d H:i:s');
@@ -250,7 +265,6 @@ class Functions {
 
             $parametros = UtilitiesConnection::getParametros($datos,null);    
             $query = $db->insertStatementPrepared($tabla, $parametros);
-//            $query = "INSERT INTO webservice.leads(lea_phone) values (".$datos["lea_phone"].");";
             $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
 
             $result = $db->Query($sp);           
@@ -345,8 +359,7 @@ class Functions {
             return false;
 	} 
     }
-    
-    
+        
     public function flujoLeadDoctorDinero($data, $db){
 
         $datosAsnef = array(
@@ -373,7 +386,6 @@ class Functions {
         if(!$r->success){
             $datos["lea_destiny"] = 'LEONTEL';
             return self::prepareAndSendLeadLeontel($datos,$db, null, false);
-            
         }else{      
             // lead_no_valido asnef_yacliente
             $datos["lea_aux3"] = "asnef_yacliente_notValid";
@@ -394,9 +406,9 @@ class Functions {
             "lea_aux1" => $data["dninie"],
             "observations" => $data["observations"],
             "lea_aux3" => $data['lea_aux3'],
-            "lea_destiny" => ''
+            "lea_destiny" => 'TEST'
         ];        
-        return self::prepareAndSendLeadLeontel($datos,$db, null, false);
-        
+        $salida = self::prepareAndSendLeadLeontel($datos,$db, null, false);
+        return $salida;        
     }
 }

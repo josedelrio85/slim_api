@@ -33,25 +33,31 @@ class Connection implements IConnection{
      * Objeto interno de conexión con la base de datos
      * @var \mysqli
      */
-    public $mysql = null;
+    public $mysql = null; 
     
-    function __construct($server, $username, $password, $database) {
-
-        if (\is_null(self::$mysqli)) {
-//            self::$mysqli = new \mysqli(self::server, self::username, self::password, self::database);
-            if(!is_null($server) && !is_null($username) && !is_null($database))
+    function __construct($params) {
+        
+        if(!empty($params) && is_array($params)){
+            $server = $params["host"];            
+            $database = $params["dbname"];
+            $username = $params["user"];
+            $password = $params["password"];
+ 
+            if(!is_null($server) && !is_null($username) && !is_null($database)){
                 self::$mysqli = new \mysqli($server, $username, $password, $database);
 
-
-            if (self::$mysqli->connect_errno) {
-                throw new \Exception("Fallo al conectar a la bbdd " . $database, self::$mysqli->connect_errno);
-                //sendMailNoReplyBys("ERROR WS LEADS {$source}", [0=>"alfonsosanchez@bysidecar.com"], "Fallo al conectar a la bbdd " . self::database, self::$mysqli->connect_errno);
+                if (self::$mysqli->connect_errno) {
+                    throw new \Exception("Fallo al conectar a la bbdd " . $database, self::$mysqli->connect_errno);
+                }               
+                self::$mysqli->set_charset("utf8");
+                self::$instances++;
+                
+            }else{
+                throw new \App\Libraries\CustomException("Fallo parametros conexion ", 0);
             }
+        }else{
+            throw new \App\Libraries\CustomException("Fallo parametros conexion ", 0);
         }
-
-        self::$mysqli->set_charset("utf8");
-
-        self::$instances++;
     }    
     
     /*

@@ -396,19 +396,22 @@ class Functions {
     
     public function leadNoValido($data, $db){
         
-        $datos = [
-            "sou_id" => $data["sou_id"],
-            "leatype_id" => $data["leatype_id"],
-            "utm_source" => $data["utm_source"],
-            "lea_phone" => $data["telf"],
-            "lea_url" => $data["url"],
-            "lea_ip" => $data["ip"],
-            "lea_aux1" => $data["dninie"],
-            "observations" => $data["observations"],
-            "lea_aux3" => $data['lea_aux3'],
-            "lea_destiny" => 'TEST'
-        ];        
-        $salida = self::prepareAndSendLeadLeontel($datos,$db, null, false);
-        return $salida;        
+        if(array_key_exists("sou_id", $data) && !empty($data["sou_id"])){
+            $datos = [
+                "sou_id" => $data["sou_id"],
+                "leatype_id" => $data["leatype_id"],
+                "utm_source" => $data["utm_source"],
+                "lea_phone" => $data["telf"],
+                "lea_url" => $data["url"],
+                "lea_ip" => $data["ip"],
+                "lea_aux1" => $data["dninie"],
+                "observations" => $data["observations"],
+                "lea_aux3" => $data['lea_aux3'],
+                "lea_destiny" => 'TEST'
+            ];        
+            $salida = self::prepareAndSendLeadLeontel($datos,$db, null, false);
+            return $salida;        
+        }
+        return json_encode(['success'=> false, 'message'=> "Param errors -> leadNoValido"]);         
     }
 }

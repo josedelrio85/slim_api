@@ -17,206 +17,6 @@ $app->get('/', function (Request $request, Response $response, array $args) {
     return $response;
 });
 
-$app->post('/prueba', function (Request $request, Response $response, array $args){
-       
-    //prueba mensaje log
-    $this->logger->info("Primera ruta creada con Slim => '/prueba' ");
-    
-    $sql = 'SELECT * FROM webservice.c2c_timetable WHERE sou_id=?;';
-    
-    $stmt = $this->db_webservice->Prepare($sql);
-    $sou_id = 6;
-    $stmt->bind_param("s", $sou_id);
-    
-    $stmt->execute();
-    
-    $result = $stmt->get_result();
-       
-    $data = $result->fetch_all(MYSQLI_ASSOC);
-    
-    return $response->withJson($data);
-});     
-
-$app->post('/testMierdas', function (Request $request, Response $response, array $args){
-       
-    $db = $this->db_webservice_dev;
-    
-    $datos = [ "lea_id" => "119707" ];
-    $query = "SELECT * FROM webservice.lea_leads where lea_id = ? ;";                   
-//    $resultado = $db->selectPrepared($query, $datos);    
-    
-//    $datos = [ "lea_phone" => "666666666" ];
-//    $query = "INSERT INTO webservice.leads(lea_phone) values (".$datos["lea_phone"].");";
-//    $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
-//
-//    $result = $db->Query($sp);           
-//
-//    if($db->AffectedRows() > 0){
-//        $r = $result->fetch_assoc();
-//        
-//    }else{
-//        $r = array(["result" => false, "message" => "puta mirda"]);
-//    }
-    
-    
-    $sou_id = $this->sou_id_test;
-//    $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $db);
-    
-    $db_rp = $this->db_report_panel_dev;
-    $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm, $db_rp) ? 1 : 9;
-    
-    
-    return $response->withJson($leatype_id);
-});     
-
-$app->post('/testWS_dev', function (Request $request, Response $response, array $args){
-    $salida = array();
-    $db = $this->db_webservice_dev;
-    
-    $datos = [ "lea_id" => "119707" ];
-    $query = "SELECT * FROM webservice.leads where lea_id = ? ;";
-    $resultado = $db->selectPrepared($query, $datos);
-    array_push($salida, array("select" => $resultado));
-
-    $datosWs ['lea_phone'] = "666666666";
-    $query = "INSERT INTO webservice.leads(lea_phone) values (".$datosWs["lea_phone"].");";
-    $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
-
-    $result = $db->Query($sp);           
-
-    if($db->AffectedRows() > 0){
-        $r = $result->fetch_assoc();   
-        $db->NextResult();
-        $result->close();
-    }else{
-        $r = array(["result" => false, "message" => "puta mirda"]);
-    }    
-    array_push($salida, array("insert" => $r));
-    
-    $where = ["lea_id" => $datos["lea_id"]];
-    $datosUpd = [
-        "lea_extracted" => date("Y-m-d H:i:s"),
-        "lea_crmid" => 9999,
-        "lea_status" => "PRUEBA"
-    ];
-    $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
-
-    $tabla = "webservice.leads";
-    $result = $db->updatePrepared($tabla, $parametros);
-
-    $ru = json_decode($result);
-    array_push($salida, array("update" => $ru));
-
-    return $response->withJson($salida);
-});
-
-$app->post('/testRP_dev', function (Request $request, Response $response, array $args){
-    $salida = array();
-    $db = $this->db_report_panel_dev;
-    
-    $datos = [ "sou_id" => "23" ];
-    $query = "SELECT * FROM report_panel.c2c_timetable where sou_id = ? ;";
-    $resultado = $db->selectPrepared($query, $datos);
-    array_push($salida, array("select" => $resultado));
-
-    $datos = [
-        "sou_id" => 99,
-        "num_dia" => 2,
-        "laborable" => 1,
-        "h_ini" => "09:00",
-        "h_fin" => "15:00",
-        "tmt_activo" => 1
-    ];
-
-    $parametros = UtilitiesConnection::getParametros($datos,null);
-    $z = $db->insertStatementPrepared("c2c_timetable", $parametros);
-    $result = $db->insertPrepared("c2c_timetable", $parametros);    
-    
-    array_push($salida, array("insert" => $z));
-    array_push($salida, array("insert2" => $result));
-    
-    $where = ["sou_id" => $datos["sou_id"]];
-    $datosUpd = [
-        "h_ini" => "09:30",
-        "tmt_activo" => 0
-    ];
-    $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
-
-    $tabla = "report_panel.c2c_timetable";
-    $result = $db->updatePrepared($tabla, $parametros);
-    $ru = json_decode($result);
-    array_push($salida, array("update" => $ru));
-
-    return $response->withJson($salida);
-});
-
-$app->post('/testCRMTI_dev', function (Request $request, Response $response, array $args){
-    $salida = array();
-    $db = $this->db_crmti_dev;
-    
-    $datos = [ "lea_id" => "119707" ];
-    $query = "SELECT * FROM crmti.lea_leads where lea_id = ? ;";
-    $resultado = $db->selectPrepared($query, $datos);
-    array_push($salida, array("select" => $resultado));
-
-//    $datos["TELEFONO"] = "666666666";    
-//    $datos["nombre"] = "tEST";
-//
-//    $parametros = UtilitiesConnection::getParametros($datos,null);
-//    
-//    $r = $db->insertStatementPrepared("lea_leads", $parametros);
-//    $er = $db->Query($r);
-//    $result = $db->insertPrepared("lea_leads", $parametros);
-//    
-//    $zr = json_decode($r);
-//    $zresult = json_decode($result);
-//   
-//    array_push($salida, array("insertStatement" => $zr));
-//    array_push($salida, array("insert" => $zresult));
-    
-    $where = ["lea_id" => $datos["lea_id"]];
-    $datosUpd = [
-        "lea_scheduled" => date("Y-m-d H:i:s"),
-        "wsid" => 9999
-    ];
-    $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
-
-    $tabla = "crmti.lea_leads";
-    $result = $db->updatePrepared($tabla, $parametros);
-    $ru = json_decode($result);
-    array_push($salida, array("update" => $ru));
-
-    return $response->withJson($salida); 
-});
-
-$app->post('/testException', function (Request $request, Response $response, array $args){
-   
-    try {
-//        $o = new \App\Libraries\ProbarExcepcion(ProbarExcepcion::THROW_CUSTOM);
-        $o = new ProbarExcepcion(ProbarExcepcion::THROW_DEFAULT);
-    } catch (MiExcepción $e) {      // Será atrapada
-        echo "Atrapada mi excepción\n", $e;
-        $e->funcionPersonalizada();
-    } catch (Exception $e) {        // Skipped
-        echo "Atrapada la Excepción Predeterminada\n", $e;
-    }
-
-    // Continuar la ejecución
-    var_dump($o); // Null
-    echo "\n\n";
-});
-
-$app->post('/testHorarioEntradaLeads', function (Request $request, Response $response, array $args){
-    
-    $db = $this->db_webservice_dev;
-    $sou_id = $this->sou_id_test;
-    $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $db);
-    
-    $db_rp = $this->db_report_panel_dev;   
-    $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm, $db_rp) ? 1 : 9;
-
-    return $response->withJson($leatype_id);
-});
 
 $app->post('/testconexion', function (Request $request, Response $response, array $args){
     
@@ -256,6 +56,265 @@ $app->post('/testconexion', function (Request $request, Response $response, arra
     return $response->withJson($salida);
 });
 
+$app->group('/test', function(){
+    
+    $app->post('/testException', function (Request $request, Response $response, array $args){
+   
+        try {
+    //        $o = new \App\Libraries\ProbarExcepcion(ProbarExcepcion::THROW_CUSTOM);
+            $o = new ProbarExcepcion(ProbarExcepcion::THROW_DEFAULT);
+        } catch (MiExcepción $e) {      // Será atrapada
+            echo "Atrapada mi excepción\n", $e;
+            $e->funcionPersonalizada();
+        } catch (Exception $e) {        // Skipped
+            echo "Atrapada la Excepción Predeterminada\n", $e;
+        }
+
+        // Continuar la ejecución
+        var_dump($o); // Null
+        echo "\n\n";
+    });
+    
+    $this->post('/testWS_dev', function (Request $request, Response $response, array $args){
+        $salida = array();
+        $db = $this->db_webservice_dev;
+
+        $datos = [ "lea_id" => "119707" ];
+        $query = "SELECT * FROM webservice.leads where lea_id = ? ;";
+        $resultado = $db->selectPrepared($query, $datos);
+        array_push($salida, array("select" => $resultado));
+
+        $datosWs ['lea_phone'] = "666666666";
+        $query = "INSERT INTO webservice.leads(lea_phone) values (".$datosWs["lea_phone"].");";
+        $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
+
+        $result = $db->Query($sp);           
+
+        if($db->AffectedRows() > 0){
+            $r = $result->fetch_assoc();   
+            $db->NextResult();
+            $result->close();
+        }else{
+            $r = array(["result" => false, "message" => "puta mirda"]);
+        }    
+        array_push($salida, array("insert" => $r));
+
+        $where = ["lea_id" => $datos["lea_id"]];
+        $datosUpd = [
+            "lea_extracted" => date("Y-m-d H:i:s"),
+            "lea_crmid" => 9999,
+            "lea_status" => "PRUEBA"
+        ];
+        $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
+
+        $tabla = "webservice.leads";
+        $result = $db->updatePrepared($tabla, $parametros);
+
+        $ru = json_decode($result);
+        array_push($salida, array("update" => $ru));
+
+        return $response->withJson($salida);
+    });
+
+    $this->post('/testRP_dev', function (Request $request, Response $response, array $args){
+    $salida = array();
+    $db = $this->db_report_panel_dev;
+    
+    $datos = [ "sou_id" => "23" ];
+    $query = "SELECT * FROM report_panel.c2c_timetable where sou_id = ? ;";
+    $resultado = $db->selectPrepared($query, $datos);
+    array_push($salida, array("select" => $resultado));
+
+    $datos = [
+        "sou_id" => 99,
+        "num_dia" => 2,
+        "laborable" => 1,
+        "h_ini" => "09:00",
+        "h_fin" => "15:00",
+        "tmt_activo" => 1
+    ];
+
+    $parametros = UtilitiesConnection::getParametros($datos,null);
+    $z = $db->insertStatementPrepared("c2c_timetable", $parametros);
+    $result = $db->insertPrepared("c2c_timetable", $parametros);    
+    
+    array_push($salida, array("insert" => $z));
+    array_push($salida, array("insert2" => $result));
+    
+    $where = ["sou_id" => $datos["sou_id"]];
+    $datosUpd = [
+        "h_ini" => "09:30",
+        "tmt_activo" => 0
+    ];
+    $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
+
+    $tabla = "report_panel.c2c_timetable";
+    $result = $db->updatePrepared($tabla, $parametros);
+    $ru = json_decode($result);
+    array_push($salida, array("update" => $ru));
+
+    return $response->withJson($salida);
+});
+
+    $this->post('/testCRMTI_dev', function (Request $request, Response $response, array $args){
+    $salida = array();
+    $db = $this->db_crmti_dev;
+    
+    $datos = [ "lea_id" => "119707" ];
+    $query = "SELECT * FROM crmti.lea_leads where lea_id = ? ;";
+    $resultado = $db->selectPrepared($query, $datos);
+    array_push($salida, array("select" => $resultado));
+
+//    $datos["TELEFONO"] = "666666666";    
+//    $datos["nombre"] = "tEST";
+//
+//    $parametros = UtilitiesConnection::getParametros($datos,null);
+//    
+//    $r = $db->insertStatementPrepared("lea_leads", $parametros);
+//    $er = $db->Query($r);
+//    $result = $db->insertPrepared("lea_leads", $parametros);
+//    
+//    $zr = json_decode($r);
+//    $zresult = json_decode($result);
+//   
+//    array_push($salida, array("insertStatement" => $zr));
+//    array_push($salida, array("insert" => $zresult));
+    
+    $where = ["lea_id" => $datos["lea_id"]];
+    $datosUpd = [
+        "lea_scheduled" => date("Y-m-d H:i:s"),
+        "wsid" => 9999
+    ];
+    $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
+
+    $tabla = "crmti.lea_leads";
+    $result = $db->updatePrepared($tabla, $parametros);
+    $ru = json_decode($result);
+    array_push($salida, array("update" => $ru));
+
+    return $response->withJson($salida); 
+});
+
+    /*
+     * Función para obtener el horario de atención en C2C. Devuelve un array JSON {result:boolean, data:JSONArray}
+     * -> JSON entrada:
+     *  {
+     *    "sou_id": "6",
+     *    "num_dia": "2",
+     *    "hora": "16:00"
+     * }
+     *   */
+    $this->post('/consultaTimeTableC2C', function(Request $request, Response $response, array $args){
+        
+        if($request->isPost()){
+        
+            $data = $request->getParsedBody();
+
+            $elements = $this->funciones->consultaTimeTableC2C($data,$this->db_report_panel_dev);
+            if(is_array($elements)){
+                exit(json_encode(['success'=> true, 'data' => $elements]));	
+            }else{
+                exit(json_encode(['success'=> false, 'data' => null]));	
+            }
+        } 
+    });
+    
+    $this->post('/getSouIdcrm', function(Request $request, Response $response, array $args){
+        if($request->isPost()){
+            
+            $db = $this->db_webservice_dev;
+            $sou_id = $this->sou_id_test;
+            
+            $sou_id_crm =$this->funciones->getSouIdcrm($sou_id, $db);
+            
+            return $response->withJson($sou_id_crm);  //Debe devolver 23 para sou_id 15
+        }
+    });
+            
+    $this->post('/horarioEntradaLeads', function(Request $request, Response $response, array $args){
+        
+        if($request->isPost()){
+
+            $db = $this->db_webservice_dev;
+            $sou_id = $this->sou_id_test;
+            
+            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $db);
+
+            $db_rp = $this->db_report_panel_dev;
+            //si está en horario, devuelve true, si no false
+            $salida = $this->funciones->horarioEntradaLeads($sou_idcrm, $db_rp);
+            
+            return $response->withJson($salida);
+        }
+    });
+    
+    $this->post('/checkAsnefCreditea', function(Request $request, Response $response, array $args){
+        
+        $data = $request->getParsedBody();
+        
+        $datosAsnef = [
+            "documento" => $data["documento"],
+            "phone" => $data["phone"]                
+        ];
+        
+        // Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion, ['success'=> false, 'message' => true] si pasa validacion
+        $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
+        return $response->withJson(json_decode($rAsnef));
+    });
+    
+    $this->post('/checkAsnefDoctorDinero', function(Request $request, Response $response, array $args){
+        
+        $data = $request->getParsedBody();
+        
+        $datosAsnef = [
+            "sou_id" => $data["sou_id"],
+            "documento" => $data["documento"],
+            "phone" => $data["phone"]                
+        ];
+        
+        // Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion, 
+        // ['success'=> true, 'message' => true] si pasa validacion
+        // ['result'=> true, 'data' => 'KO-paramsNeeded'] si faltan parámetros
+        $rAsnef = $this->funciones->checkAsnefDoctorDinero($datosAsnef, $this->db_crmti);
+        return $response->withJson(json_decode($rAsnef));
+    });
+    
+    $this->post('/sendLeadToLeontel', function(Request $request, Response $response, array $args){
+        
+        $datos = [
+            "lea_phone" => "666666664",
+            "lea_url" => "http://test.bysidecar.gal",
+            "lea_ip" => "127.0.0.1",
+            "lea_destiny" => "LEONTEL",
+            "sou_id" => 15,
+            "leatype_id" => 1
+        ];
+
+        $parametros = UtilitiesConnection::getParametros($datos,null);
+
+        $db = $this->db_webservice_dev;
+        $z = $db->insertStatementPrepared("leads", $parametros);
+        $result = $db->insertPrepared("leads", $parametros);
+        $r = json_decode($result);
+    
+        if($r->success){
+            
+            $data = ["sou_id" => $datos["sou_id"], "leatype_id" => $datos["leatype_id"]];
+            
+            //Devuelve ['success'=> $res->success, 'message'=> $res->message] si hay resultados para la consulta
+            // ['success'=> $res->success, 'message'=> 'No results'] => si no hay resultados para la consulta
+            $res = App\Functions\LeadLeontel::sendLead($data, $db);  
+            
+            $rs = json_decode($res,true);
+            
+            return $response->withJson($rs);
+        }else{
+            //Devuelve el error en la inserción
+            return  $response->withJson(array("succes" => $r->succes, "message" => $r->message));
+        }
+        
+    });
+});
 
 
 /* Tests funciones interacción BD */
@@ -310,7 +369,7 @@ $app->post('/pruebaUpdate', function(Request $request, Response $response, array
         "lea_status" => "PRUEBA"
     ];
     
-    $where = ["lea_id" => 118182];
+    $where = ["lea_id" => 119735];
     $parametros = UtilitiesConnection::getParametros($datos, $where);
 
     $tabla = "webservice.leads";
@@ -354,9 +413,9 @@ $app->post('/pruebaInsert', function(Request $request, Response $response, Array
     $r = json_decode($result);
     
     if($r->success){
-        exit(json_encode(['success'=> true, 'message'=> $r->message]));
+        $response->withJson(['success'=> true, 'message'=> $r->message]);
     }else{
-        exit(json_encode(['success'=> false, 'message'=> $r->message]));
+        $response->withJson(['success'=> false, 'message'=> $r->message]);
     }
 });
 
@@ -409,29 +468,6 @@ $app->group('/RCable', function(){
             $resultLeontel = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
             return json_decode($resultLeontel);      
         }
-    });
-
-    /*
-     * Función para obtener el horario de atención en C2C. Devuelve un array JSON {result:boolean, data:JSONArray}
-     * -> JSON entrada:
-     *  {
-     *    "sou_id": "6",
-     *    "num_dia": "2",
-     *    "hora": "16:00"
-     * }
-     *   */
-    $this->post('/consultaTimetableC2C', function(Request $request, Response $response, array $args){
-
-        if($request->isPost()){
-            $data = $request->getParsedBody();
-
-            $elements = $this->funciones->consultaTimeTableC2C($data,$this->db_report_panel_dev);
-            if(is_array($elements)){
-                exit(json_encode(['success'=> true, 'data' => $elements]));	
-            }else{
-                exit(json_encode(['success'=> false, 'data' => null]));	
-            }
-        } 
     });
 });
 
@@ -564,18 +600,6 @@ $app->group('/creditea', function(){
 
     });    
     
-    $this->post('/testCheckAsnef', function(Request $request, Response $response, array $args){
-        
-        $data = $request->getParsedBody();
-        
-        $datosAsnef = [
-            "documento" => $data["documento"],
-            "phone" => $data["phone"]                
-        ];
-            
-        $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
-        return $response->withJson(json_decode($rAsnef));
-    });
 });
 
 

@@ -20,10 +20,6 @@ $container['logger'] = function ($c) {
 };
 
 
-$container['settings_db_webservice'] = function($c){
-    return $c->get('settings')['db_webservice'];
-};
-
 /* Settings DB Producción */
 $container['settings_db_report_panel'] = function($c){
     $dbSettings = $c->get('settings')['db_report_panel'];

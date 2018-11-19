@@ -171,9 +171,9 @@ class LeadLeontel {
                 $id_origen_leontel = 4;
                 
                 $lea_id = $r[0]->even_id;
-		$phone = $r[0]->PERSONMOBILEPHONE;
-		$client_estado_c = $r[0]->CLIENT_ESTADO__C;
-		$url_salesforce = $r[0]->URL_SALESFORCE;
+                $phone = $r[0]->PERSONMOBILEPHONE;
+                $client_estado_c = $r[0]->CLIENT_ESTADO__C;
+                $url_salesforce = $r[0]->URL_SALESFORCE;
                 
                 $stepid = $r[0]->STEPID;   
                 $logalty_estado_c = $r[0]->LOGALTY_ESTADO__C;
@@ -189,8 +189,8 @@ class LeadLeontel {
                     'wsid' => $lea_id
                 ];
                 
-                $this->wsCred = self::invokeWSLeontelWithCredentials();                
-                $data = $this->wsCred->getLeadLastStatus($id_origen_leontel,$id_tipo_leontel,$phone);
+                $ws  = self::invokeWSLeontelWithCredentials();                
+                $data = $ws->getLeadLastStatus($id_origen_leontel,$id_tipo_leontel,$phone);
 
                 if($data["success"]){
                     $datosDup = ["even_status" => "DUPLICATED"];
@@ -201,8 +201,8 @@ class LeadLeontel {
                     $res = json_decode($resultDup);
                     
                 }else{
-                    if(is_null($this->ws)){
-                        $this->ws = self::invokeWSLeontel();
+                    if(is_null(self::ws)){
+                        $ws = self::invokeWSLeontel();
                     }
                     //$retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
                     $retorno["success"] = true;                
@@ -310,6 +310,7 @@ class LeadLeontel {
             28	YOIGO NEGOCIOS EMAILING	
         */		
         if(!is_null($sou_id) && $sou_id!= ""){         
+            
             switch($sou_id){
                 case 1:
                     //Creditea Abandonos
@@ -382,7 +383,7 @@ class LeadLeontel {
             $lea_id = $r[0]->lea_id;
             $phone = $r[0]->lea_phone;
             $nombre = $r[0]->lea_name;
-
+ 
             switch($sou_id){
                 case 1:
                     //Abandonos
@@ -461,6 +462,7 @@ class LeadLeontel {
                 case 5:
                 case 14:
                 case 3:
+                case 15:
                     $url = $r[0]->lea_url;
                     $email = $r[0]->lea_mail;
 
@@ -506,7 +508,12 @@ class LeadLeontel {
                         'observaciones2' => $observaciones2
                     ];
                     break;
-                default;
+                default:
+                    $lead = [
+                        'TELEFONO' => $phone,
+                        'nombre' => $nombre,
+                        'wsid' => $lea_id
+                    ];
             }
             return $lead;
         }

@@ -58,7 +58,7 @@ $app->post('/testconexion', function (Request $request, Response $response, arra
 
 $app->group('/test', function(){
     
-    $app->post('/testException', function (Request $request, Response $response, array $args){
+    $this->post('/testException', function (Request $request, Response $response, array $args){
    
         try {
     //        $o = new \App\Libraries\ProbarExcepcion(ProbarExcepcion::THROW_CUSTOM);
@@ -281,12 +281,18 @@ $app->group('/test', function(){
     
     $this->post('/sendLeadToLeontel', function(Request $request, Response $response, array $args){
         
+        $data = $request->getParsedBody();
+        if(!empty($data["sou_id"])){
+            $sou_id = $data["sou_id"];
+        }else{
+            $sou_id = 15;
+        }
         $datos = [
             "lea_phone" => "666666664",
             "lea_url" => "http://test.bysidecar.gal",
             "lea_ip" => "127.0.0.1",
             "lea_destiny" => "LEONTEL",
-            "sou_id" => 15,
+            "sou_id" => $sou_id,
             "leatype_id" => 1
         ];
 
@@ -313,6 +319,82 @@ $app->group('/test', function(){
             return  $response->withJson(array("succes" => $r->succes, "message" => $r->message));
         }
         
+    });
+    
+    $this->post('/sendLeadToLeontelIntesivo', function(Request $request, Response $response, array $args){
+        
+        $db = $this->db_webservice_dev;
+        $sqlSources = "SELECT * FROM webservice.sources;";
+        $datosSource = [];
+        $rsou = $db->selectPrepared($sqlSources, $datosSource);    
+        $salida = array();
+        
+        if(is_array($rsou)){
+            foreach($rsou as $k => $source){
+                
+                $datos = [
+                    "lea_phone" => "666666664",
+                    "lea_url" => "http://test.bysidecar.gal",
+                    "lea_ip" => "127.0.0.1",
+                    "lea_destiny" => "LEONTEL",
+                    "sou_id" => $source->sou_id,
+                    "leatype_id" => 1
+                ];
+                
+                $parametros = UtilitiesConnection::getParametros($datos,null);
+
+                $z = $db->insertStatementPrepared("leads", $parametros);
+                $result = $db->insertPrepared("leads", $parametros);
+                $r = json_decode($result);
+
+                if($r->success){
+
+                    $data = ["sou_id" => $datos["sou_id"], "leatype_id" => $datos["leatype_id"]];
+                    $res = App\Functions\LeadLeontel::sendLead($data, $db);  
+
+                    $rs = json_decode($res,true);
+                    $rs['query'] = $z;
+
+                    array_push($salida,$rs);
+                }else{
+                    array_push($salida,array("succes" => $r->succes, "message" => $r->message, 'query' => $z));
+                }
+            }
+        }
+        return $response->withJson($salida);
+    });
+    
+    $this->post('/sendLeadLeontelPagoRecurrente', function(Request $request, Response $response, array $args){
+        
+        $db = $this->db_crmti_dev;
+        
+//        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db);  
+        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db);  
+
+                
+        return $response->withJson(json_decode($salida, true));
+    });
+    
+    $this->post('/leadNoValido', function(Request $request, Response $response, array $args){
+        
+        $data = $request->getParsedBody();
+
+        $datos = [
+            "sou_id" => $data["sou_id"],
+            "leatype_id" => $data["leatype_id"],
+            "utm_source" => $data["utm_source"],
+            "lea_phone" => $data["telf"],
+            "lea_url" => $data["url"],
+            "lea_ip" => $data["ip"],
+            "lea_aux1" => $data["dninie"],
+            "observations" => $data["observations"],
+            "lea_aux3" => $data['lea_aux3'],
+            "lea_destiny" => 'TEST'
+        ];    
+        
+        $res = $this->funciones->leadNoValido($datos, $this->db_webservice_dev);
+        $r = json_decode($res, true);
+        return $response->withJson($r);
     });
 });
 
@@ -448,9 +530,6 @@ $app->group('/RCable', function(){
             
             $db = $this->db_webservice_dev;
 
-            $diaSemana = intval(date('N'));
-            $horaActual = date('H:i');
-
 //            $sou_id = 5;
             $sou_id = $this->sou_id_test;
             $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $db);
@@ -458,15 +537,20 @@ $app->group('/RCable', function(){
             $db_rp = $this->db_report_panel_dev;
             $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm, $db_rp) ? 1 : 9;
             
-            $datos = ["lea_phone" => $phone,
+            $db_params = $this->settings_db_webservice_dev;
+            $db = new \App\Libraries\Connection($db_params);   
+            
+            $datos = [
+                "lea_phone" => $phone,
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "lea_destiny" => "TEST",
+                "lea_destiny" => "LEONTEL",
                 "sou_id" => $sou_id,
                 "leatype_id" => $leatype_id];
             
             $resultLeontel = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
-            return json_decode($resultLeontel);      
+            $r = json_decode($resultLeontel, true); 
+            return $response->withJson($r);
         }
     });
 });
@@ -512,7 +596,7 @@ $app->group('/creditea', function(){
             $leatype_id = 1;
             
             $datos = [
-                "lea_destiny" => 'TEST',
+                "lea_destiny" => 'LEONTEL',
                 "sou_id" => $sou_id,
                 "leatype_id" => $leatype_id,
                 "utm_source" => $data["utm_source"],
@@ -528,7 +612,7 @@ $app->group('/creditea', function(){
             $parametros = UtilitiesConnection::getParametros($datos,null); 
             $result = $db->insertPrepared("leads", $parametros);
 
-            $salida = json_decode($result);
+            $salida = json_decode($result,true);
 
             return $response->withJson($salida);
         }        
@@ -589,14 +673,14 @@ $app->group('/creditea', function(){
                     "lea_aux1" => $data["documento"],
                     "lea_aux2" => $data["cantidadsolicitada"]
                 ];
-                $db = $this->db_webservice;
-
+                
+                $db = $this->db_webservice_dev;
                 $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
             }else{
                 $salida = json_encode(['result' => false, 'message' => $rAsnef->message]);
             }            
         }
-        return $response->withJson(json_decode($salida));
+        return $response->withJson(json_decode($salida, true));
 
     });    
     
@@ -1048,6 +1132,7 @@ $app->group('/doctordinero', function(){
         }
    });
 });
+
 
 /*
  * Invoca la lógica para gestionar el envío del lead a la cola de Leontel

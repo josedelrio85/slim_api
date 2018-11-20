@@ -10,6 +10,7 @@ namespace App\Functions;
 
 use SoapClient;
 use App\Libraries\UtilitiesConnection;
+
 /**
  * Description of LeadLeontel
  *
@@ -63,22 +64,50 @@ class LeadLeontel {
                 . "AND l.lea_status <=> ? "
                 . "AND l.sou_id = ? ";
             
+            if($data["sou_id"] == 1 || $data["sou_id"] == 21 || $data["sou_id"] == 22){
+
+                switch($data["sou_id"]){
+                    case 1:
+                        $datos[4] = 21;
+                        $datos[5] = 22;
+                        break;
+                    case 21:
+                        $datos[4] = 1;
+                        $datos[5] = 22;
+                        break;
+                    case 22:
+                        $datos[4] = 1;
+                        $datos[5] = 21;
+                        break;
+                    default:
+                        $datos[3] = 1;
+                        $datos[4] = 21;
+                        $datos[5] = 22;
+                }
+                $queryFromWhere .= " OR l.sou_id = ? OR l.sou_id = ?";
+            }
+            
             if($data["sou_id"] == 2){
                 $queryFromWhere .= " AND l.leatype_id = ? ";
-                $datos[4] = $data["leatype_id"];
+                if($data["leatype_id"] == 2){
+                    $datos[4] = $data["leatype_id"];
+                }else{
+                    $datos[4] = 2;
+                }
+                
             }
             
             if($data["sou_id"] == 5){
-                $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208','94.143.76.28'";
-                $datos[5] = "''";
-
                 $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
 
                 $queryFromWhere .= " AND l.lea_phone <> ? ";
+                
+                $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208','94.143.76.28'";
+                $datos[5] = "''";
             }
             
             if($data["sou_id"] == 14){
-                $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208'";
+                $datos[4] = "'139.47.1.166', '194.39.218.10', '92.56.96.208'";
                 $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
             }
             
@@ -94,8 +123,10 @@ class LeadLeontel {
             
         
             $r = $db->selectPrepared($query, $datos);
-            
-            
+//            $consulta = array();
+//            $consulta['query'] = $query;            
+//            $consulta['datos'] = $datos;
+
             if(!is_null($r)){
                 
                 $id_origen_leontel = $r[0]->source;
@@ -130,6 +161,7 @@ class LeadLeontel {
                 $res = json_decode($result);
   
                 return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
+//                return json_encode(['success'=> $res->success, 'message'=> $consulta]);      
             }
             return json_encode(['success'=> false, 'message'=> 'No results']);
         }
@@ -235,6 +267,179 @@ class LeadLeontel {
         }
     }
     
+    /*
+     * Proceso para generar leads en Leontel que cumplan los requisitos del Pago Recurrente.
+     * Hay dos tipos:leads y clientes. Una consulta para cada uno. Se recuperan leads que cumplan
+     * condiciones, se crean unos nuevos a partir de estos, y en el campo observaciones2 de los 
+     * primeros se actualiza con el valor del idlead generado.
+     * @params:
+     *      tipo: cliente/lead
+     *      db: instancia de crmti
+     * @return:
+     *      @boolean
+     *      @string: tipo volcado (cliente/lead)
+     *      @array: array id's tratados
+     */
+    public static function sendLeadLeontelPagoRecurrente($tipo, $db){
+        
+        $test = "SET NAMES 'utf8';";
+        $db->Query($test);
+    
+        $salida = array();
+        $nombreFunc = "";
+
+        if($tipo == "cliente"){
+                        
+            $sql = "
+                SELECT 
+                    hh.his_id, 
+                    hh.his_ts, 
+                    hh.his_user, 
+                    hh.his_code,
+                    hh.his_cdrid, 
+                    ll.lea_id, 
+                    ll.lea_source,
+                    ll.lea_type,
+                    ll.lea_ts, 
+                    ll.TELEFONO, 
+                    ll.nombre, 
+                    ll.apellido1,
+                    ll.apellido2, 
+                    ll.dninie, 
+                    c.numerocliente,
+                    CONCAT('Cliente que llama a recepción el día ',date(hh.his_ts),' para solicitar activación pago recurrente') as obsalt
+                FROM his_history hh 
+                INNER JOIN lea_leads ll ON hh.his_lead = ll.lea_id
+                INNER JOIN ord_orders oo ON hh.his_order = oo.ord_id
+                INNER JOIN cli_clients c ON oo.ord_client = c.cli_id 
+                WHERE 
+            ";
+            
+            $ids = array(2,9,10,13,29,30);
+                        
+            foreach($ids as $i => $id){
+                if($i == 0){
+                    $sqlWhere .= " (ll.lea_source = ?";
+                }else{
+                    $sqlWhere .= " OR ll.lea_source = ?";
+                }
+                $datos[$i] = $id;
+            }
+            $sqlWhere .= ")";
+
+            $sqlWhere .= " AND hh.his_sub = ?
+            AND ll.observaciones2 <=> ?                    
+            AND date(ll.lea_ts) >= ?;";
+                 
+            
+            array_push($datos, 732);            
+            array_push($datos, NULL);
+            array_push($datos, '2018-06-01');
+            
+            $sql = $sql. $sqlWhere;
+
+            $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";
+
+        }else if($tipo == "leads"){
+                        
+            $sql = "
+                SELECT 
+                    hh.his_id, 
+                    hh.his_ts, 
+                    hh.his_user, 
+                    hh.his_code,
+                    hh.his_cdrid, 
+                    ll.lea_id, 
+                    ll.lea_source,
+                    ll.lea_type,
+                    ll.lea_ts, 
+                    ll.TELEFONO, 
+                    ll.nombre, 
+                    ll.apellido1,
+                    ll.apellido2, 
+                    CONCAT('Cliente que llama a recepción el día ',date(hh.his_ts),' para solicitar activación pago recurrente') as obsalt
+                FROM his_history hh 
+                INNER JOIN lea_leads ll on hh.his_lead = ll.lea_id
+                WHERE ";
+            
+                $ids = array(9,10);
+
+                foreach($ids as $i => $id){
+                    if($i == 0){
+                        $sqlWhere .= " (ll.lea_source = ?";
+                    }else{
+                        $sqlWhere .= " OR ll.lea_source = ?";
+                    }
+                    $datos[$i] = $id;
+                }
+                $sqlWhere .= ")";
+                        
+                $sqlWhere .= " AND hh.his_sub = ?
+                AND ll.observaciones2 <=> ?                    
+                AND date(ll.lea_ts) >= ?;";
+                 
+            
+            array_push($datos, 733);            
+            array_push($datos, NULL);
+            array_push($datos, '2018-06-01');
+            
+            $sql = $sql. $sqlWhere;
+            
+            $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";            
+        }
+        
+        $result = $db->selectPrepared($sql, $datos);
+        
+        if(!is_null($result)){
+            foreach($result as $k => $r){
+                $id_origen_leontel = 31;
+                $id_tipo_leontel = 8;
+                $lea_id = $r->lea_id;
+                $phone = $r->TELEFONO;
+                $nombre = $r->nombre;
+                $apellido1 = $r->apellido1;
+                $apellido2 = $r->apellido2;
+                $obsalt = $r->obsalt;
+
+                $lead = [
+                    'TELEFONO' => $phone,
+                    'nombre' => $nombre,
+                    'apellido1' => $apellido1,
+                    'apellido2' => $apellido2,
+                    'observaciones' => $obsalt
+                ];
+                
+                if($tipo == "cliente"){
+                    $dninie = $r->dninie;
+                    $numerocliente = $r->numerocliente;
+                    
+                    $lead['dninie'] = $dninie;
+                    $lead['observaciones'] = $obsalt ."//". $numerocliente;
+                }
+
+                $ws = self::invokeWSLeontel();
+//                $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+                $retorno["success"] = true;                
+                $retorno["id"] = 9999;
+
+                if($retorno["success"] == true){
+                    $datos = [
+                        "observaciones2" => $retorno["id"]
+                    ];
+
+                    $where = ["lea_id" => $lea_id];
+                    $parametros = UtilitiesConnection::getParametros($datos, $where);
+                    $result = $db->updatePrepared("crmti.lea_leads", $parametros);               
+                    array_push($salida, $lea_id);
+                }
+            }
+            $success = true;
+        }else{
+            $success = false;
+        }
+        return json_encode(["success" => $success, "message" => $nombreFunc, "salida" => $salida ]);
+    }
+    
     private static function invokeWSLeontel($params = null){
         
         $params = $params ? $params : ["location" => self::$locationWs, "uri" => self::$uriWs];
@@ -313,6 +518,8 @@ class LeadLeontel {
             
             switch($sou_id){
                 case 1:
+                case 21:
+                case 22:
                     //Creditea Abandonos
                     $querySource = "l.lea_surname,"
                         . "l.lea_aux2 dninie,"
@@ -385,7 +592,9 @@ class LeadLeontel {
             $nombre = $r[0]->lea_name;
  
             switch($sou_id){
-                case 1:
+                case 1                :
+                case 21:
+                case 22:
                     //Abandonos
                     $apellidos = $r[0]->lea_surname;
                     $url = $r[0]->lea_url;

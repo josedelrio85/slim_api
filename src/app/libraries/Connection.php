@@ -173,27 +173,50 @@ class Connection implements IConnection{
     
     
     /*
+     * Añadido soportes para array anidados (1 dimension)
      * @query: Parte selectiva de la consulta
      * @data: array con los valores del where
      */
-    public function selectPrepared($query, $data) {
+    public function selectPrepared($query, $data, $assoc = false) {
         //Prepare our query for binding
         $stmt = $this->prepare($query);
         
         $formato = UtilitiesConnection::getFormatPreparedSql($data);
         $format = UtilitiesConnection::getStringFormato($formato);
         
+        /****************************************/
+        $d = array();
+        foreach($data as $k => $v){
+            if(is_array($v)){
+                foreach ($v as $c){
+                    array_push($d, $c);
+                }
+            }else{
+                array_push($d, $v);
+            }
+        }
+        /****************************************/
         // Añade format al inicio de data (en el indice 0)
-        array_unshift($data, $format);
+//        array_unshift($data, $format);
+        array_unshift($d, $format);
+
 
         //data es un array, elemento 0 es el formato, y los siguientes son los datos
-        call_user_func_array( array( $stmt, 'bind_param'), UtilitiesConnection::ref_values($data));
+        //call_user_func_array(array($stmt, 'bind_param'), UtilitiesConnection::ref_values($data));
+        call_user_func_array(array($stmt, 'bind_param'), UtilitiesConnection::ref_values($d));
+        
 
         $stmt->execute();
         $result = $stmt->get_result();
         $results = null;
-        while ($row = $result->fetch_object()) {
-            $results[] = $row;
+        if($assoc){
+            while ($row = $result->fetch_assoc()) {
+                $results[] = $row;
+            }            
+        }else{
+            while ($row = $result->fetch_object()) {
+                $results[] = $row;
+            }            
         }
         return $results;
     }

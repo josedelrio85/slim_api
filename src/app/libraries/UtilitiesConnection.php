@@ -229,6 +229,9 @@ class UtilitiesConnection {
         
         $questions = implode(",", array_fill(0, count($valores), "?"));
         
+        if(empty($questions))
+            $questions = "?";
+             
         $salida['questions'] = $questions;
         $salida['values'] = $valores;
         

@@ -17,20 +17,33 @@ class UtilitiesConnection {
     
     /*
     Genera un array con los formatos necesarios en función 
-    del tipo de variable de cada indice del array
+    del tipo de variable de cada indice del array. 
+     * Ahora tiene soporte para un array anidado.
     @array      el array de parametros en función del cual habrá 
                 que generar los parámetros correspondientes
     */    
     public static function getFormatPreparedSql($array){
         $salida = array();
         foreach($array as $key => $value){
-            if(is_int($value) || is_double($value)){
-                array_push($salida, "%d");
-            }else if(is_string($value)){
-                array_push($salida, "%s");
-            }else if(is_null($value)){
-                array_push($salida, "%s");
-            }      
+            if(!is_array($value)){
+                if(is_int($value) || is_double($value)){
+                    array_push($salida, "%d");
+                }else if(is_string($value)){
+                    array_push($salida, "%s");
+                }else if(is_null($value)){
+                    array_push($salida, "%s");
+                }      
+            }else{
+                foreach($value as $k => $v){
+                    if(is_int($v) || is_double($v)){
+                        array_push($salida, "%d");
+                    }else if(is_string($v)){
+                        array_push($salida, "%s");
+                    }else if(is_null($v)){
+                        array_push($salida, "%s");
+                    }   
+                }
+            }            
         }
         return $salida;
     }
@@ -177,7 +190,7 @@ class UtilitiesConnection {
      * $array => array clave => valor  [0 => "X"]
      * $salida => string separado por comas => "X,Y,Z"
      */
-    public static function arrayToPreparedParam($array){
+    private static function arrayToPreparedParam_notused($array){
         if(is_array($array)){
             $salida = "";
             $tam = count($array) - 1;
@@ -193,9 +206,41 @@ class UtilitiesConnection {
                     $salida .= ",";
                 }
             }
+            $b = "";
             return $salida;
         }
         return "";
     }
     
+    /*
+     * Transforma array en formato adecuado para utilizar como parametro
+     * en prepared statement.
+     * @$array => array de valores
+     * @$prop => para obtener la propiedad deseada de cada subarray
+     * 
+     * @return => array con conjunto de ? para preparar la consulta
+     *         => valores a sustituir por ?
+     */
+    public static function arrayToPreparedParam($array, $prop = null){
+        
+        foreach($array as $k => $v){           
+            $valores[$k] = ($prop === null) ? $v : $v[$prop];
+        }
+        
+        $questions = implode(",", array_fill(0, count($valores), "?"));
+        
+        $salida['questions'] = $questions;
+        $salida['values'] = $valores;
+        
+        return $salida;
+    }
+    
+    
+    public static function generaQuestions($array){
+        if(!empty($array)){
+            $questions = implode(",", array_fill(0, count($array), "?"));
+            return $questions;
+        }
+        return null;
+    }
 }

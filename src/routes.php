@@ -61,10 +61,9 @@ $app->post('/testconexionIntensivo', function (Request $request, Response $respo
     
     $salida = array();
     
-    $mysqli = $this->db_webservice_dev;
-    
+   
     $sou_id = $this->sou_id_test;
-    $sou_idcrm = App\Functions\Functions::getSouIdcrm($sou_id,$mysqli);
+    $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
     
     array_push($salida,$sou_idcrm);
 
@@ -263,10 +262,8 @@ $app->group('/test', function(){
     $this->post('/getSouIdcrm', function(Request $request, Response $response, array $args){
         if($request->isPost()){
             
-            $db = $this->db_webservice_dev;
             $sou_id = $this->sou_id_test;
-            
-            $sou_id_crm =$this->funciones->getSouIdcrm($sou_id, $db);
+            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
             
             return $response->withJson($sou_id_crm);  //Debe devolver 23 para sou_id 15
         }
@@ -276,14 +273,11 @@ $app->group('/test', function(){
         
         if($request->isPost()){
 
-            $db = $this->db_webservice_dev;
             $sou_id = $this->sou_id_test;
-            
-            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $db);
+            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
 
-            $db_rp = $this->db_report_panel_dev;
             //si está en horario, devuelve true, si no false
-            $salida = $this->funciones->horarioEntradaLeads($sou_idcrm, $db_rp);
+            $salida = $this->funciones->horarioEntradaLeads($sou_idcrm, $this->db_report_panel_dev);
             
             return $response->withJson($salida);
         }
@@ -571,25 +565,14 @@ $app->group('/RCable', function(){
             $data = $request->getParsedBody();
             $phone = $data['phone'];
 
-            $serverParams = $request->getServerParams();
-            $url = "????";
-            if(array_key_exists("HTTP_REFERER", $serverParams)){
-                $url = $serverParams["HTTP_REFERER"];            
-            }
-            $ip = $serverParams["REMOTE_ADDR"];
+            list($url, $ip) = $this->funciones->getServerParams($request);
             
-            $db = $this->db_webservice_dev;
-
 //            $sou_id = 5;
             $sou_id = $this->sou_id_test;
-            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $db);
+            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
 
-            $db_rp = $this->db_report_panel_dev;
-            $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm, $db_rp) ? 1 : 9;
-            
-            $db_params = $this->settings_db_webservice_dev;
-            $db = new \App\Libraries\Connection($db_params);   
-            
+            $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm, $this->db_report_panel_dev) ? 1 : 9;
+                        
             $datos = [
                 "lea_phone" => $phone,
                 "lea_url" => $url,
@@ -598,9 +581,9 @@ $app->group('/RCable', function(){
                 "sou_id" => $sou_id,
                 "leatype_id" => $leatype_id];
             
-            $resultLeontel = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
-            $r = json_decode($resultLeontel, true); 
-            return $response->withJson($r);
+            $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice_dev), true);
+            
+            return $response->withJson($resultLeontel);
         }
     });
 });
@@ -633,12 +616,7 @@ $app->group('/creditea', function(){
 
             $data = $request->getParsedBody();
             
-            $serverParams = $request->getServerParams();
-            $url = "????";
-            if(array_key_exists("HTTP_REFERER", $serverParams)){
-                $url = $serverParams["HTTP_REFERER"];            
-            }
-            $ip = $serverParams["REMOTE_ADDR"];
+            list($url, $ip) = $this->funciones->getServerParams($request);
             
 //            $sou_id = 9;
             $sou_id = $this->sou_id_test;
@@ -690,15 +668,10 @@ $app->group('/creditea', function(){
         if($request->isPost()){
             $data = $request->getParsedBody();
             
-            $serverParams = $request->getServerParams();
-            $url = "????";
-            if(array_key_exists("HTTP_REFERER", $serverParams)){
-                $url = $serverParams["HTTP_REFERER"];            
-            }
-            $ip = $serverParams["REMOTE_ADDR"];
+            list($url, $ip) = $this->funciones->getServerParams($request);
             
-//            $sou_id = 9;
-            $sou_id = $this->sou_id_test;
+            $sou_id = 9;
+//            $sou_id = $this->sou_id_test;
             $leatype_id = 1;
             
             $datosAsnef = [
@@ -707,11 +680,10 @@ $app->group('/creditea', function(){
                 "phone" => $data["phone"]                
             ];
             
-            $db_crmti = $this->db_crmti;
-            $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti);
-            $r = json_decode($rAsnef);
-
-            if(!$r->success){
+            $db_crmti = $this->db_crmti_dev;
+            $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti));
+            
+            if(!$rAsnef->success){
                 
                 $datos = [
                     "lea_destiny" => 'LEONTEL',
@@ -974,13 +946,7 @@ $app->group('/yoigo', function(){
         if($request->isPost()){
             $data = $request->getParsedBody();
                        
-            $serverParams = $request->getServerParams();
-            $url = "????";
-            if(array_key_exists("HTTP_REFERER", $serverParams)){
-                $url = $serverParams["HTTP_REFERER"];            
-            }
-            $ip = $serverParams["REMOTE_ADDR"];
-            $lea_destiny = array_key_exists("test", $data) ? 'TEST' : 'LEONTEL';
+            list($url, $ip) = $this->funciones->getServerParams($request);
             
             
             /*
@@ -1013,14 +979,12 @@ $app->group('/yoigo', function(){
             	$sou_id = 19;
             }
 
-            //Pruebas
+
             $sou_id = $this->sou_id_test;
-            $db = $this->db_webservice_dev;
-            $sou_idcrm = App\Functions\Functions::getSouIdcrm($sou_id,$db);
-            $datosHorario = ["sou_id" => $sou_idcrm, "hora" => date('H:i'), "num_dia" => intval(date('N'))];
+            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
             
-            $dbAlt = $this->db_report_panel;
-            $consTimeTable = $this->funciones->consultaTimeTableC2C($datosHorario,$dbAlt);
+            $datosHorario = ["sou_id" => $sou_idcrm, "hora" => date('H:i'), "num_dia" => intval(date('N'))];            
+            $consTimeTable = $this->funciones->consultaTimeTableC2C($datosHorario, $this->db_report_panel);
             $leatype_id = is_array($consTimeTable) ? 1 : 20;
             
             $lea_aux3 = $data["cobertura"]."//".$data["impuesto"];
@@ -1032,33 +996,12 @@ $app->group('/yoigo', function(){
                 "lea_aux2" =>  $data["producto"],
                 "observations" => $data["producto"],
                 "lea_aux3" => $lea_aux3,
-                "lea_destiny" => $lea_destiny,
+                "lea_destiny" => 'LEONTEL',
                 "sou_id" => $sou_id,
                 "leatype_id" => $leatype_id                
             ];
-
-            $parametros = UtilitiesConnection::getParametros($datos,null);  
-            $sws = $this->settings_db_webservice_dev;
-            $db = new \App\Libraries\Connection($sws);   
-            $query = $db->insertStatementPrepared("leads", $parametros);            
             
-            $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';                
-            $result = $db->Query($sp);           
-            
-            
-            if($db->AffectedRows() > 0){
-                $resultSP = $result->fetch_assoc();
-                $lastid = $resultSP["@result"];
-                $db->NextResult();
-                $result->close();
-
-                $resLeontel = \App\Functions\LeadLeontel::sendLead($datos,$db);
-                
-                $db->close();
-                $salida = array(['success'=> true, 'message'=> $lastid]);
-            }else{
-                $salida = array(['success'=> false, 'message'=> $db->LastError()]);
-            }
+            $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$this->db_webservice_dev);
         }       
         return $response->withJson($salida);
     });
@@ -1091,9 +1034,7 @@ $app->group('/doctordinero', function(){
         
         if($request->isPost()){
             $data = $request->getParsedBody();
-                
-            $db = $this->db_webservice_dev;
-           
+                          
             $datos = array();
             $salida = array();
             $salidaTxt = "";
@@ -1131,7 +1072,7 @@ $app->group('/doctordinero', function(){
             
              $sou_id = 9;        
 //            $sou_id = $this->sou_id_test;
-            $sou_idcrm = App\Functions\Functions::getSouIdcrm($sou_id,$db);
+            $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
             $leatype_id = 1;
 
             $observations = "";
@@ -1139,12 +1080,14 @@ $app->group('/doctordinero', function(){
                 $observations .= $v."--";
             }           
             
+            list($url, $ip) = $this->funciones->getServerParams($request);
+            
             $datosLead = [
                 "sou_id" => $sou_id,
                 "leatype_id" => $leatype_id,
                 "lea_phone" => $data["movil"],
-                "lea_url" => array_key_exists("HTTP_REFERER", $request->getServerParams()) ? $request->getServerParams()['HTTP_REFERER'] : "???",
-                "lea_ip" => $serverParams["REMOTE_ADDR"],
+                "lea_url" => $url,
+                "lea_ip" => $ip,
                 "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
                 "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
                 "lea_aux1" => $data["dni"],
@@ -1179,7 +1122,7 @@ $app->group('/doctordinero', function(){
                 $datosLead["lea_aux3"] = $datos['telf']."_notValid";
             }        
             
-            $db = new \App\Libraries\Connection($this->settings_db_webservice_dev);   
+            $db = $this->db_webservice_dev;
             $mensaje = "KO-notValid";
             
             if($todoOk){
@@ -1189,7 +1132,7 @@ $app->group('/doctordinero', function(){
                 
                 $salida = array(['result' => true, 'message' => $mensaje]);                       
             }else{
-                $this->funciones->prepareAndSendLeadLeontel($datosLead,$db, null, false);
+                $this->funciones->prepareAndSendLeadLeontel($datosLead, $db, null, false);
                 $salida = array(['result' => false, 'message' => $mensaje ]);
             }
             return $response->withJson($salida); 

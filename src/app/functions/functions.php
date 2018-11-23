@@ -205,9 +205,12 @@ class Functions {
      * @db: instancia bd
      * @tabla: por si hay que hacer la inserción en otra tabla
      */
-    public function prepareAndSendLeadLeontel($datos,$db,$tabla = null, $leontel = true){
+    public function prepareAndSendLeadLeontel($datos,$paramsDb,$tabla = null, $leontel = true){
         
-        if(is_array($datos) && !is_null($db)){
+        if(is_array($datos) && !is_null($paramsDb)){
+            
+            $db = new \App\Libraries\Connection($paramsDb);
+            
             if($tabla == null){
                 $tabla = "leads";
             }

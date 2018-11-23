@@ -128,6 +128,7 @@ class UtilitiesConnection {
         $values = array();
         $data = $params["datos"];
         
+        $i = 0;
         // Loop through $data and build $fields, $placeholders, and $values			
         foreach ( $data as $field => $value ) {
             if($value != null){
@@ -135,11 +136,15 @@ class UtilitiesConnection {
                 $values[] = $value;
 
                 if ( $type == 'update') {
-                        $placeholders .= $field . '=?,';
+                    $placeholders .= $field . '=?,';
                 } else {
-                        $placeholders .= '?,';
+                    $placeholders .= '?,';
                 }
+            }else{
+                //en caso de que el valor sea null hay que quitar el elemento correspondiente de $params["formatoDatos"]
+                unset($params["formatoDatos"][$i]);
             }
+            $i++;
         }
 
         // Normalize $fields and $placeholders for inserting

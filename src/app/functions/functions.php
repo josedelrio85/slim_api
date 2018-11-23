@@ -205,12 +205,10 @@ class Functions {
      * @db: instancia bd
      * @tabla: por si hay que hacer la inserción en otra tabla
      */
-    public function prepareAndSendLeadLeontel($datos,$paramsDb,$tabla = null, $leontel = true){
+    public function prepareAndSendLeadLeontel($datos, $db, $tabla = null, $leontel = true){
         
-        if(is_array($datos) && !is_null($paramsDb)){
-            
-            $db = new \App\Libraries\Connection($paramsDb);
-            
+        if(is_array($datos) && !is_null($db)){
+                       
             if($tabla == null){
                 $tabla = "leads";
             }
@@ -279,10 +277,10 @@ class Functions {
      * return:
      * @sou_idcrm (sou_id de crmti)
      */
-    public function getSouIdcrm($sou_id, $db){
-        if(!empty($sou_id)){
+    public function getSouIdcrm($sou_id, $paramsDb){
+        if(!empty($sou_id) && !empty($paramsDb)){
             $datos = [ 0 => $sou_id];
-            
+            $db = new \App\Libraries\Connection($paramsDb);
             $sql = "SELECT sou_idcrm FROM webservice.sources WHERE sou_id = ?;";
             
             $r = $db->selectPrepared($sql, $datos);
@@ -290,8 +288,8 @@ class Functions {
             if(!is_null($r)){
                 return $r[0]->sou_idcrm;
             }
-            return null;
         }
+        return null;
     }
     
     /*
@@ -311,6 +309,26 @@ class Functions {
             return false;
 	} 
     }   
+    
+    /* Devuelve parametros url e ip. Ampliable a más parámetros en un futuro 
+     * @params => objeto Request
+     * @returns => array con parametros url e ip 
+     *  o null si objeto Request está vacío
+     */
+    public function getServerParams($request){
+        
+        if(!empty($request)){
+            $serverParams = $request->getServerParams();
+            $url = "????";
+            if(array_key_exists("HTTP_REFERER", $serverParams)){
+                $url = $serverParams["HTTP_REFERER"];            
+            }
+            $ip = $serverParams["REMOTE_ADDR"];
+            
+            return array($url, $ip);
+        }
+        return null;
+    }
     
     public function test($db){
               

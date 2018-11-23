@@ -289,7 +289,18 @@ class LeadLeontel {
         $nombreFunc = "";
 
         if($tipo == "cliente"){
-                        
+            
+            $arrSources = array(2,9,10,13,29,30);
+            
+            $datos = [
+                0 => $arrSources,
+                1 => 732,
+                2 => NULL,
+                3 => '2018-06-01'
+            ];
+            $questionsA = UtilitiesConnection::generaQuestions($arrSources);
+
+            
             $sql = "
                 SELECT 
                     hh.his_id, 
@@ -313,35 +324,26 @@ class LeadLeontel {
                 INNER JOIN ord_orders oo ON hh.his_order = oo.ord_id
                 INNER JOIN cli_clients c ON oo.ord_client = c.cli_id 
                 WHERE 
+                ll.lea_source IN ($questionsA)
+                AND hh.his_sub = ?
+                AND ll.observaciones2 <=> ?                    
+                AND date(ll.lea_ts) >= ?;
             ";
-            
-            $ids = array(2,9,10,13,29,30);
-                        
-            foreach($ids as $i => $id){
-                if($i == 0){
-                    $sqlWhere .= " (ll.lea_source = ?";
-                }else{
-                    $sqlWhere .= " OR ll.lea_source = ?";
-                }
-                $datos[$i] = $id;
-            }
-            $sqlWhere .= ")";
-
-            $sqlWhere .= " AND hh.his_sub = ?
-            AND ll.observaciones2 <=> ?                    
-            AND date(ll.lea_ts) >= ?;";
-                 
-            
-            array_push($datos, 732);            
-            array_push($datos, NULL);
-            array_push($datos, '2018-06-01');
-            
-            $sql = $sql. $sqlWhere;
 
             $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";
 
         }else if($tipo == "leads"){
-                        
+            
+            $arrSources = array(9,10);
+            
+            $datos = [
+                0 => $arrSources,
+                1 => 732,
+                2 => NULL,
+                3 => '2018-06-01'
+            ];
+            $questionsA = UtilitiesConnection::generaQuestions($arrSources);
+            
             $sql = "
                 SELECT 
                     hh.his_id, 
@@ -360,30 +362,11 @@ class LeadLeontel {
                     CONCAT('Cliente que llama a recepción el día ',date(hh.his_ts),' para solicitar activación pago recurrente') as obsalt
                 FROM his_history hh 
                 INNER JOIN lea_leads ll on hh.his_lead = ll.lea_id
-                WHERE ";
-            
-                $ids = array(9,10);
-
-                foreach($ids as $i => $id){
-                    if($i == 0){
-                        $sqlWhere .= " (ll.lea_source = ?";
-                    }else{
-                        $sqlWhere .= " OR ll.lea_source = ?";
-                    }
-                    $datos[$i] = $id;
-                }
-                $sqlWhere .= ")";
-                        
-                $sqlWhere .= " AND hh.his_sub = ?
+                WHERE 
+                ll.lea_source IN ($questionsA)
+                AND hh.his_sub = ?
                 AND ll.observaciones2 <=> ?                    
                 AND date(ll.lea_ts) >= ?;";
-                 
-            
-            array_push($datos, 733);            
-            array_push($datos, NULL);
-            array_push($datos, '2018-06-01');
-            
-            $sql = $sql. $sqlWhere;
             
             $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";            
         }

@@ -404,8 +404,8 @@ $app->group('/test', function(){
         
         $db = $this->db_crmti_dev;
         
-//        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db);  
-        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db);  
+        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db);  
+//        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db);  
 
                 
         return $response->withJson(json_decode($salida, true));
@@ -567,8 +567,8 @@ $app->group('/RCable', function(){
 
             list($url, $ip) = $this->funciones->getServerParams($request);
             
-//            $sou_id = 5;
-            $sou_id = $this->sou_id_test;
+            $sou_id = 5;
+//            $sou_id = $this->sou_id_test;
             $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
 
             $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm, $this->db_report_panel_dev) ? 1 : 9;
@@ -638,9 +638,7 @@ $app->group('/creditea', function(){
             
             $db = $this->db_webservice_dev;            
             $parametros = UtilitiesConnection::getParametros($datos,null); 
-            $result = $db->insertPrepared("leads", $parametros);
-
-            $salida = json_decode($result,true);
+            $salida = json_decode($db->insertPrepared("leads", $parametros),true);;
 
             return $response->withJson($salida);
         }        
@@ -932,6 +930,117 @@ $app->group('/evobanco', function(){
             }
        }
     });
+    
+    /* Inserción en tabla evo_user_tracking
+     * params: hashid, stepid, bsdCookie
+     * @JSON salida:
+     *      success:boolean
+     *      message:string
+    */
+    $this->post('/userTracking', function (Request $request, Response $response, array $args){
+        $this->logger->info("WS user tracking Evo Banco");
+        
+        if($request->isPost()){
+            $data = $request->getParsedBody();
+            
+            list($url, $ip, $device) = $this->funciones->getServerParams($request);
+            
+            $datos = [
+                "hashid" => strtoupper($data["hashid"]), 
+                "stepid" => $data["stepid"], 
+                "device" => $device, 
+                "url_source" => $url, 
+                "track_ip" => $ip, 
+                "track_cookie" => $data["bsdCookie"]
+            ];
+            
+            $db = $this->db_webservice_dev;            
+            $parametros = UtilitiesConnection::getParametros($datos,null); 
+            $salida = json_decode($db->insertPrepared("evo_user_tracking", $parametros),true);
+            
+            return $response->withJson($salida);
+        }
+        return null;
+    });
+    
+    /* 
+     * evo_events_sf_v2 => 
+     * params:
+     * @entrada => montón de parámetros proceso de entrada Evo
+     * @JSON salida:
+     *      success:boolean
+     *      message:string
+     */
+    $this->post('/eventSF_v2', function (Request $request, Response $response, array $args){
+        $this->logger->info("WS EventSF_V2 Evo Banco");
+        
+        if($request->isPost()){
+            $data = $request->getParsedBody();
+
+            $datos = [
+                "CLIENTID" => $data["clientId"],                
+                "PERSONMOBILEPHONE" => $data["personMobilePhone"],
+                "PERSONEMAIL" => $data["personEmail"],
+                "FIRSTNAME" => $data["firstName"],
+                "LASTNAME" => $data["lastName"],
+                "PERSONHASOPTEDOUTOFEMAIL" => $data["personHasOptedOutOfEmail"],
+                "QUIERE_PUBLICIDAD__C" => $data["quierePublicidad"],
+                "PERSONDONOTCALL" => $data["personDoNotCall"],
+                "CONFIRMA_OK__C" => $data["confirmaOk"],
+                "PERSONLEADSOURCE" => $data["personLeadSource"],
+                "ELECTRONICAID_OK__C" => $data["electronicaIdOk"],
+                "CREATEDDATE" => $data["createdDate"],
+                "LASTMODIFIEDDATE" => $data["lastModifiedDate"],
+                "RATING" => $data["rating"],
+                "CLIENT_ESTADO__C" => $data["clientEstado"],
+                "TIPO_DE_IDENTIFICACION__C" => $data["tipoDeIdentificacion"],
+                "CLIENTTYPE" => $data["clientType"],
+                "STEPID" => $data["stepId"],
+                "URL_SALESFORCE" => $data["urlSalesforce"],
+                "URL_SOURCE" => $data["urlSource"],
+                "ESTADO_CONFIRMA__C" => $data["estadoConfirma"],
+                "GESTION__C" => $data["gestion"],
+                "SUBGESTION__C" => $data["subgestion"],
+                "BLOQUEO_CLIENTE__C" => $data["bloqueoCliente"],
+                "ELECTRONICID_ESTADO__C" => $data["electronicIdEstado"],
+                "GESTION_BACKOFFICE__C" => $data["gestionBackOffice"],
+                "EVENT__C" => $data["event"],
+                "REJECTIONMESSAGE__C" => $data["rejectionMessage"],
+                "LOGALTYID" => $data["logaltyId"],
+                "LOGALTY_ESTADO__C" => $data["logaltyEstado"],
+                "DESCARGA_DE_CONTRATO__C" => $data["descargaDeContrato"],
+                "DOCUMENTACION_SUBIDA__C" => $data["documentacionSubida"],
+                "DESCARGA_DE_CERTIFICADO__C" => $data["descargaDeCertificado"],
+                "RECORDNUMBER" => $data["recordNumber"],
+                "IDPERSONIRIS" => $data["idPersonIris"],
+                "CONTRACTSTATUS" => $data["contractStatus"],
+                "LOGALTYDATE" => $data["logaltyDate"],
+                "FECHA_FORMALIZACION" => $data["fechaFormalizacion"],
+                "PRODUCT_CODE" => $data["productCode"],
+                "IDCONTRACT" => $data["idContract"],
+                "CLIENT" => $data["client"],
+                "METODO_ENTRADA" => $data["metodoEntrada"],
+                "MOTIVO_DESESTIMACION" => $data["motivoDesestimacion"]
+            ];
+                                    
+            $db = $this->db_webservice_dev;            
+            $parametros = UtilitiesConnection::getParametros($datos,null); 
+            $salida = json_decode($db->insertPrepared("evo_events_sf_v2", $parametros),true);
+            
+            return $response->withJson($salida);
+        }
+        return null;
+    });
+    
+    $this->post('/sendLeadToLeontelRecovery', function (Request $request, Response $response, array $args){
+        
+        $this->logger->info("WS EventSF_V2 Evo Banco");
+        
+        if($request->isPost()){
+            $db = $this->db_webservice_dev;            
+            $this->funciones->sendLeadToLeontelRecovery($db);
+        }
+    });
 });
 
 
@@ -980,7 +1089,8 @@ $app->group('/yoigo', function(){
             }
 
 
-            $sou_id = $this->sou_id_test;
+//            $sou_id = $this->sou_id_test;
+            $sou_id = 17;
             $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
             
             $datosHorario = ["sou_id" => $sou_idcrm, "hora" => date('H:i'), "num_dia" => intval(date('N'))];            

@@ -1032,17 +1032,38 @@ $app->group('/evobanco', function(){
         return null;
     });
     
+    /*
+     * Tarea cron para recovery Leontel
+     */
     $this->post('/sendLeadToLeontelRecovery', function (Request $request, Response $response, array $args){
         
-        $this->logger->info("WS EventSF_V2 Evo Banco");
+        $this->logger->info("WS sendLeadToLeontelRecovery Evo Banco");
         
         if($request->isPost()){
             $db = $this->db_webservice_dev;            
             $this->funciones->sendLeadToLeontelRecovery($db);
         }
     });
-});
+    
+    /*
+     * Tarea cron para C2C Evo Banco Leontel
+     */
+    $this->post('/sendC2CToLeontel', function (Request $request, Response $response, array $args){
+        
+        $this->logger->info("WS sendC2CToLeontel Evo Banco");
+        
+        if($request->isPost()){
+            $data = $request->getParsedBody();
+            $data["sou_id"] = 3;
+            
+            $db = $this->db_webservice_dev;            
+            $result = json_decode($this->funciones->sendC2CToLeontel($data, $db));
+            
+            return $response->withJson($result);
+        }
+    });
 
+});
 
 
 
@@ -1116,8 +1137,6 @@ $app->group('/yoigo', function(){
         return $response->withJson($salida);
     });
 });
-
-
 
 
 
@@ -1250,24 +1269,6 @@ $app->group('/doctordinero', function(){
    });
 });
 
-
-/*
- * Invoca la lógica para gestionar el envío del lead a la cola de Leontel
- * -> JSON entrada:
- * {
- *  "sou_id": 6
- * }
- * si sou_id = 2, hay que añadir "leatype_id" : X
- */
-$app->post('/sendLeadToLeontel', function(Request $request, Response $response, array $args){
-    
-    if($request->isPost()){
-        $data = $request->getParsedBody();
-        $db = $this->db_webservice_dev;
-        App\Functions\LeadLeontel::sendLead($data, $db);
-    }
-    
-});
 
 
 // Catch-all route to serve a 404 Not Found page if none of the routes match

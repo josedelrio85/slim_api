@@ -269,10 +269,23 @@ class Functions {
         }
     }
     
-    
+    /*
+    * Invocación tarea recovery Evo Banco
+    */
     public function sendLeadToLeontelRecovery($db){
         
         LeadLeontel::recoveryEvoBancoLeontel($db);
+    }
+    
+    /*
+     * Invocación tarea C2C Leontel (usada mayormente para cron Evo Banco)
+    */
+    public function sendC2CToLeontel($data, $db){
+        
+        if(!empty($data) && !empty($db)){
+            return LeadLeontel::sendLead($data, $db);
+        }
+        return null;
     }
     
     /*

@@ -269,6 +269,12 @@ class Functions {
         }
     }
     
+    
+    public function sendLeadToLeontelRecovery($db){
+        
+        LeadLeontel::recoveryEvoBancoLeontel($db);
+    }
+    
     /*
      * Obtiene el sou_id de crmti en función del sou_id de webservice
      * params:
@@ -325,7 +331,9 @@ class Functions {
             }
             $ip = $serverParams["REMOTE_ADDR"];
             
-            return array($url, $ip);
+            $device = $serverParams["HTTP_USER_AGENT"];
+            
+            return array($url, $ip, $device);
         }
         return null;
     }

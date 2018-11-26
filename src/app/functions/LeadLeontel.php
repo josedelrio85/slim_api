@@ -31,9 +31,7 @@ class LeadLeontel {
         }
     }
     
-    
     public static function sendLead($data, $db){
-        //data tiene que tener nombres de parametro como lea_leads
         
         if(array_key_exists('sou_id', $data)){
             
@@ -120,12 +118,8 @@ class LeadLeontel {
             
             $query .= $queryFromWhere; 
             $query .= " ORDER BY l.lea_id DESC LIMIT 1;";
-            
         
             $r = $db->selectPrepared($query, $datos);
-//            $consulta = array();
-//            $consulta['query'] = $query;            
-//            $consulta['datos'] = $datos;
 
             if(!is_null($r)){
                 
@@ -161,7 +155,6 @@ class LeadLeontel {
                 $res = json_decode($result);
   
                 return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
-//                return json_encode(['success'=> $res->success, 'message'=> $consulta]);      
             }
             return json_encode(['success'=> false, 'message'=> 'No results']);
         }
@@ -620,27 +613,29 @@ class LeadLeontel {
                 . "evo_events_sf_v2_pro "
                 . "WHERE "
                 . "even_destiny = ? "
-                . "AND even_extracted <=> ?"
-                . "AND even_status <=> ?"
+                . "AND even_extracted <=> ? "
+                . "AND even_status <=> ? "
                 . "AND PERSONMOBILEPHONE <> ? "; 
                
         $queryLeads = $selectLeads. $where . ";";
                 
         $r = $db->selectPrepared($queryLeads, $datos);
         
+        $salida = array();
+
         foreach($r as $k => $v){
                             
             $id_origen_leontel = 4;
 
-            $lea_id = $v[0]->even_id;
-            $phone = $v[0]->PERSONMOBILEPHONE;
-            $estado_cliente = $v[0]->CLIENT_ESTADO__C;
-            $url_salesforce = $v[0]->URL_SALESFORCE;
-            $stepid = $v[0]->STEPID;
-            $estado_logalty = $v[0]->LOGALTY_ESTADO__C;
-            $estado_contrato = $v[0]->CONTRACTSTATUS;
+            $lea_id = $v->even_id;
+            $phone = $v->PERSONMOBILEPHONE;
+            $estado_cliente = $v->CLIENT_ESTADO__C;
+            $url_salesforce = $v->URL_SALESFORCE;
+            $stepid = $v->STEPID;
+            $estado_logalty = $v->LOGALTY_ESTADO__C;
+            $estado_contrato = $v->CONTRACTSTATUS;
 
-            $destinyF = self::getIdTipoLeontel($estado_logalty, $client_estado_c, $stepid, $estado_contrato);
+            $destinyF = self::getIdTipoLeontel($estado_logalty, $estado_cliente, $stepid, $estado_contrato);
 
             $lead = [
                 'TELEFONO' => $phone,
@@ -654,44 +649,59 @@ class LeadLeontel {
             $tipo_iban = 20;
             $tipo_incompleto = 22;
             $tipo_c2c = 2;
-
+                        
             $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_pdte_firma, $phone);
+            
+            //Desarrollo y test
+//            $dataCred["success"] = false;
 
             if($dataCred["success"]){
 
-                self::updateDuplicatedEvo($db, $lea_id);
+                $result = self::updateDuplicatedEvo($db, $lea_id);
+                array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_pdte_firma"));
 
             }else{
 
                 $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_eid, $phone);
-
+//                Desarrollo y test
+//                $dataCred["success"] = false;
+            
                 if($dataCred["success"]){
 
-                    self::updateDuplicatedEvo($db, $lea_id);
+                    $result = self::updateDuplicatedEvo($db, $lea_id);
+                    array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_eid"));
 
                 }else{
 
                     $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_iban, $phone);
+//                    Desarrollo y test
+//                    $dataCred["success"] = false;
 
                     if($dataCred["success"]){
 
-                        self::updateDuplicatedEvo($db, $lea_id);
+                        $result = self::updateDuplicatedEvo($db, $lea_id);
+                        array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_iban"));
 
                     }else{
 
                         $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_incompleto, $phone);
-
+//                        Desarrollo y test
+//                        $dataCred["success"] = false;
+                    
                         if($dataCred["success"]){
 
-                            self::updateDuplicatedEvo($db, $lea_id);
+                            $result = self::updateDuplicatedEvo($db, $lea_id);
+                            array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_incompleto"));
 
                         }else{
 
                             $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_c2c, $phone);
+//                            Desarrollo y test
 
                             if($dataCred["success"]){
 
-                                self::updateDuplicatedEvo($db, $lea_id);
+                                $result = self::updateDuplicatedEvo($db, $lea_id);
+                                array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_c2c"));
 
                             }else{
 
@@ -716,15 +726,15 @@ class LeadLeontel {
                                     }
 
                                     $result = self::updateDuplicatedEvo($db, $lea_id, $datos);              
-                                    $res = json_decode($result);
-                                    return json_encode(['success'=> $res->success, 'message'=> $res->message]);
+                                    array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "id_tipo_leontel"));
                                 }
                             }
                         }
                     }
                 }
             }
-        }
+        }       
+        return $salida;
     }
     
     /*
@@ -749,7 +759,7 @@ class LeadLeontel {
 
         $result = $db->updatePrepared("webservice.evo_events_sf_v2_pro", $parametros);
         
-        return $result;
+        return json_decode($result);
     }
     
     /*

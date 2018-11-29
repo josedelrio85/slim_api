@@ -436,7 +436,8 @@ class LeadLeontel {
     }
     
     /* Se implementa lógica de sendLeadToLeontelRecoveryV2_Pro, simplificando y
-     * reutilizando código.
+     * reutilizando código. 
+     * EN PRINCIPIO SE PODRÁ ELIMINAR.
     */
     public static function recoveryEvoBancoLeontel_old($db){
         
@@ -1132,5 +1133,25 @@ class LeadLeontel {
             default:
                 return NULL;
 	}
+    }
+    
+    public static function testLeadStatus(){
+                
+        $id_origen_leontel = 4;
+        $phone = "600633058";
+
+        $tipo_pdte_firma = 18;
+        $tipo_eid = 19;
+        $tipo_iban = 20;
+        $tipo_incompleto = 22;
+        $tipo_c2c = 2;
+        
+        
+        $wsCred = self::invokeWSLeontelWithCredentials();
+        
+        sleep(2);
+        $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_c2c, $phone);
+        
+        return $dataCred;
     }
 }

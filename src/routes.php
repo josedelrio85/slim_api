@@ -440,6 +440,14 @@ $app->group('/test', function(){
         
         var_dump($a);
     });
+    
+    $this->post('/testLeadStatusProd', function(Request $request, Response $response, array $args){
+               
+        $a = App\Functions\LeadLeontel::testLeadStatus();
+        
+        return $response->withJson($a);
+    });
+    
 });
 
 

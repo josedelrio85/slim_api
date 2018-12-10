@@ -807,7 +807,8 @@ $app->group('/evobanco', function(){
             }
 
             $db = $this->db_webservice_dev;            
-            $result = App\Functions\Functions::prepareAndSendLeadEvoBancoLeontel($datos,$db);
+//            $result = App\Functions\Functions::prepareAndSendLeadEvoBancoLeontel($datos,$db);
+            $result = $this->funciones->prepareAndSendLeadEvoBancoLeontel($datos, $db);
             $r = json_decode($result);
             
             return json_encode(['success'=> $r->success, 'message'=> $r->message]);
@@ -839,13 +840,8 @@ $app->group('/evobanco', function(){
             $type = ($typ == 2 || $typ == "2") ? 3 : 1;
             $codRecommendation = array_key_exists("codRecommendation", $data) ? $data["codRecommendation"] : "";
             $lea_destiny = array_key_exists("test", $data) ? 'TEST' : 'LEONTEL';
-            
-            $serverParams = $request->getServerParams();
-            $url = "????";
-            if(array_key_exists("HTTP_REFERER", $serverParams)){
-                $url = $serverParams["HTTP_REFERER"];            
-            }
-            $ip = $serverParams["REMOTE_ADDR"];
+            list($url, $ip) = $this->funciones->getServerParams($request);
+
             
             $datos = [
                 "lea_phone" => $data["phone"],

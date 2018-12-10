@@ -19,8 +19,6 @@ return [
         'db_webservice' => [
             "host" => "192.168.50.20",
             "dbname" => "webservice",
-//            "user" => "webservice",
-//            "password" => "xp5555"
             "user" => "admin",
             "password" => "dalema22"
         ],

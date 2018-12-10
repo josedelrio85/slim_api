@@ -4,7 +4,6 @@ use Slim\Http\Request;
 use Slim\Http\Response;
 
 use App\Libraries\UtilitiesConnection;
-use App\Libraries\ProbarExcepcion;
 
 $app->get('/', function (Request $request, Response $response, array $args) {
     // Sample log message

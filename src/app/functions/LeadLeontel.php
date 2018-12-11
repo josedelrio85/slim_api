@@ -1135,6 +1135,56 @@ class LeadLeontel {
 	}
     }
     
+    /*
+     * Emula consulta realizada por método Leontel WS SOAP getLeadStatus. 
+     * Se implementa para no depender del método de Leontel. Tiempos de respuesta similares
+     *  @params
+     *   @sou_id: origen en crmti
+     *   @type:  tipo en crmti
+     *   @telefono: telefono  
+     *   @db: instancia de crmti
+     * @returns
+     *   array[success: boolean, data: array/null/string]
+     */
+    public static function getLeadLastStatus($sou_id, $type, $telefono, $db){   
+        
+        if(!empty($sou_id) && !empty($type) && !empty($telefono)){
+            
+            $datos = [
+                "lea_source" => $sou_id,
+                "lea_type" => $type,
+                "TELEFONO" => $telefono,
+                "lea_closed" => 0
+            ];
+            
+            $query = "SELECT "
+                . "lea_leads.lea_id,"
+                . "lea_leads.lea_ts,"
+                . "lea_leads.lea_closed,"
+                . "sub_subcategories.sub_id,"
+                . "sub_subcategories.sub_description "
+                . "FROM "
+                . "crmti.lea_leads "
+                . "INNER JOIN crmti.act_activity ON lea_leads.lea_id = act_activity.act_id "
+                . "INNER JOIN crmti.sub_subcategories ON act_activity.act_last_cat = sub_subcategories.sub_id "
+                . "where lea_source = ? "
+                . "and lea_type = ? "
+                . "and TELEFONO = ? "
+                . "and lea_closed = ? "
+                . "order by lea_id desc "
+                . "limit 1;";
+            
+            $result = $db->selectPrepared($query, $datos);
+            
+            if(!is_null($result)){
+                return array('success' => true, 'data' => $result);
+            }else{
+                return array('success' => false, 'data' => null);
+            }
+        }
+        return array('success' => false, 'data' => 'paramError');
+    }
+    
     public static function testLeadStatus(){
                 
         $id_origen_leontel = 4;

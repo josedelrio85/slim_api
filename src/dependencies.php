@@ -38,20 +38,20 @@ $container['settings_db_crmti'] = function($c){
 
 
 /* Settings DB Desarrollo */
-$container['settings_db_report_panel_dev'] = function($c){
-    $dbSettings = $c->get('settings')['db_report_panel_dev'];
-    return $dbSettings;
-};
-
-$container['settings_db_webservice_dev'] = function($c){
-    $dbSettings = $c->get('settings')['db_webservice_dev'];   
-    return $dbSettings;
-};
-
-$container['settings_db_crmti_dev'] = function($c){
-    $dbSettings = $c->get('settings')['db_crmti_dev'];
-    return $dbSettings;
-};
+//$container['settings_db_report_panel_dev'] = function($c){
+//    $dbSettings = $c->get('settings')['db_report_panel_dev'];
+//    return $dbSettings;
+//};
+//
+//$container['settings_db_webservice_dev'] = function($c){
+//    $dbSettings = $c->get('settings')['db_webservice_dev'];   
+//    return $dbSettings;
+//};
+//
+//$container['settings_db_crmti_dev'] = function($c){
+//    $dbSettings = $c->get('settings')['db_crmti_dev'];
+//    return $dbSettings;
+//};
 
 
 /* Conexión DB Producción */
@@ -76,23 +76,23 @@ $container['db_crmti'] = function($c){
 
 
 /* Conexión DB Desarrollo */
-$container['db_report_panel_dev'] = function($c){
-    $dbSettings = $c->get('settings')['db_report_panel_dev'];
-    $a = new \App\Libraries\Connection($dbSettings);
-    return $a;
-};
-
-$container['db_webservice_dev'] = function($c){
-    $dbSettings = $c->get('settings')['db_webservice_dev'];
-    $a = new \App\Libraries\Connection($dbSettings);     
-    return $a;
-};
-
-$container['db_crmti_dev'] = function($c){
-    $dbSettings = $c->get('settings')['db_crmti_dev'];
-    $a = new \App\Libraries\Connection($dbSettings);
-    return $a;
-};
+//$container['db_report_panel_dev'] = function($c){
+//    $dbSettings = $c->get('settings')['db_report_panel_dev'];
+//    $a = new \App\Libraries\Connection($dbSettings);
+//    return $a;
+//};
+//
+//$container['db_webservice_dev'] = function($c){
+//    $dbSettings = $c->get('settings')['db_webservice_dev'];
+//    $a = new \App\Libraries\Connection($dbSettings);     
+//    return $a;
+//};
+//
+//$container['db_crmti_dev'] = function($c){
+//    $dbSettings = $c->get('settings')['db_crmti_dev'];
+//    $a = new \App\Libraries\Connection($dbSettings);
+//    return $a;
+//};
 
 
 

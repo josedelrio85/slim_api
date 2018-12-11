@@ -96,8 +96,8 @@ $container['db_crmti'] = function($c){
 
 
 
-$container['funciones'] = function(){
-    return new \App\Functions\Functions($container['dev']);
+$container['funciones'] = function($c){
+    return new \App\Functions\Functions($c->get('settings')['dev']);
 };
 
 $container['utilities'] = function(){

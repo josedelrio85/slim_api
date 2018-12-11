@@ -390,18 +390,6 @@ $app->group('/test', function(){
         return $response->withJson($salida);
     });
     
-    $this->post('/sendLeadLeontelPagoRecurrente', function(Request $request, Response $response, array $args){
-        
-        $db = $this->db_crmti;
-
-        
-//        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db);  
-        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db);  
-
-                
-        return $response->withJson(json_decode($salida, true));
-    });
-    
     $this->post('/testTest', function(Request $request, Response $response, array $args){
         
 //        $db = $this->db_crmti_dev;
@@ -683,7 +671,25 @@ $app->group('/creditea', function(){
         }
         return $response->withJson(json_decode($salida, true));
 
-    });    
+    });
+
+    /* 
+     * Función para volcado de leads considerados como Pago Recurrente. La idea es que se llame a través de cron.
+     * Ver si es posible realizar esto.
+     * @returns
+     *  @ array que será escrito en log para comprobar qué ids se volcaron. (Sin implementar esto último)
+    */
+    $this->post('/sendLeadLeontelPagoRecurrente', function(Request $request, Response $response, array $args){
+        
+        $db = $this->db_crmti;
+        
+        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db);  
+        
+        $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db);  
+
+                
+        return $response->withJson(json_decode($salida, true));
+    });
     
 });
 

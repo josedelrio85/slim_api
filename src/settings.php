@@ -38,5 +38,7 @@ return [
         ],         
 
         'sou_id_test' => 15,
+        
+        'dev' => false,
     ],
 ];

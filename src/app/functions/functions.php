@@ -12,6 +12,12 @@ use App\Libraries\UtilitiesConnection;
 
 class Functions {
     
+    private $dev = null;
+    
+    public function __construct($dev){
+        $this->dev = $dev;
+    }
+    
     /*
      * Función para obtener horario de atención para C2C.
      * Params: 
@@ -225,7 +231,7 @@ class Functions {
                 $db->NextResult();
                 $result->close();
                 
-                $leontel ? LeadLeontel::sendLead($datos,$db) : null;
+                $leontel ? LeadLeontel::sendLead($datos, $db, $this->dev) : null;
                 
                 $db->close();
                 //Hay que devolver el resultado de la inserción en webservice.leads, no el update de Leontel
@@ -259,7 +265,7 @@ class Functions {
             $r = json_decode($result);
 
             if($r->success){   
-                LeadLeontel::sendLeadEvo($datos,$db);
+                LeadLeontel::sendLeadEvo($datos,$db, $this->dev);
                 exit(json_encode(['success'=> true, 'message'=> $r->message]));
             }else{
                 exit(json_encode(['success'=> false, 'message'=> $r->message]));
@@ -274,7 +280,7 @@ class Functions {
     */
     public function sendLeadToLeontelRecovery($db){
         
-        LeadLeontel::recoveryEvoBancoLeontel($db);
+        LeadLeontel::recoveryEvoBancoLeontel($db, $this->dev);
     }
     
     /*
@@ -283,7 +289,7 @@ class Functions {
     public function sendC2CToLeontel($data, $db){
         
         if(!empty($data) && !empty($db)){
-            return LeadLeontel::sendLead($data, $db);
+            return LeadLeontel::sendLead($data, $db, $this->dev);
         }
         return null;
     }

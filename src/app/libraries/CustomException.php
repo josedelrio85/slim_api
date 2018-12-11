@@ -13,7 +13,10 @@ namespace App\Libraries;
  *
  * @author Jose
  */
-//implements IException
+use Monolog\Logger;
+use Monolog\Processor\UidProcessor;
+use Monolog\Handler\StreamHandler;
+
 class CustomException extends \Exception {
     
     /*
@@ -50,14 +53,21 @@ class CustomException extends \Exception {
         parent::__construct($message, $code, $previous);
     }
     
-    public function __toString()
-    {
-          $a = [
-              "message" => $this->message,
-              "file" => $this->file,
-              "line" => $this->line,
-              "trace" => $this->getTraceAsString()
-          ];
-          return $a;
+    public function __toString(){
+    
+        $logger = new Logger('CustomExceptionLogger');
+        $logger->pushProcessor(new UidProcessor());
+        $logger->pushHandler(new StreamHandler(__DIR__.'/logs/app.log', Logger::INFO));
+        
+        $a = [
+            "message" => $this->message,
+            "file" => $this->file,
+            "line" => $this->line,
+            "trace" => $this->getTraceAsString()
+        ];
+        
+        $logger->info('Custom_exception => ',$a);
+        
+        return json_encode($a);
     }
 }

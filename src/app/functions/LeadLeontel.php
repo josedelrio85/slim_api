@@ -31,7 +31,7 @@ class LeadLeontel {
         }
     }
     
-    public static function sendLead($data, $db){
+    public static function sendLead($data, $db, $dev){
         
         if(array_key_exists('sou_id', $data)){
             
@@ -130,16 +130,21 @@ class LeadLeontel {
                 $lead = self::paramsLead($r, $data["sou_id"]);
                 
                 $ws = self::invokeWSLeontel();
-//                $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                $retorno["success"] = true;                
-                $retorno["id"] = 9999;
+                
+                if(!$dev){
+                    $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+                    $lea_status = "SENT";
+                }else{
+                    $retorno["success"] = true;                
+                    $retorno["id"] = 9999;      
+                    $lea_status = "PRUEBA";
+                }
                 
                 if($retorno["success"]){
                     $datos = [
                             "lea_extracted" => date("Y-m-d H:i:s"),
                             "lea_crmid" => $retorno["id"],
-                            "lea_status" => "PRUEBA"
-                            //"lea_status" => "SENT"
+                            "lea_status" => $lea_status,
                         ];
                 }else{
                     $datos = [
@@ -160,7 +165,7 @@ class LeadLeontel {
         }
     }
     
-    public static function sendLeadEvo($data, $db){
+    public static function sendLeadEvo($data, $db, $dev){
                           
         $datos = [
             0 => "LEONTEL",
@@ -213,10 +218,13 @@ class LeadLeontel {
             ];
 
             $wsCred  = self::invokeWSLeontelWithCredentials();                
-            $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel,$id_tipo_leontel,$phone);
 
-            // Desarrollo prueba update
-            $dataCred["success"] = true;
+            if(!$dev){
+                $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel,$id_tipo_leontel,$phone);
+            }else{
+                $dataCred["success"] = true;   
+            }
+
 
             if($dataCred["success"]){
                 $datosDup = ["even_status" => "DUPLICATED"];
@@ -229,16 +237,20 @@ class LeadLeontel {
             }else{
 
                 $ws = self::invokeWSLeontel();
-                //$retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                $retorno["success"] = true;                
-                $retorno["id"] = 9999;
+                if(!$dev){
+                    $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+                    $even_status = "SENT";
+                }else{
+                    $retorno["success"] = true;                
+                    $retorno["id"] = 9999;
+                    $even_status = "PRUEBA";
+                }  
 
                 if($retorno["success"]){
                     $datos = [
                         "even_extracted" => date("Y-m-d H:i:s"),
                         "even_crmid" => $retorno["id"],
-                        "even_status" => "PRUEBA"
-                        //"even_status" => "SENT"
+                        "even_status" => $even_status
                     ];
                 }else{
                     $datos = [
@@ -269,7 +281,7 @@ class LeadLeontel {
      *      @string: tipo volcado (cliente/lead)
      *      @array: array id's tratados
      */
-    public static function sendLeadLeontelPagoRecurrente($tipo, $db){
+    public static function sendLeadLeontelPagoRecurrente($tipo, $db, $dev){
         
         $test = "SET NAMES 'utf8';";
         $db->Query($test);
@@ -390,9 +402,12 @@ class LeadLeontel {
                 }
 
                 $ws = self::invokeWSLeontel();
-//                $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                $retorno["success"] = true;                
-                $retorno["id"] = 9999;
+                if(!$dev){
+                    $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+                }else{
+                    $retorno["success"] = true;                
+                    $retorno["id"] = 9999;                    
+                }
 
                 if($retorno["success"] == true){
                     $datos = [
@@ -436,160 +451,9 @@ class LeadLeontel {
     }
     
     /* Se implementa lógica de sendLeadToLeontelRecoveryV2_Pro, simplificando y
-     * reutilizando código. 
-     * EN PRINCIPIO SE PODRÁ ELIMINAR.
-    */
-    public static function recoveryEvoBancoLeontel_old($db){
-        
-        $ws = self::invokeWSLeontel();                
-        $wsCred = self::invokeWSLeontelWithCredentials();
-        
-        $datos = [
-            "even_destiny" => 'LEONTEL',
-            "even_extracted" => NULL,
-            "even_status" => NULL,
-            "PERSONMOBILEPHONE" => ''
-        ];
-        
-        $selectQueryPendientes = "SELECT "
-                . "even_id ";
-        
-        $where = "FROM "
-                . "evo_events_sf_v2_pro "
-                . "WHERE "
-                . "even_destiny = ? "
-                . "AND even_extracted <=> ?"
-                . "AND even_status <=> ?"
-                . "AND PERSONMOBILEPHONE <> ? ";
-        
-        $queryPendientes = $selectQueryPendientes . $where . ";";
-                
-        $r = $db->selectPrepared($queryPendientes, $datos);
-        
-        foreach($r as $k => $v){
-            
-            $selectLeads =  "SELECT "
-                . "even_id,"
-                . "PERSONMOBILEPHONE,"
-                . "CLIENT_ESTADO__C,"
-                . "URL_SALESFORCE,"
-                . "LOGALTY_ESTADO__C,"
-                . "STEPID,"
-                . "CONTRACTSTATUS ";            
-            
-            $orderLeads = "ORDER BY even_id desc LIMIT 1; ";
-            
-            $queryLeads = $selectLeads. $where . $orderLeads;
-            
-            $rLeads = $db->selectPrepared($queryLeads, $datos);
-                        
-            if(!is_null($rLeads)){
-                
-                $id_origen_leontel = 4;
-                
-                $lea_id = $r[0]->even_id;
-                $phone = $r[0]->PERSONMOBILEPHONE;
-                $estado_cliente = $r[0]->CLIENT_ESTADO__C;
-                $url_salesforce = $r[0]->URL_SALESFORCE;
-                $stepid = $r[0]->STEPID;
-                $estado_logalty = $r[0]->LOGALTY_ESTADO__C;
-                $estado_contrato = $r[0]->CONTRACTSTATUS;
-            
-                $destinyF = self::getIdTipoLeontel($estado_logalty, $client_estado_c, $stepid, $estado_contrato);
-                
-                $lead = [
-                    'TELEFONO' => $phone,
-                    'observaciones' => $estado_cliente,
-                    'url' => $url_salesforce,
-                    'wsid' => $lea_id
-                ];
-                
-                $tipo_pdte_firma = 18;
-                $tipo_eid = 19;
-                $tipo_iban = 20;
-                $tipo_incompleto = 22;
-                $tipo_c2c = 2;
-                
-                $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel,$tipo_pdte_firma,$phone);
-                
-                if($dataCred["success"]){
-                    
-                    self::updateDuplicatedEvo($db, $lea_id);
-                    
-                }else{
-                    
-                    $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel,$tipo_eid,$phone);
-                    
-                    if($dataCred["success"]){
-                        
-                        self::updateDuplicatedEvo($db, $lea_id);
-                        
-                    }else{
-                     
-                        $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel,$tipo_iban,$phone);
-                        
-                        if($dataCred["success"]){
-
-                            self::updateDuplicatedEvo($db, $lea_id);
-
-                        }else{
-                            
-                            $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel,$tipo_incompleto,$phone);
-                            
-                            if($dataCred["success"]){
-                                
-                                self::updateDuplicatedEvo($db, $lea_id);
-                                                            
-                            }else{
-                                
-                                $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel,$tipo_c2c,$phone);
-                                
-                                if($dataCred["success"]){
-
-                                    self::updateDuplicatedEvo($db, $lea_id);
-
-                                }else{
-                                    
-                                    if($destinyF != null){
-                                        
-                                        //$retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                                        $retorno["success"] = true;                
-                                        $retorno["id"] = 9999;
-
-                                        if($retorno["success"]){
-                                            $datos = [
-                                                "even_extracted" => date("Y-m-d H:i:s"),
-                                                "even_crmid" => $retorno["id"],
-                                                "even_status" => "PRUEBA"
-                                                //"even_status" => "SENT"
-                                            ];
-                                        }else{
-                                            $datos = [
-                                                "even_crmid" => "ERROR",
-                                                "even_status" => "ERROR"
-                                            ];
-                                        }
-
-                                        $result = self::updateDuplicatedEvo($db, $lea_id, $datos);              
-                                        $res = json_decode($result);
-                                        return json_encode(['success'=> $res->success, 'message'=> $res->message]);
-                                    }
-                                }
-                            }
-
-                        }
-
-                    }
-
-                }
-            }
-        }
-    }
-    
-    /* Se implementa lógica de sendLeadToLeontelRecoveryV2_Pro, simplificando y
     * reutilizando código.
     */
-    public static function recoveryEvoBancoLeontel($db){
+    public static function recoveryEvoBancoLeontel($db, $dev){
         
         $ws = self::invokeWSLeontel();                
         $wsCred = self::invokeWSLeontelWithCredentials();
@@ -623,118 +487,131 @@ class LeadLeontel {
         $r = $db->selectPrepared($queryLeads, $datos);
         
         $salida = array();
+        
+        if(!empty($r)){
+            foreach($r as $k => $v){
 
-        foreach($r as $k => $v){
-                            
-            $id_origen_leontel = 4;
+                $id_origen_leontel = 4;
 
-            $lea_id = $v->even_id;
-            $phone = $v->PERSONMOBILEPHONE;
-            $estado_cliente = $v->CLIENT_ESTADO__C;
-            $url_salesforce = $v->URL_SALESFORCE;
-            $stepid = $v->STEPID;
-            $estado_logalty = $v->LOGALTY_ESTADO__C;
-            $estado_contrato = $v->CONTRACTSTATUS;
+                $lea_id = $v->even_id;
+                $phone = $v->PERSONMOBILEPHONE;
+                $estado_cliente = $v->CLIENT_ESTADO__C;
+                $url_salesforce = $v->URL_SALESFORCE;
+                $stepid = $v->STEPID;
+                $estado_logalty = $v->LOGALTY_ESTADO__C;
+                $estado_contrato = $v->CONTRACTSTATUS;
 
-            $destinyF = self::getIdTipoLeontel($estado_logalty, $estado_cliente, $stepid, $estado_contrato);
+                $destinyF = self::getIdTipoLeontel($estado_logalty, $estado_cliente, $stepid, $estado_contrato);
 
-            $lead = [
-                'TELEFONO' => $phone,
-                'observaciones' => $estado_cliente,
-                'url' => $url_salesforce,
-                'wsid' => $lea_id
-            ];
+                $lead = [
+                    'TELEFONO' => $phone,
+                    'observaciones' => $estado_cliente,
+                    'url' => $url_salesforce,
+                    'wsid' => $lea_id
+                ];
 
-            $tipo_pdte_firma = 18;
-            $tipo_eid = 19;
-            $tipo_iban = 20;
-            $tipo_incompleto = 22;
-            $tipo_c2c = 2;
-                        
-            $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_pdte_firma, $phone);
-            
-            //Desarrollo y test
-//            $dataCred["success"] = false;
+                $tipo_pdte_firma = 18;
+                $tipo_eid = 19;
+                $tipo_iban = 20;
+                $tipo_incompleto = 22;
+                $tipo_c2c = 2;
 
-            if($dataCred["success"]){
+                if(!$dev){
+                    $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_pdte_firma, $phone);    
+                }else{
+                    $dataCred["success"] = false;    
+                }                
 
-                $result = self::updateDuplicatedEvo($db, $lea_id);
-                array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_pdte_firma"));
-
-            }else{
-
-                $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_eid, $phone);
-//                Desarrollo y test
-//                $dataCred["success"] = false;
-            
                 if($dataCred["success"]){
 
                     $result = self::updateDuplicatedEvo($db, $lea_id);
-                    array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_eid"));
+                    array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_pdte_firma"));
 
                 }else{
 
-                    $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_iban, $phone);
-//                    Desarrollo y test
-//                    $dataCred["success"] = false;
+                    $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_eid, $phone);
+                    
+                    if($dev)
+                        $dataCred["success"] = false;
 
                     if($dataCred["success"]){
 
                         $result = self::updateDuplicatedEvo($db, $lea_id);
-                        array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_iban"));
+                        array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_eid"));
 
                     }else{
 
-                        $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_incompleto, $phone);
-//                        Desarrollo y test
-//                        $dataCred["success"] = false;
-                    
+                        $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_iban, $phone);
+                        
+                        if($dev)
+                            $dataCred["success"] = false;
+
                         if($dataCred["success"]){
 
                             $result = self::updateDuplicatedEvo($db, $lea_id);
-                            array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_incompleto"));
+                            array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_iban"));
 
                         }else{
 
-                            $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_c2c, $phone);
-//                            Desarrollo y test
-
+                            $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_incompleto, $phone);
+    
+                            if($dev)
+                                $dataCred["success"] = false;
+                            
                             if($dataCred["success"]){
 
                                 $result = self::updateDuplicatedEvo($db, $lea_id);
-                                array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_c2c"));
+                                array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_incompleto"));
 
                             }else{
 
-                                if($destinyF != null){
+                                $dataCred = $wsCred->getLeadLastStatus($id_origen_leontel, $tipo_c2c, $phone);
+    
+                                if($dev)
+                                    $dataCred["success"] = false;
 
-                                    //$retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                                    $retorno["success"] = true;                
-                                    $retorno["id"] = 9999;
+                                if($dataCred["success"]){
 
-                                    if($retorno["success"]){
-                                        $datos = [
-                                            "even_extracted" => date("Y-m-d H:i:s"),
-                                            "even_crmid" => $retorno["id"],
-                                            "even_status" => "PRUEBA"
-                                            //"even_status" => "SENT"
-                                        ];
-                                    }else{
-                                        $datos = [
-                                            "even_crmid" => "ERROR",
-                                            "even_status" => "ERROR"
-                                        ];
+                                    $result = self::updateDuplicatedEvo($db, $lea_id);
+                                    array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "tipo_c2c"));
+
+                                }else{
+
+                                    if($destinyF != null){
+
+                                        $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+                                        
+                                        $even_status = "SENT";
+
+                                        if($dev){
+                                            $retorno["success"] = true;                
+                                            $retorno["id"] = 9999;
+                                            $even_status = "PRUEBA";
+                                        }
+
+                                        if($retorno["success"]){
+                                            $datos = [
+                                                "even_extracted" => date("Y-m-d H:i:s"),
+                                                "even_crmid" => $retorno["id"],
+                                                "even_status" => $even_status
+                                            ];
+                                        }else{
+                                            $datos = [
+                                                "even_crmid" => "ERROR",
+                                                "even_status" => "ERROR"
+                                            ];
+                                        }
+
+                                        $result = self::updateDuplicatedEvo($db, $lea_id, $datos);              
+                                        array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => $id_tipo_leontel));
                                     }
-
-                                    $result = self::updateDuplicatedEvo($db, $lea_id, $datos);              
-                                    array_push($salida, array("success" => $result->success, "lea_id" => $lea_id, "paso" => "id_tipo_leontel"));
                                 }
                             }
                         }
                     }
                 }
-            }
-        }       
+            }       
+        }
         return $salida;
     }
     
@@ -1006,6 +883,7 @@ class LeadLeontel {
                 case 20:
                     $observaciones = $r[0]->lea_aux2;
                     $url = $r[0]->lea_url;
+                    $ip = $r[0]->lea_ip;
                     $observaciones2 = $r[0]->lea_aux3;
                     
                     $lead = [

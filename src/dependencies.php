@@ -19,6 +19,9 @@ $container['logger'] = function ($c) {
     return $logger;
 };
 
+$container['errorHandler'] = function($c){
+    return new \App\Libraries\CustomError($c['logger']);
+};
 
 /* Settings DB Producción */
 $container['settings_db_report_panel'] = function($c){

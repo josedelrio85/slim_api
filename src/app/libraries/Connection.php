@@ -47,7 +47,6 @@ class Connection implements IConnection{
                 self::$mysqli = new \mysqli($server, $username, $password, $database);
 
                 if (self::$mysqli->connect_errno) {
-//                    throw new \Exception("Fallo al conectar a la bbdd " . $database, self::$mysqli->connect_errno);
                     throw new \App\Libraries\CustomException("Fallo al conectar a la bbdd " . $database, self::$mysqli->connect_errno);
                 }               
                 self::$mysqli->set_charset("utf8");

@@ -23,16 +23,19 @@ final class CustomError extends \Slim\Handlers\Error {
     }
     
     public function __invoke(Request $request, Response $response, \Exception $exception){
-        //Log the message
-        $this->logger->critical($exception->getMessage());
         
-//        return parent::__invoke($request, $response, $exception);        
+        // return parent::__invoke($request, $response, $exception);        
         
         //create a JSON error string for the Response body
         $body = json_encode([
             'error' => $exception->getMessage(),
             'code' => $exception->getCode(),
+            'file' => $exception->getFile(),
+            'line' => $exception->getLine()
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                
+        //Log the message
+        $this->logger->critical($body);
         
         return $response
                 ->withStatus(500)

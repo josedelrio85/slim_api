@@ -1249,6 +1249,109 @@ $app->group('/doctordinero', function(){
 });
 
 
+$app->group('/microsoft', function(){
+    
+    $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
+
+        $this->logger->info("Microsoft incomingC2C request");
+        
+        if($request->isPost()){
+            $data = (object) $request->getParsedBody();
+            
+            $domain = $data->domain;
+            
+            switch($domain){
+                // Recomendador => 1
+		case "microsoftbusiness.es":
+                    $tipo = 1;
+		break;
+		// Ofertas => 2
+		case "microsoftprofesional.es":
+                    if(!$data->index){
+                        //FichaProducto => 3
+                        $tipo = 3;
+                    }else{
+                        $tipo = 2;
+                    }
+		break;
+		// mundo-r => 4
+		case "ofertas.mundo-r.com":
+                    $tipo = 4;
+		break;
+		default: 
+                    $tipo = 0;
+		break;
+            }
+                      
+            $lea_ip = $_SERVER["REMOTE_ADDR"];
+            $sou_id = $this->funciones->getSouidMicrosoft($data->utm_source, $tipo, $data->gclid);
+            
+            $datosIni = [
+                "lea_destiny" => 'LEONTEL',
+                "sou_id" => $sou_id,
+                "leatype_id" => $data->lea_type,
+                "utm_source" => $data->utm_source,
+                "sub_source" => $data->sub_source,
+                "lea_phone" => $data->phone,
+                "lea_url" => $data->url,
+                "lea_ip" => $lea_ip
+            ];
+            
+            if($tipo == 1){
+                $check1 = $data->check1;
+                $check2 = $data->check2;
+                $check3 = $data->check3;
+                $pcsOk = implode(", ", $data->pcsOk);
+                
+                $datos1 = [
+                    "lea_aux4" => $data->tipo_ordenador,
+                    "lea_aux5" => $data->sector,
+                    "lea_aux6" => $data->presupuesto,
+                    "lea_aux7" => $data->rendimiento,
+                    "lea_aux8" => $data->movilidad,
+                    "lea_aux9" => $data->tipouso,
+                    "lea_aux10" => $data->Office365,
+                    "observations" => $pcsOk
+                ];
+                
+                $datos = array_merge($datosIni, $datos1);
+                
+            }else if($tipo == 2){
+                
+                $datos = $datosIni;
+
+            }else if($tipo == 3){
+                $name = $data->name;
+                $id = $data->id;
+                $originalPrice = $data->originalPrice;
+                $price = $data->price;
+                $brand = $data->brand;
+                $discountPercentage = $data->discountPercentage;
+                $discountCode = $data->discountCode;
+                $typeOfProcessor = $data->typeOfProcessor;
+                $hardDiskCapacity = $data->hardDiskCapacity;
+                $graphics = $data->graphics;
+                $wirelessInterface = $data->wirelessInterface;
+                $productType = $data->productType;
+                
+                $obs = "Tipo: {$productType} -- Producto: {$name} -- idProducto: {$id} -- precioOriginal: {$originalPrice} -- Precio: {$price} -- Marca: {$brand} -- %Descuento: {$discountPercentage} ";
+                $obs .= " Cod. descuento: {$discountCode} -- Tipo Procesador: {$typeOfProcessor} -- Capacidad HDD: {$hardDiskCapacity} -- Gráfica: {$graphics} -- Wireless: {$wirelessInterface}";
+			
+                $datos3 = [ "lea_aux10" => $obs ];
+                
+                $datos = array_merge($datosIni, $datos3);
+
+            }else if($tipo == 4){
+                $datos = $datosIni;
+            }
+            
+            $result = $this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice);
+            
+            return $response->withJson(json_decode($result));
+        }
+    });
+});
+
 
 // Catch-all route to serve a 404 Not Found page if none of the routes match
 // NOTE: make sure this route is defined last

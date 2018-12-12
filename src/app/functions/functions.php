@@ -385,4 +385,110 @@ class Functions {
         $result = $db->selectPrepared($sql, $datos);
         return $result;
     }
+    
+    /*
+     * Devuelve el sou_id apropiado en función del contenido recibido para
+     * los parámetros gclid, domain y utm_source
+     */
+    public function getSouidMicrosoft($utm_source, $tipo, $gclid){
+        if(!empty($gclid)){
+            switch($tipo){
+                // Recomendador => 1
+                case 1:
+                    $sou_id = 28;
+                break;
+                // Ofertas => 2
+                case 2:
+                    $sou_id = 31;
+                break;
+                // FichaProducto => 3
+                case 3:
+                    $sou_id = 37;
+                break;
+            }
+        }else{
+            switch($tipo){
+                // Recomendador
+                case 1:
+                    switch($utm_source){
+                        case "34":
+                            //RRSS
+                            $sou_id = 26;
+                            break;
+                        case "1":
+                        case "41":
+                            //EMAILING
+                            $sou_id = 29;
+                            break;
+                        case "16":
+                        case "17":
+                        case "43":
+                        case "44":                            
+                            //PROGRAMATICA
+                            $sou_id = 30;
+                            break;
+                        default:
+                            //SEO
+                            $sou_id = 27;
+                            break;
+                    }
+                break;
+                // Ofertas
+                case 2:
+                    switch($utm_source){
+                        case "34":
+                            //RRSS
+                            $sou_id = 35;
+                            break;
+                        case "1":
+                        case "41":
+                            //EMAILING
+                            $sou_id = 32;
+                            break;
+                        case "16":
+                        case "17":
+                        case "43":
+                        case "44":
+                            //PROGRAMATICA
+                            $sou_id = 34;
+                            break;
+                        default:
+                            //SEO
+                            $sou_id = 33;
+                            break;
+                    }
+                break;
+                // FichaProducto
+                case 3:
+                    switch($utm_source){
+                        case "34":
+                            //RRSS
+                            $sou_id = 40;
+                            break;
+                        case "1":
+                        case "41":
+                            //EMAILING
+                            $sou_id = 38;
+                            break;
+                        case "16":
+                        case "17":
+                        case "43":
+                        case "44":
+                            //PROGRAMATICA
+                            $sou_id = 39;
+                            break;
+                        default:
+                            //SEO
+                            $sou_id = 36;
+                            break;
+                    }
+                break;
+                //Microsoft Mundo R
+                case 4:
+                    $sou_id = 25;
+                break;
+            }
+        }      
+        return $sou_id;
+    }
 }

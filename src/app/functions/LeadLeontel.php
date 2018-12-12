@@ -644,53 +644,7 @@ class LeadLeontel {
      * Devuelve parte de la query que se realiza en función del sou_id 
      * para la recuperación del último lead registrado en webservice.
      */
-    private function queryLead($sou_id){
-        /*  
-            * webservice
-            1	CREDITEA ABANDONADOS            2
-            2   CREDITEA STAND                  3
-            3	EVO BANCO                       4
-            4	CREDITEA TIMEOUT                5
-            5	R CABLE                         6
-            6	BYSIDECAR                       7
-            7	HERCULES                        8
-            8	SEGURO PARA MOVIL               11
-            9	CREDITEA END TO END             13
-            10	CREDITEA FB                     14
-            11	CREDITEA RASTREATOR             15
-            12	EUSKALTEL                       16
-            13	ADESLAS                         19
-            14	R CABLE EMPRESAS                20
-            15	PRUEBA BySidecar                23
-            16	EVO BANCO FIRMADOS NO FORMALIZ	24
-            17	YOIGO NEGOCIOS DERIVACION YOIG	25
-            18	YOIGO NEGOCIOS SEO              26
-            19	YOIGO NEGOCIOS SEM              27
-            20	YOIGO NEGOCIOS EMAILING         28
-         * 
-            * crmti
-            2	CREDITEA ABANDONOS          
-            3	CREDITEA STAND	
-            5	CREDITEA TIMEOUT	
-            6	R CABLE	
-            9	CREDITEA RECEPCION	
-            10	CREDITEA RECEPCION NO CLI	
-            13	CREDITEA END TO END	
-            14	CREDITEA FB	
-            15	CREDITEA RASTREATOR	
-            17	CREDITEA DISPOSICION DE EFECTIVO	
-            18	EUSKALTEL ATENCION AL CLIENTE	
-            19	ADESLAS	
-            20	R CABLE EMPRESAS	
-            21	DINERO VELOZ RECEPCION	
-            22	DINERO VELOZ RECEPCION NO CLI	
-            23	PRUEBA BySidecar	
-            24	EVO BANCO FIRMADOS NO FORMALIZADOS	
-            25	YOIGO NEGOCIOS DERIVACION YOIGO	
-            26	YOIGO NEGOCIOS SEO	
-            27	YOIGO NEGOCIOS SEM	
-            28	YOIGO NEGOCIOS EMAILING	
-        */		
+    private function queryLead($sou_id){		
         if(!is_null($sou_id) && $sou_id!= ""){         
             
             switch($sou_id){
@@ -743,7 +697,36 @@ class LeadLeontel {
                         . "l.lea_url,"
                         . "l.lea_ip";
                     break;
-                
+                case 25:
+                case 26:
+                case 27:
+                case 28:
+                case 29:
+                case 30:
+                case 31:
+                case 32:
+                case 33:
+                case 34:
+                case 35:
+                case 36:
+                case 37:
+                case 38:
+                case 39:
+                case 40:
+                    //Microsoft
+                    $querySource = "l.lea_url, "
+                        . "l.lea_ip, "
+                        . "l.lea_mail, "
+                        . "l.lea_aux3, "
+                        . "l.lea_aux4, "
+                        . "l.lea_aux5, "
+                        . "l.lea_aux6, "
+                        . "l.lea_aux7, "
+                        . "l.lea_aux8, "
+                        . "l.lea_aux9, "
+                        . "l.lea_aux10, "
+                        . "l.observations ";
+                    break;
                 default:
                     /* case 5: case 12: case 7:case 14:case 8: case 6:*/
                     //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar + EvoBanco (sendC2CToLeontel)
@@ -895,11 +878,80 @@ class LeadLeontel {
                         'observaciones2' => $observaciones2
                     ];
                     break;
-                default:
+                case 26:                
+                case 27:
+                case 28:
+                case 29:
+                case 30:
+                    $url = $r[0]->lea_url;                    
+                    $ip = $r[0]->lea_ip;
+                    $lea_aux4 = $r[0]->lea_aux4;
+                    $lea_aux5 = $r[0]->lea_aux5;
+                    $lea_aux6 = $r[0]->lea_aux6;
+                    $lea_aux7 = $r[0]->lea_aux7;
+                    $lea_aux8 = $r[0]->lea_aux8;
+                    $lea_aux9 = $r[0]->lea_aux9;
+                    $lea_aux10 = $r[0]->lea_aux10;
+                    $observations = $r[0]->observations;
+                    
                     $lead = [
                         'TELEFONO' => $phone,
-                        'nombre' => $nombre,
-                        'wsid' => $lea_id
+                        'url' => $url,
+                        'wsid' => $lea_id,
+                        'ip' => $ip,
+                        'tipoordenador' => $lea_aux4,
+                        'sector' => $lea_aux5,
+                        'presupuesto' => $lea_aux6,
+                        'rendimiento' => $lea_aux7,
+                        'movilidad' => $lea_aux8,
+                        'tipouso' => $lea_aux9." ".$sou_id,
+                        'Office365' => $lea_aux10,
+                        'observaciones2' => $observations
+                    ];
+                    break;
+                case 25:
+                case 31:                
+                case 32:
+                case 33:
+                case 34:
+                case 35:
+                    $url = $r[0]->lea_url;                    
+                    $ip = $r[0]->lea_ip;
+                    
+                    $lead = [
+                        'TELEFONO' => $phone,
+                        'url' => $url,
+                        'wsid' => $lea_id,
+                        'ip' => $ip
+                    ];
+                    break;
+                case 36:
+                case 37:
+                case 38:
+                case 39:
+                case 40:
+                    $observations = $r[0]->lea_aux10;
+                    $url = $r[0]->lea_url;
+                    $ip = $r[0]->lea_ip;
+
+                    $lead = [
+                            'TELEFONO' => $phone,
+                            'url' => $url,
+                            'wsid' => $lea_id,
+                            'ip' => $ip,
+                            'observaciones2' => $observations
+                    ];
+                    break;
+                default:
+                   
+                    $observations = $r[0]->lea_aux10;
+
+                    $lead = [
+                        'TELEFONO' => $phone,
+                        'url' => $url,
+                        'wsid' => $lea_id,
+                        'ip' => $ip,
+                        'observaciones2' => $observations
                     ];
             }
             return $lead;

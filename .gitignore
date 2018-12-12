@@ -3,3 +3,4 @@
 /tests/*
 #!/logs/README.md
 /github*
+/src/app/libraries/logs/*

@@ -97,19 +97,16 @@ $app->post('/testconexionIntensivo', function (Request $request, Response $respo
 $app->group('/test', function(){
     
     $this->post('/testException', function (Request $request, Response $response, array $args){
-   
-        try {
-    //        $o = new \App\Libraries\ProbarExcepcion(ProbarExcepcion::THROW_CUSTOM);
-            $o = new ProbarExcepcion(ProbarExcepcion::THROW_DEFAULT);
-        } catch (MiExcepción $e) {      // Será atrapada
-            echo "Atrapada mi excepción\n", $e;
-            $e->funcionPersonalizada();
-        } catch (Exception $e) {        // Skipped
-            echo "Atrapada la Excepción Predeterminada\n", $e;
-        }
+        throw new Exception("hola cara de bola!");
+//        try {
+//            throw new Exception();
+////            throw new App\Libraries\CustomException("ei parroquia!");
+//        } catch (App\Libraries\CustomException $e) {      // Será atrapada
+//            echo "Atrapada mi excepción\n", $e;            
+//        } catch (Exception $e) {        // Skipped
+////            echo "Atrapada la Excepción Predeterminada\n", $e;
+//        }
 
-        // Continuar la ejecución
-        var_dump($o); // Null
         echo "\n\n";
     });
     
@@ -405,7 +402,11 @@ $app->group('/test', function(){
         
         return $response->withJson($a);
     });
-    
+   
+    $this->post('/testLoggingArray', function(Request $request, Response $response, array $args){
+        
+      $this->logger->info('Testing logging array', array('hola' => 'adios'));
+    });
 });
 
 
@@ -689,8 +690,7 @@ $app->group('/creditea', function(){
 
                 
         return $response->withJson(json_decode($salida, true));
-    });
-    
+    }); 
 });
 
 

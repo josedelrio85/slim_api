@@ -1354,8 +1354,36 @@ $app->group('/microsoft', function(){
 
 
 $app->group('/sanitas', function(){
-    $this->post('incomingC2C', function(Request $request, Response $response, array $args){
+    $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
+
+        $this->logger->info("Sanitas incomingC2C request");
         
+        if($request->isPost()){
+            
+            $data = (object) $request->getParsedBody();
+            
+            $sou_id = $this->sou_id_test;
+            $lea_type = 1;
+            list($url, $ip) = $this->funciones->getServerParams($request);
+            $gclid = $data->gclid;
+            
+            $datos = [
+                "lea_destiny" => 'LEONTEL',
+                "sou_id" => $sou_id,
+                "leatype_id" => $lea_type,
+                "utm_source" => $data->utm_source,
+                "sub_source" => $data->sub_source,
+                "lea_phone" => $data->phone,
+                "lea_url" => $url,
+                "lea_ip" => $ip,
+                "lea_aux2" => $data->producto
+            ];
+            
+            $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice));
+            
+            return $response->withJson($result);
+        }
+
     });
 });
 

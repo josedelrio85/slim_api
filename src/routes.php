@@ -1353,6 +1353,12 @@ $app->group('/microsoft', function(){
 });
 
 
+$app->group('/sanitas', function(){
+    $this->post('incomingC2C', function(Request $request, Response $response, array $args){
+        
+    });
+});
+
 // Catch-all route to serve a 404 Not Found page if none of the routes match
 // NOTE: make sure this route is defined last
 $app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function($req, $res) {

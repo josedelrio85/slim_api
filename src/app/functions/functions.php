@@ -417,6 +417,7 @@ class Functions {
                             break;
                         case "1":
                         case "41":
+                        case "48":
                             //EMAILING
                             $sou_id = 29;
                             break;
@@ -442,6 +443,7 @@ class Functions {
                             break;
                         case "1":
                         case "41":
+                        case "48":
                             //EMAILING
                             $sou_id = 32;
                             break;
@@ -467,6 +469,7 @@ class Functions {
                             break;
                         case "1":
                         case "41":
+                        case "48":
                             //EMAILING
                             $sou_id = 38;
                             break;

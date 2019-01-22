@@ -1278,6 +1278,14 @@ $app->group('/microsoft', function(){
 		case "ofertas.mundo-r.com":
                     $tipo = 4;
 		break;
+                // haz_el_cambio => 5
+		case "microsoftbusiness.es/hazelcambio":
+                    $tipo = 5;
+		break;
+		//Calculadora
+		case "microsoftnegocios.es":
+                    $tipo = 6;
+		break;
 		default: 
                     $tipo = 0;
 		break;
@@ -1286,6 +1294,14 @@ $app->group('/microsoft', function(){
             $lea_ip = $_SERVER["REMOTE_ADDR"];
             $sou_id = $this->funciones->getSouidMicrosoft($data->utm_source, $tipo, $data->gclid);
             
+            //INCIDENCIA LEONTEL
+            $lea_aux3 = $sou_id;
+            // excepción R Cable office365 => mantener sou_id
+            // quitar lea_aux3 de datosIni cuando incidencia finalizada
+            if($tipo != 4){
+                $sou_id = 52;		
+            }
+        
             $datosIni = [
                 "lea_destiny" => 'LEONTEL',
                 "sou_id" => $sou_id,
@@ -1294,10 +1310,11 @@ $app->group('/microsoft', function(){
                 "sub_source" => $data->sub_source,
                 "lea_phone" => $data->phone,
                 "lea_url" => $data->url,
-                "lea_ip" => $lea_ip
+                "lea_ip" => $lea_ip,
+                "lea_aux3" => $lea_aux3
             ];
             
-            if($tipo == 1){
+            if($tipo == 1 || $tipo == 5){
                 $check1 = $data->check1;
                 $check2 = $data->check2;
                 $check3 = $data->check3;
@@ -1342,7 +1359,28 @@ $app->group('/microsoft', function(){
                 $datos = array_merge($datosIni, $datos3);
 
             }else if($tipo == 4){
+            
                 $datos = $datosIni;
+                
+            }else if($tipo == 6){
+                //calculadora
+                $check1 = $data->check1;
+                $check2 = $data->check2;
+                $check3 = $data->check3;
+                $anos_ordenadores_media = $data->anos_ordenadores_media;
+                $sistema_operativo_instalado = $data->sistema_operativo_instalado;
+                $frecuencia_bloqueo_ordenadores = $data->frecuencia_bloqueo_ordenadores;
+                $num_dispositivos_empresa = $data->num_dispositivos_empresa;
+                $reparaciones_ultimo_ano = $data->reparaciones_ultimo_ano;
+                $tiempo_arrancar_dispositivos = $data->tiempo_arrancar_dispositivos;
+                
+                $lea_aux10 = "anos_ordenadores_media: {$anos_ordenadores_media} -- sistema_operativo_instalado: {$sistema_operativo_instalado} -- "
+                . "frecuencia_bloqueo_ordenadores: {$frecuencia_bloqueo_ordenadores} -- num_dispositivos_empresa: {$num_dispositivos_empresa} -- "
+                . "reparaciones_ultimo_ano: {$reparaciones_ultimo_ano} -- tiempo_arrancar_dispositivos: {$tiempo_arrancar_dispositivos}";
+			
+                $datos4 = [ "lea_aux10" => $lea_aux10 ];
+                
+                $datos = array_merge($datosIni, $datos4);
             }
             
             $result = $this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice);

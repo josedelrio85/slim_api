@@ -407,6 +407,36 @@ $app->group('/test', function(){
         
       $this->logger->info('Testing logging array', array('hola' => 'adios'));
     });
+    
+    $this->post('/getjson', function(Request $request, Response $response, array $args){
+        if($request->isPost()){
+         
+            $db = $this->db_webservice;
+//            $sql = "SELECT * FROM webservice.sources;";
+            $sql = "SELECT * FROM webservice.log_error_load_weborama limit 10";
+            
+            $r = $db->selectPrepared($sql, null);
+            
+            if(!is_null($r)){
+                return $response->withJson($r);
+            }
+        }
+    });
+    
+    $this->post('/testAsnefPrev', function(Request $request, Response $response, array $args){
+       if($request->isPost()){
+           
+           $db = $this->db_webservice;
+           $data = [
+               "sou_id" => "9",
+               "documento" => "24345796C",
+               "phone" => "666666666"
+           ];
+           $res = $this->funciones->checkAsnefCrediteaPrev($data, $db);
+           
+           return $response->withJson(json_decode($res));
+       } 
+    });
 });
 
 
@@ -606,7 +636,7 @@ $app->group('/creditea', function(){
             
             $db = $this->db_webservice;            
             $parametros = UtilitiesConnection::getParametros($datos,null); 
-            $salida = json_decode($db->insertPrepared("leads", $parametros),true);;
+            $salida = json_decode($db->insertPrepared("leads", $parametros),true);
 
             return $response->withJson($salida);
         }        
@@ -638,40 +668,73 @@ $app->group('/creditea', function(){
             
             $sou_id = 9;
             $leatype_id = 1;
-            
+
             $datosAsnef = [
                 "sou_id" => $sou_id,
                 "documento" => $data["documento"],
                 "phone" => $data["phone"]                
             ];
             
-            $db_crmti = $this->db_crmti;
-
-            $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti));
+            $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
             
-            if(!$rAsnef->success){
-                
-                $datos = [
-                    "lea_destiny" => 'LEONTEL',
-                    "sou_id" => $sou_id,
-                    "leatype_id" => $leatype_id,
-                    "utm_source" => $data["utm_source"],
-                    "lea_phone" => $data["phone"],
-                    "lea_url" => $url,
-                    "lea_ip" => $ip,
-                    "lea_aux1" => $data["documento"],
-                    "lea_aux2" => $data["cantidadsolicitada"]
-                ];
-                
-                $db = $this->db_webservice;
-                $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
-                
+            if(!$rAsnefPre->success){
+               
+                $db_crmti = $this->db_crmti;
+
+                $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti));
+
+                if(!$rAsnef->success){
+
+                    $datos = [
+                        "lea_destiny" => 'LEONTEL',
+                        "sou_id" => $sou_id,
+//                        "sou_id" => $this->sou_id_test,
+                        "leatype_id" => $leatype_id,
+                        "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
+                        "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
+                        "lea_phone" => $data["phone"],
+                        "lea_url" => $url,
+                        "lea_ip" => $ip,
+                        "lea_aux1" => $data["documento"],
+                        "lea_aux2" => $data["cantidadsolicitada"]
+                    ];
+
+                    $setwebservice = $this->settings_db_webservice;
+                    $db = new \App\Libraries\Connection($setwebservice);  
+                    $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
+                    $db = null;
+                }else{
+                    $salida = json_encode(['success' => false, 'message' => $rAsnef->message]);
+                }               
             }else{
-                $salida = json_encode(['result' => false, 'message' => $rAsnef->message]);
+                $salida = json_encode(['success' => false, 'message' => $rAsnefPre->message]);                
+            }
+
+            $test = json_decode($salida);
+            if(!$test->success){
+                
+                $datosInsert = [
+                    "lea_destiny" => '',
+                    "sou_id" => $sou_id, 
+//                    "sou_id" => $this->sou_id_test,
+                    "leatype_id" => $leatype_id, 
+                    "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
+                    "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
+                    "lea_phone" => $data["phone"], 
+                    "lea_url" => $url, 
+                    "lea_ip" => $ip, 
+                    "lea_aux1" => $data["documento"], 
+                    "lea_aux2" => $data["cantidadsolicitada"], 
+                    "lea_aux3" => $test->message
+                ];
+                $parametros = UtilitiesConnection::getParametros($datosInsert,null);
+
+                $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+                
+                $salida = json_encode(['success' => false, 'message' => $test->message]);
             }            
         }
         return $response->withJson(json_decode($salida, true));
-
     });
 
     /* 
@@ -1190,60 +1253,142 @@ $app->group('/doctordinero', function(){
             
             list($url, $ip) = $this->funciones->getServerParams($request);
             
-            $datosLead = [
-                "sou_id" => $sou_id,
+//            $datosLead = [
+////                "sou_id" => $sou_id,
+//                "sou_id" => $this->sou_id_test,
+//                "leatype_id" => $leatype_id,
+//                "lea_phone" => $data["movil"],
+//                "lea_url" => $url,
+//                "lea_ip" => $ip,
+//                "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
+//                "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
+//                "lea_aux1" => $data["dni"],
+//                "observations" => $observations
+//            ];
+
+            $datos = [
+                "lea_destiny" => '',
+//                "sou_id" => $sou_id,
+                "sou_id" => $this->sou_id_test,
                 "leatype_id" => $leatype_id,
+                "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
+                "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
                 "lea_phone" => $data["movil"],
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
-                "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
                 "lea_aux1" => $data["dni"],
                 "observations" => $observations
             ];
-
-            $todoOk = false;
+            
+            $datosAsnef = [
+                "sou_id" => $sou_id,
+                "documento" => $data["dni"],
+                "phone" => $data["movil"]                
+            ];
+            
             if($telfValido){
-              
-                $datosAsnef = array(
-                    "sou_id" => $sou_idcrm,
-                    "documento" => $data["dni"],
-                    "phone" => $data["movil"]
-                );  
+             
+//                if($valido){
+//                    $datos["lea_destiny"] = 'LEONTEL';
+//                    $datos["lea_aux3"] = "Ok_DoctorDinero";
+//                }else{
+//                    $datos["lea_destiny"] = '';
+//                    $datos["lea_aux3"] = $salidaTxt;
+//                }
                 
-                $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
-                     
-                if($rAsnef->success){
-                    //lead no valido asnef
-                    $datosLead["lea_aux3"] = "asnef_yacliente_notValid";                    
-                }else if($valido){
-                    //lead valido
-                    $datosLead["lea_destiny"] = 'LEONTEL';
-                    $datosLead["lea_aux3"] = "Ok_DoctorDinero";
-                    $todoOk = true;
-                }else{ 
-                    $datosLead["lea_destiny"] = 'LEONTEL';
-                    $datosLead["lea_aux3"] = $salidaTxt;
-                    $todoOk = true;
+                $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
+
+                if(!$rAsnefPre->success){
+
+                    $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
+
+                    if(!$rAsnef->success){
+                        $datos["lea_destiny"] = 'LEONTEL';
+                        $datos["lea_aux3"] = "Ok_DoctorDinero";     
+                        
+                        $setwebservice = $this->settings_db_webservice;
+                        $db = new \App\Libraries\Connection($setwebservice);  
+                        
+                        $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
+                        if(!$valido){
+                            $salida = json_encode(['success' => false, 'message' => 'KO-notValid_params']);;
+                        }
+                        $db = null;
+                    }else{
+                        $salida = json_encode(['success' => false, 'message' => $rAsnef->message]);
+                    }               
+                }else{
+                    $salida = json_encode(['success' => false, 'message' => $rAsnefPre->message]);                
                 }
+
+                $test = json_decode($salida);
+                if(!$test->success){
+                    $datos["lea_destiny"] = '';
+                    $datos["lea_aux3"] = $test->message;
+
+                    $parametros = UtilitiesConnection::getParametros($datos,null);
+
+                    $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+
+                    $salida = json_encode(['success' => false, 'message' => $test->message]);
+                } 
             }else{
-                $datosLead["lea_aux3"] = $datos['telf']."_notValid";
-            }        
-            
-            $db = $this->db_webservice;
-            $mensaje = "KO-notValid";
-            
-            if($todoOk){
-                $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datosLead,$db));
-                if($valido)
-                    $mensaje = $result->message;
+                //telefono no valido
+                $datos["lea_destiny"] = '';
+                $datos["lea_aux3"] = $data["movil"]."_notValid";
                 
-                $salida = array(['result' => true, 'message' => $mensaje]);                       
-            }else{
-                $this->funciones->prepareAndSendLeadLeontel($datosLead, $db, null, false);
-                $salida = array(['result' => false, 'message' => $mensaje ]);
+                $parametros = UtilitiesConnection::getParametros($datos,null);
+
+                $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+
+                $salida = json_encode(['success' => false, 'message' => 'KO-notValid_telf']);
             }
-            return $response->withJson($salida); 
+            
+//            $todoOk = false;
+//            if($telfValido){
+//              
+//                $datosAsnef = array(
+////                    "sou_id" => $sou_idcrm,
+////                    "sou_id" => $sou_id,
+//                    "sou_id" => $this->sou_id_test,
+//                    "documento" => $data["dni"],
+//                    "phone" => $data["movil"]
+//                );  
+//                
+//                $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
+//                     
+//                if($rAsnef->success){
+//                    //lead no valido asnef
+//                    $datosLead["lea_aux3"] = "asnef_yacliente_notValid";                    
+//                }else if($valido){
+//                    //lead valido
+//                    $datosLead["lea_destiny"] = 'LEONTEL';
+//                    $datosLead["lea_aux3"] = "Ok_DoctorDinero";
+//                    $todoOk = true;
+//                }else{ 
+//                    $datosLead["lea_destiny"] = 'LEONTEL';
+//                    $datosLead["lea_aux3"] = $salidaTxt;
+//                    $todoOk = true;
+//                }
+//            }else{
+//                $datosLead["lea_aux3"] = $datos['telf']."_notValid";
+//            }        
+//            
+//            $db = $this->db_webservice;
+//            $mensaje = "KO-notValid";
+//            
+//            if($todoOk){
+//                $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datosLead,$db));
+//                if($valido)
+//                    $mensaje = $result->message;
+//                
+//                $salida = array(['success' => true, 'message' => $mensaje]);                       
+//            }else{
+//                $this->funciones->prepareAndSendLeadLeontel($datosLead, $db, null, false);
+//                $salida = array(['success' => false, 'message' => $mensaje ]);
+//            }
+//            return $response->withJson($salida); 
+            return $response->withJson(json_decode($salida, true));
         }
    });
 });

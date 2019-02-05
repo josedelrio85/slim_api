@@ -101,7 +101,7 @@ class Functions {
         return false;
     }
     
-    /*
+    /**
      *  Se evalúa en la tabla crmti.lea_leads y crmti.his_history la existencia de algún registro 
      * 	que cumpla con las siguiente condiciones:
      * 		- lea_source perteneciente al sou_id recibido por parametro
@@ -197,11 +197,75 @@ class Functions {
                     }
                 }  
             }else{
-                return json_encode(['result'=> false, 'data' => 'KO-paramsNeeded']);
+                return json_encode(['success'=> true, 'message' => 'KO-paramsNeeded']);
             }
             return null;
         }
     }   
+    
+    
+    /**
+     *  Se evalúa que no haya registros en webservice.leads, para el par DNI-telefono, que tengan
+     *  asnef/yacliente dentro del periodo inferior a 1 mes para el día actual. 
+     *  @parametros:
+     *  - sou_id del origen a evaluar
+     *  - dni valido
+     *  - telefono valido
+     *  @returns:
+     *  - En caso de que exista algún registro que cumpla las condiciones, devuelve objeto JSON:
+     *  {
+     *      "result":true,
+     *      "data": "KO-notValid"
+     *  }
+     *  - En caso contrario de que no haya resultados, devuelve objeto JSON:
+     *  {
+     *      "result":false,
+     *      "data": true
+     *  }
+    */
+    public function checkAsnefCrediteaPrev($data, $db){
+        $a = $data["sou_id"];
+        $b = $data["documento"];
+        $c = $data["phone"];
+        
+        if(!empty($db)){
+            if(!empty($a) && !empty($b) && !empty($c)){
+                
+                $fecha = new \DateTime();
+                $fecha->sub(new \DateInterval('P1M')); // 1 mes
+                $dateMySql = $fecha->format('Y-m-d');
+                    
+                $datos = [
+                    0 => $a,
+                    1 => '',
+                    2 => $dateMySql,
+                    3 => "%".$b."%",
+                    4 => $c,
+                    5 => 'Check Cliente marcado.',
+                    6 => 'Check Asnef marcado.',
+                ];
+                
+                $sql = " SELECT ll.lea_id "
+                    ."FROM webservice.leads ll "
+                    ."WHERE "
+                    ."ll.sou_id = ? "
+                    ."AND ll.lea_destiny = ? "
+                    ."AND DATE(ll.lea_ts) > ? "
+                    ."AND (ll.lea_aux1 LIKE ? OR ll.lea_phone = ?) "
+                    ."AND (ll.lea_aux3 = ? OR ll.lea_aux3 = ?);";
+                
+                $result = $db->selectPrepared($sql, $datos);
+
+                if(!is_null($result)){
+                    return json_encode(['success'=> true, 'message' => 'KO-notValid_pre']);
+                }else{
+                    return json_encode(['success'=> false, 'message' => true]);
+                }                
+            }else{
+                return json_encode(['success'=> true, 'message' => 'KO-paramsNeeded']);
+            }
+        }
+    }
     
     /*
      * Encapsulación de la lógica de inserción de lead (inserción en webservice.leads 
@@ -552,5 +616,39 @@ class Functions {
             }
         }      
         return $sou_id;
+    }
+    
+    /**
+     * Sends a lead to webservice.leads table throw wsInsertLead stored procedure
+     * @params
+     *  - settingsDb (array) => array with setting to create a db connection
+     *  - params (array) => array with the data to insert. One of the params must be phone.
+     * @returns (array) => success (bool); message (string)
+    */
+    public function sendLeadToWebservice($settingsDb, $params){
+        
+        if(!empty($settingsDb) && !empty($params)){
+            $phone = $params["datos"]["lea_phone"];
+
+            $db = new \App\Libraries\Connection($settingsDb);
+            $query = $db->insertStatementPrepared("leads", $params);
+            $sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
+            $result = $db->Query($sp);   
+            
+            if($db->AffectedRows() > 0){
+                $resultSP = $result->fetch_assoc();
+                $lastid = $resultSP["@result"];
+                $db->NextResult();
+                $result->close();
+                                
+                $db->close();
+                $db = null;
+                return json_encode(['success'=> true, 'message'=> $lastid]);
+            }else{
+                $db = null;
+                return json_encode(['success'=> false, 'message'=> $db->LastError()]);
+            }  
+        }
+        return json_encode(['success'=> false, 'message'=> 'Error in params.']);
     }
 }

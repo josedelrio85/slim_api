@@ -775,7 +775,7 @@ $app->group('/creditea', function(){
          * 
          *     $settings_crmti = $this->settings_db_crmti;  //gets crmti db params
          *     $connection = new \App\Libraries\Connection($settings_crmti);   //use this params to instatiate a new connection
-         */
+        */
         
         $this->logger->info("IPF leads request");
         
@@ -785,9 +785,8 @@ $app->group('/creditea', function(){
             
             // this sou_id value is for testing purposes. Check dependencies.php and settings_dev.php
 //            $sou_id = $this->sou_id_test;
+            // in production environment use the correct sou_id, for example for this queue check in webservices.sources and use sou_id 53 (62 in crmti.sou_sources)
             $sou_id = 53;
-            // in production environment use the correct sou_id, for example for Creditea E2E check in webservices.sources and use sou_id 9
-            // $sou_id = 0;
             
             //lea_type identifies the type of interaction (C2C, ABANDONO, etc). Check webservice.sources for the different types.
             $lea_type = 1;
@@ -800,11 +799,13 @@ $app->group('/creditea', function(){
             // To populate $datos array propperly, you must know what are the keys of the data received by POST, and set it to manage Leontel requirements
             // lea_destiny, sou_id, leatype_id are mandatory fields.
             $observations = $data->idStatusDate."---".$data->application;
+            
             if($this->funciones->phoneFormatValidator($data->phoneId)){
                $phone = $data->phoneId;
             }else{
                 $phone = substr($data->phoneId,3);
             }
+            
             $datos = [
                 "lea_destiny" => 'LEONTEL',
                 "sou_id" => $sou_id,
@@ -818,22 +819,22 @@ $app->group('/creditea', function(){
                 "observations" => $observations
             ];
             
-//Info recibida						Campo Leontel						Campo webservice.lead
-//
-//clientId => 4169626					Nº Cliente (ncliente)					lea_aux4
-//nameId => 15861419K					Documento (dninie)					lea_aux1
-//phoneId => +34522361413				Telefono (telefono)					lea_phone
-//alternativePhoneId =>	
-//lastStatusId => Not Started	
-//application => A-7590009				Observaciones    (observaciones)			observations
-//productAmountTaken => 1500€ CREDIT_LINE		Cantidad ofrecida (cantidadofrecida)			lea_aux2
+            //Info recibida						Campo Leontel						Campo webservice.lead
+            //
+            //clientId => 4169626					Nº Cliente (ncliente)					lea_aux4
+            //nameId => 15861419K					Documento (dninie)					lea_aux1
+            //phoneId => +34522361413				Telefono (telefono)					lea_phone
+            //alternativePhoneId =>	
+            //lastStatusId => Not Started	
+            //application => A-7590009				Observaciones    (observaciones)			observations
+            //productAmountTaken => 1500€ CREDIT_LINE		Cantidad ofrecida (cantidadofrecida)			lea_aux2
 
-//channel => Web	
-//type => New application	
-//putLeadDate => 2019-02-10T16:00:00Z	
-//latestTaskStatus => Not Started	
+            //channel => Web	
+            //type => New application	
+            //putLeadDate => 2019-02-10T16:00:00Z	
+            //latestTaskStatus => Not Started	
 
-//idStatusDate => 2019-02-11T14:17:45.000Z              Observaciones (observaciones)				observations
+            //idStatusDate => 2019-02-11T14:17:45.000Z              Observaciones (observaciones)				observations
             
             // prepareAndSendLeadLeontel works with data passed by param and implements the logic to send the lead to Leontel. 
             // Check functions/functions.php for documentation.

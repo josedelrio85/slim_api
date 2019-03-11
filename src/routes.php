@@ -1660,13 +1660,50 @@ $app->group('/sanitas', function(){
                 "lea_url" => $url,
                 "lea_ip" => $ip,
                 "lea_aux2" => $data->producto
+                // acepCond ??
+                // acepBd ??
             ];
             
-            $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice));
+//            $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice));
             
-            return $response->withJson($result);
+            $db = $this->db_webservice;            
+            $parametros = UtilitiesConnection::getParametros($datos,null); 
+            $salida = json_decode($db->insertPrepared("leads", $parametros),true);
+            
+            return $response->withJson($salida);
         }
+    });
+    
+    $this->post('/statusLeadGSS', function(Request $request, Response $response, array $args){
+        $this->logger->info("GSS status lead request");
+        
+        if($request->isPost()){
+            $data = (object) $request->getParsedBody();
+            
+            $datos = [
+//                "lea_id" => $data->idLead,
+//                "lea_phone" => $data->Telefono,
+                "__status" => $data->codEstado,
+                "__resultado" => $data->codResultado,
+                "__motivo" => $data->codMotivo,
+            ];
+            
+            // nombre de los campos a actualizar¿¿¿????
+            // HABRÁ QUE ACTUALIZAR EL ESTADO DEL LEAD, PERO COMO HACEMOS ESTO??? EL LEAD ESTÁ ALMACENADO EN webservice.leads
+            // USAR COMO REFERENCIA $lea_id y $lea_phone
+                       
+            $where = [
+                "lea_id" => $data->lea_id,
+                "lea_phone" => $data->Telefono
+            ];
+            
+            $parametros = UtilitiesConnection::getParametros($datos, $where);
 
+            $tabla = "webservice.leads";
+            $salida = json_decode($db->updatePrepared($tabla, $parametros), true);
+            
+            return $response->withJson($salida);
+        }
     });
 });
 

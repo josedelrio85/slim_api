@@ -18,9 +18,13 @@ return [
         
         'db_webservice' => [
             "host" => "192.168.50.20",
+//            "host" => "localhost",
             "dbname" => "webservice",
             "user" => "admin",
             "password" => "dalema22"
+//            "user" => "root",
+//            "password" => "dalema22"
+            // en prod usar los valores comentados
         ],
         
         'db_report_panel' => [

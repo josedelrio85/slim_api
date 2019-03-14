@@ -1688,13 +1688,13 @@ $app->group('/sanitas', function(){
             
             $data = $request->getParsedBody();
 
-            //  there is not sou_id value for Sanitas
-            $sou_id = $this->sou_id_test;
+//            $sou_id = $this->sou_id_test;
+            $sou_id = 57;
             $lea_type = 1;
             list($url, $ip) = $this->funciones->getServerParams($request);
             
             $datos = [
-                "lea_destiny" => 'TEST',
+                "lea_destiny" => 'GSS',
                 "sou_id" => $sou_id,
                 "leatype_id" => $lea_type,
                 "utm_source" => $data->utm_source,
@@ -1711,6 +1711,9 @@ $app->group('/sanitas', function(){
             $db = $this->db_webservice;            
             $parametros = UtilitiesConnection::getParametros($datos,null); 
             $salida = json_decode($db->insertPrepared("leads", $parametros),true);
+            
+            if(!$salida['success'])
+                $salida['message'] = 'KO';
             
             return $response->withJson($salida);
         }

@@ -1,11 +1,5 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 namespace App\Functions;
 
 use SoapClient;
@@ -17,7 +11,7 @@ use App\Libraries\UtilitiesConnection;
  * @author Jose
  */
 class LeadLeontel {
-    private static $test ="";
+
     private static $locationWs = "http://192.168.50.102/webservice/index.php";
     private static $uriWs = "http://wsLeads";
     private $ws = null;
@@ -951,8 +945,6 @@ class LeadLeontel {
                     ];
                     break;
                 case 53: //ipf 
-                    $url = $r[0]->lea_url;                    
-                    $ip = $r[0]->lea_ip;
                     $lea_aux1 = $r[0]->lea_aux1;
                     $lea_aux2 = $r[0]->lea_aux2;
                     $lea_aux4 = $r[0]->lea_aux4;

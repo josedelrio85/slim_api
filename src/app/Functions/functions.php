@@ -11,7 +11,6 @@ namespace App\Functions;
 use App\Libraries\UtilitiesConnection;
 
 class Functions {
-        private static $test ="";
 
     private $dev = null;
     

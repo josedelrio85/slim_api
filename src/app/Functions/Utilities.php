@@ -14,7 +14,6 @@ namespace App\Functions;
  * @author Jose
  */
 class Utilities {
-        private static $test ="";
 
  /*
     Array insert

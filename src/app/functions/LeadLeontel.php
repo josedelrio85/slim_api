@@ -17,7 +17,7 @@ use App\Libraries\UtilitiesConnection;
  * @author Jose
  */
 class LeadLeontel {
-    
+    private static $test ="";
     private static $locationWs = "http://192.168.50.102/webservice/index.php";
     private static $uriWs = "http://wsLeads";
     private $ws = null;

@@ -14,7 +14,8 @@ namespace App\Functions;
  * @author Jose
  */
 class NifNieCifValidator {
-    
+        private static $test ="";
+
     /*
     *   This function validates a Spanish identification number
     *   verifying its check digits.

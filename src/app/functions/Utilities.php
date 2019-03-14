@@ -14,7 +14,8 @@ namespace App\Functions;
  * @author Jose
  */
 class Utilities {
-    
+        private static $test ="";
+
  /*
     Array insert
     @array      the array to add an element to

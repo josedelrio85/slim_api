@@ -29,15 +29,19 @@ class ContentType {
 class JSONContentMiddleware {
     
     public function __invoke($request, $response, $next) {
-//      if (!$request->isXhr()){
-            //X-Requested-With realmente solo da información sobre si el request ha sido realizado desde Ajax, como value debe llegar XMLHttpRequest. 
-            //Valorar si interesa implementarlo. ¿Habrá requests desde clientes, curl, etc?
-            //return $response->withStatus(412, "The precondition given in the request evaluated to false by the server ");
-//        }
+        /*
+        if (!$request->isXhr()){
+            // X-Requested-With realmente solo da información sobre si el request ha sido realizado desde Ajax, como value debe llegar XMLHttpRequest. 
+            // Valorar si interesa implementarlo. ¿Habrá requests desde clientes, curl, etc?
+            // return $response->withStatus(412, "The precondition given in the request evaluated to false by the server ");
+        }
+        */
         
-//        if($request->getContentType() != "application/json")        
-//            return $response->withStatus(400, "Bad content-type");
-//        return $next($request, $response);
+        /*
+        if($request->getContentType() != "application/json")        
+            return $response->withStatus(400, "Bad content-type");
+        return $next($request, $response);
+        */
         
         /*
         * The following middleware can be used to query Slim’s router and get a list of methods a particular pattern implements.

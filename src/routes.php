@@ -835,7 +835,8 @@ $app->group('/creditea', function(){
         if($request->isPost()){
             
             $data = $request->getParsedBody();
-            
+
+
             // this sou_id value is for testing purposes. Check dependencies.php and settings_dev.php
 //            $sou_id = $this->sou_id_test;
             // in production environment use the correct sou_id, for example for this queue check in webservices.sources and use sou_id 53 (62 in crmti.sou_sources)
@@ -1701,7 +1702,8 @@ $app->group('/sanitas', function(){
                 "lea_phone" => $data->phone,
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "lea_aux2" => $data->producto
+                "lea_aux2" => $data->producto,
+                "lea_name" => $data->name
                 // acepCond ??
                 // acepBd ??
             ];

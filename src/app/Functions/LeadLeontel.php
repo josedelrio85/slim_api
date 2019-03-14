@@ -727,6 +727,14 @@ class LeadLeontel {
                         . "l.lea_aux10, "
                         . "l.observations ";
                     break;
+                    case 53: //ipf
+                        // Creditea IPF
+                        $querySource =" "
+                            . "l.lea_aux1, "
+                            . "l.lea_aux2, "
+                            . "l.lea_aux4, "
+                            . "l.observations ";
+                        break;
                 default:
                     /* case 5: case 12: case 7:case 14:case 8: case 6:*/
                     //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar + EvoBanco (sendC2CToLeontel)
@@ -940,6 +948,23 @@ class LeadLeontel {
                             'wsid' => $lea_id,
                             'ip' => $ip,
                             'observaciones2' => $observations
+                    ];
+                    break;
+                case 53: //ipf 
+                    $url = $r[0]->lea_url;                    
+                    $ip = $r[0]->lea_ip;
+                    $lea_aux1 = $r[0]->lea_aux1;
+                    $lea_aux2 = $r[0]->lea_aux2;
+                    $lea_aux4 = $r[0]->lea_aux4;
+                    $observations = $r[0]->observations;
+                    
+                    $lead = [
+                        'TELEFONO' => $phone,
+                        'wsid' => $lea_id,
+                        'ncliente' => $lea_aux4,
+                        'dninie' => $lea_aux1,
+                        'observaciones' => $observations,
+                        'cantidadofrecida' => $lea_aux2
                     ];
                     break;
                 default:

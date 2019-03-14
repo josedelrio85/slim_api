@@ -3,8 +3,9 @@
 
 //Middleware
 $config=[
-    'origin'=>'*.example.com', // allow all hosts ending example.com
+//    'origin'=>'*.example.com', // allow all hosts ending example.com
 //    'origin'    =>'*localhost',
+    'origin' => '*',
     'allowMethods'  => 'GET, POST, OPTIONS',
     'allowHeaders'  => ['Accept', 'Accept-Language', 'Authorization', 'Content-Type','DNT','Keep-Alive','User-Agent','X-Requested-With','Cache-Control','Origin'],
 ];

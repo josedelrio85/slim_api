@@ -437,6 +437,59 @@ $app->group('/test', function(){
            return $response->withJson(json_decode($res));
        } 
     });
+    
+    $this->post('/testContentTypes', function(Request $request, Response $response, array $args){
+        
+        $json = file_get_contents("php://input");
+        $data = json_decode($json);  
+
+        $dataalt1 = $request->getParsedBody();
+        $dataalt2 = (object) $request->getParsedBody();
+        
+        /*
+         * A problem was found!! 
+         * When a ajax request is made from a browser, I have to use this Content-Type: application/x-www-form-urlencoded; charset=UTF-8
+         * because if I use Content-Type: application/json a message about CORS situation is showed in the console and the request never reachs the controller.
+         * Using www-form-urlenncoded Content-Type with $request->getParsedBody() method generates a malformed array. As an example, using this array:
+         * {
+         *  "field1": "hola!",
+         *  "field2": 123213,
+         *  "field3": "2019-08-15"
+         * }
+         * 
+         * Must generate this stdClass object =>
+         * stdClass object {
+         *   field1 => (string) hola!
+         *   field2 => (int) 123213
+         *   field3 => (string) "2019-08-15"
+         * }
+         * 
+         * Instead, is generating 
+         * stdClass object {
+         *  {"field1":"hola!","field2":"123213","field2":"2019-08-15"} => (string)
+         * }
+         * 
+         * So I have to use file_get_contents("php://input") and json_decode to obtain the desired object.
+         * 
+         * This situation never occurs when using request client as Postman, using /x-www-form-urlencoded or json Content-Type.
+         * 
+         * UPDATE!!!!
+         * Using this snippet in Middleware =>
+         * 
+         * # inside middleware:
+         * $requestbody = $request->getBody();
+         * $requestobject = json_decode($requestbody);
+         * # validation and modification of $requestobject takes place here
+         * $request = $request->withParsedBody($requestobject);
+         * return $next($request, $response);
+         * 
+         * The situation is fixed. Sending an ajax request with the browser + using /x-www-form-urlencoded Content-Type + $request->getParsedBody()
+         * returns a well-formed stdClass object.
+        */
+        
+        return $response->withJson($dataalt2);
+
+    });
 });
 
 
@@ -563,7 +616,8 @@ $app->group('/RCable', function(){
 
         if($request->isPost()){
             $data = $request->getParsedBody();
-            $phone = $data['phone'];
+//            $phone = $data['phone'];
+            $phone = $data->phone;
 
             list($url, $ip) = $this->funciones->getServerParams($request);
             
@@ -578,7 +632,8 @@ $app->group('/RCable', function(){
                 "lea_ip" => $ip,
                 "lea_destiny" => "LEONTEL",
                 "sou_id" => $sou_id,
-                "leatype_id" => $leatype_id];
+                "leatype_id" => $leatype_id
+            ];
             
             $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice), true);
 
@@ -586,8 +641,6 @@ $app->group('/RCable', function(){
         }
     });
 });
-
-
 
 
 
@@ -625,13 +678,13 @@ $app->group('/creditea', function(){
                 "lea_destiny" => 'LEONTEL',
                 "sou_id" => $sou_id,
                 "leatype_id" => $leatype_id,
-                "utm_source" => $data["utm_source"],
-                "lea_phone" => $data["phone"],
+                "utm_source" => $data->utm_source,
+                "lea_phone" => $data->phone,
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "lea_aux1" => $data["documento"],
-                "lea_aux2" => $data["cantidadsolicitada"],
-                "lea_aux3" => $data["motivo"]                
+                "lea_aux1" => $data->documento,
+                "lea_aux2" => $data->cantidadsolicitada,
+                "lea_aux3" => $data->motivo
             ];
             
             $db = $this->db_webservice;            
@@ -671,8 +724,8 @@ $app->group('/creditea', function(){
 
             $datosAsnef = [
                 "sou_id" => $sou_id,
-                "documento" => $data["documento"],
-                "phone" => $data["phone"]                
+                "documento" => $data->documento,
+                "phone" => $data->phone                
             ];
             
             $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
@@ -690,13 +743,13 @@ $app->group('/creditea', function(){
                         "sou_id" => $sou_id,
 //                        "sou_id" => $this->sou_id_test,
                         "leatype_id" => $leatype_id,
-                        "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
-                        "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
-                        "lea_phone" => $data["phone"],
+                        "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
+                        "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
+                        "lea_phone" => $data->phone,
                         "lea_url" => $url,
                         "lea_ip" => $ip,
-                        "lea_aux1" => $data["documento"],
-                        "lea_aux2" => $data["cantidadsolicitada"]
+                        "lea_aux1" => $data->documento,
+                        "lea_aux2" => $data->cantidadsolicitada
                     ];
 
                     $setwebservice = $this->settings_db_webservice;
@@ -718,13 +771,13 @@ $app->group('/creditea', function(){
                     "sou_id" => $sou_id, 
 //                    "sou_id" => $this->sou_id_test,
                     "leatype_id" => $leatype_id, 
-                    "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
-                    "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
-                    "lea_phone" => $data["phone"], 
+                    "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
+                    "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
+                    "lea_phone" => $data->phone, 
                     "lea_url" => $url, 
                     "lea_ip" => $ip, 
-                    "lea_aux1" => $data["documento"], 
-                    "lea_aux2" => $data["cantidadsolicitada"], 
+                    "lea_aux1" => $data->documento, 
+                    "lea_aux2" => $data->cantidadsolicitada, 
                     "lea_aux3" => $test->message
                 ];
                 $parametros = UtilitiesConnection::getParametros($datosInsert,null);
@@ -781,7 +834,7 @@ $app->group('/creditea', function(){
         
         if($request->isPost()){
             
-            $data = (object) $request->getParsedBody();
+            $data = $request->getParsedBody();
             
             // this sou_id value is for testing purposes. Check dependencies.php and settings_dev.php
 //            $sou_id = $this->sou_id_test;
@@ -823,18 +876,18 @@ $app->group('/creditea', function(){
             //
             //clientId => 4169626					Nº Cliente (ncliente)					lea_aux4
             //nameId => 15861419K					Documento (dninie)					lea_aux1
-            //phoneId => +34522361413				Telefono (telefono)					lea_phone
+            //phoneId => +34522361413                                   Telefono (telefono)					lea_phone
             //alternativePhoneId =>	
             //lastStatusId => Not Started	
-            //application => A-7590009				Observaciones    (observaciones)			observations
-            //productAmountTaken => 1500€ CREDIT_LINE		Cantidad ofrecida (cantidadofrecida)			lea_aux2
+            //application => A-7590009                                  Observaciones    (observaciones)			observations
+            //productAmountTaken => 1500€ CREDIT_LINE                   Cantidad ofrecida (cantidadofrecida)			lea_aux2
 
             //channel => Web	
             //type => New application	
             //putLeadDate => 2019-02-10T16:00:00Z	
             //latestTaskStatus => Not Started	
 
-            //idStatusDate => 2019-02-11T14:17:45.000Z              Observaciones (observaciones)				observations
+            //idStatusDate => 2019-02-11T14:17:45.000Z                  Observaciones (observaciones)				observations
             
             // prepareAndSendLeadLeontel works with data passed by param and implements the logic to send the lead to Leontel. 
             // Check functions/functions.php for documentation.
@@ -858,8 +911,6 @@ $app->group('/creditea', function(){
 
 
 
-
-
 $app->group('/evobanco', function(){
     
     /* Inserción en tabla evo_user_tracking
@@ -877,12 +928,12 @@ $app->group('/evobanco', function(){
             list($url, $ip, $device) = $this->funciones->getServerParams($request);
             
             $datos = [
-                "hashid" => strtoupper($data["hashid"]), 
-                "stepid" => $data["stepid"], 
+                "hashid" => strtoupper($data->hashid), 
+                "stepid" => $data->stepid, 
                 "device" => $device, 
                 "url_source" => $url, 
                 "track_ip" => $ip, 
-                "track_cookie" => $data["bsdCookie"]
+                "track_cookie" => $data->bsdCookie
             ];
             
             $db = $this->db_webservice;            
@@ -909,49 +960,49 @@ $app->group('/evobanco', function(){
             $data = $request->getParsedBody();
 
             $datos = [
-                "CLIENTID" => $data["clientId"],                
-                "PERSONMOBILEPHONE" => $data["personMobilePhone"],
-                "PERSONEMAIL" => $data["personEmail"],
-                "FIRSTNAME" => $data["firstName"],
-                "LASTNAME" => $data["lastName"],
-                "PERSONHASOPTEDOUTOFEMAIL" => $data["personHasOptedOutOfEmail"],
-                "QUIERE_PUBLICIDAD__C" => $data["quierePublicidad"],
-                "PERSONDONOTCALL" => $data["personDoNotCall"],
-                "CONFIRMA_OK__C" => $data["confirmaOk"],
-                "PERSONLEADSOURCE" => $data["personLeadSource"],
-                "ELECTRONICAID_OK__C" => $data["electronicaIdOk"],
-                "CREATEDDATE" => $data["createdDate"],
-                "LASTMODIFIEDDATE" => $data["lastModifiedDate"],
-                "RATING" => $data["rating"],
-                "CLIENT_ESTADO__C" => $data["clientEstado"],
-                "TIPO_DE_IDENTIFICACION__C" => $data["tipoDeIdentificacion"],
-                "CLIENTTYPE" => $data["clientType"],
-                "STEPID" => $data["stepId"],
-                "URL_SALESFORCE" => $data["urlSalesforce"],
-                "URL_SOURCE" => $data["urlSource"],
-                "ESTADO_CONFIRMA__C" => $data["estadoConfirma"],
-                "GESTION__C" => $data["gestion"],
-                "SUBGESTION__C" => $data["subgestion"],
-                "BLOQUEO_CLIENTE__C" => $data["bloqueoCliente"],
-                "ELECTRONICID_ESTADO__C" => $data["electronicIdEstado"],
-                "GESTION_BACKOFFICE__C" => $data["gestionBackOffice"],
-                "EVENT__C" => $data["event"],
-                "REJECTIONMESSAGE__C" => $data["rejectionMessage"],
-                "LOGALTYID" => $data["logaltyId"],
-                "LOGALTY_ESTADO__C" => $data["logaltyEstado"],
-                "DESCARGA_DE_CONTRATO__C" => $data["descargaDeContrato"],
-                "DOCUMENTACION_SUBIDA__C" => $data["documentacionSubida"],
-                "DESCARGA_DE_CERTIFICADO__C" => $data["descargaDeCertificado"],
-                "RECORDNUMBER" => $data["recordNumber"],
-                "IDPERSONIRIS" => $data["idPersonIris"],
-                "CONTRACTSTATUS" => $data["contractStatus"],
-                "LOGALTYDATE" => $data["logaltyDate"],
-                "FECHA_FORMALIZACION" => $data["fechaFormalizacion"],
-                "PRODUCT_CODE" => $data["productCode"],
-                "IDCONTRACT" => $data["idContract"],
-                "CLIENT" => $data["client"],
-                "METODO_ENTRADA" => $data["metodoEntrada"],
-                "MOTIVO_DESESTIMACION" => $data["motivoDesestimacion"]
+                "CLIENTID" => $data->clientId,                
+                "PERSONMOBILEPHONE" => $data->personMobilePhone,
+                "PERSONEMAIL" => $data->personEmail,
+                "FIRSTNAME" => $data->firstName,
+                "LASTNAME" => $data->lastName,
+                "PERSONHASOPTEDOUTOFEMAIL" => $data->personHasOptedOutOfEmail,
+                "QUIERE_PUBLICIDAD__C" => $data->quierePublicidad,
+                "PERSONDONOTCALL" => $data->personDoNotCall,
+                "CONFIRMA_OK__C" => $data->confirmaOk,
+                "PERSONLEADSOURCE" => $data->personLeadSource,
+                "ELECTRONICAID_OK__C" => $data->electronicaIdOk,
+                "CREATEDDATE" => $data->createdDate,
+                "LASTMODIFIEDDATE" => $data->lastModifiedDate,
+                "RATING" => $data->rating,
+                "CLIENT_ESTADO__C" => $data->clientEstado,
+                "TIPO_DE_IDENTIFICACION__C" => $data->tipoDeIdentificacion,
+                "CLIENTTYPE" => $data->clientType,
+                "STEPID" => $data->stepId,
+                "URL_SALESFORCE" => $data->urlSalesforce,
+                "URL_SOURCE" => $data->urlSource,
+                "ESTADO_CONFIRMA__C" => $data->estadoConfirma,
+                "GESTION__C" => $data->gestion,
+                "SUBGESTION__C" => $data->subgestion,
+                "BLOQUEO_CLIENTE__C" => $data->bloqueoCliente,
+                "ELECTRONICID_ESTADO__C" => $data->electronicIdEstado,
+                "GESTION_BACKOFFICE__C" => $data->gestionBackOffice,
+                "EVENT__C" => $data->event,
+                "REJECTIONMESSAGE__C" => $data->rejectionMessage,
+                "LOGALTYID" => $data->logaltyId,
+                "LOGALTY_ESTADO__C" => $data->logaltyEstado,
+                "DESCARGA_DE_CONTRATO__C" => $data->descargaDeContrato,
+                "DOCUMENTACION_SUBIDA__C" => $data->documentacionSubida,
+                "DESCARGA_DE_CERTIFICADO__C" => $data->descargaDeCertificado,
+                "RECORDNUMBER" => $data->recordNumber,
+                "IDPERSONIRIS" => $data->idPersonIris,
+                "CONTRACTSTATUS" => $data->contractStatus,
+                "LOGALTYDATE" => $data->logaltyDate,
+                "FECHA_FORMALIZACION" => $data->fechaFormalizacion,
+                "PRODUCT_CODE" => $data->productCode,
+                "IDCONTRACT" => $data->idContract,
+                "CLIENT" => $data->client,
+                "METODO_ENTRADA" => $data->metodoEntrada,
+                "MOTIVO_DESESTIMACION" => $data->motivoDesestimacion
             ];
                                     
             $db = $this->db_webservice;
@@ -992,49 +1043,49 @@ $app->group('/evobanco', function(){
             $data = $request->getParsedBody();
 
             $datos = [
-                "CLIENTID" => $data["clientId"],                
-                "PERSONMOBILEPHONE" => $data["personMobilePhone"],
-                "PERSONEMAIL" => $data["personEmail"],
-                "FIRSTNAME" => $data["firstName"],
-                "LASTNAME" => $data["lastName"],
-                "PERSONHASOPTEDOUTOFEMAIL" => $data["personHasOptedOutOfEmail"],
-                "QUIERE_PUBLICIDAD__C" => $data["quierePublicidad"],
-                "PERSONDONOTCALL" => $data["personDoNotCall"],
-                "CONFIRMA_OK__C" => $data["confirmaOk"],
-                "PERSONLEADSOURCE" => $data["personLeadSource"],
-                "ELECTRONICAID_OK__C" => $data["electronicaIdOk"],
-                "CREATEDDATE" => $data["createdDate"],
-                "LASTMODIFIEDDATE" => $data["lastModifiedDate"],
-                "RATING" => $data["rating"],
-                "CLIENT_ESTADO__C" => $data["clientEstado"],
-                "TIPO_DE_IDENTIFICACION__C" => $data["tipoDeIdentificacion"],
-                "CLIENTTYPE" => $data["clientType"],
-                "STEPID" => $data["stepId"],
-                "URL_SALESFORCE" => $data["urlSalesforce"],
-                "URL_SOURCE" => $data["urlSource"],
-                "ESTADO_CONFIRMA__C" => $data["estadoConfirma"],
-                "GESTION__C" => $data["gestion"],
-                "SUBGESTION__C" => $data["subgestion"],
-                "BLOQUEO_CLIENTE__C" => $data["bloqueoCliente"],
-                "ELECTRONICID_ESTADO__C" => $data["electronicIdEstado"],
-                "GESTION_BACKOFFICE__C" => $data["gestionBackOffice"],
-                "EVENT__C" => $data["event"],
-                "REJECTIONMESSAGE__C" => $data["rejectionMessage"],
-                "LOGALTYID" => $data["logaltyId"],
-                "LOGALTY_ESTADO__C" => $data["logaltyEstado"],
-                "DESCARGA_DE_CONTRATO__C" => $data["descargaDeContrato"],
-                "DOCUMENTACION_SUBIDA__C" => $data["documentacionSubida"],
-                "DESCARGA_DE_CERTIFICADO__C" => $data["descargaDeCertificado"],
-                "RECORDNUMBER" => $data["recordNumber"],
-                "IDPERSONIRIS" => $data["idPersonIris"],
-                "CONTRACTSTATUS" => $data["contractStatus"],
-                "LOGALTYDATE" => $data["logaltyDate"],
-                "FECHA_FORMALIZACION" => $data["fechaFormalizacion"],
-                "PRODUCT_CODE" => $data["productCode"],
-                "IDCONTRACT" => $data["idContract"],
-                "CLIENT" => $data["client"],
-                "METODO_ENTRADA" => $data["metodoEntrada"],
-                "MOTIVO_DESESTIMACION" => $data["motivoDesestimacion"]
+                "CLIENTID" => $data->clientId,                
+                "PERSONMOBILEPHONE" => $data->personMobilePhone,
+                "PERSONEMAIL" => $data->personEmail,
+                "FIRSTNAME" => $data->firstName,
+                "LASTNAME" => $data->lastName,
+                "PERSONHASOPTEDOUTOFEMAIL" => $data->personHasOptedOutOfEmail,
+                "QUIERE_PUBLICIDAD__C" => $data->quierePublicidad,
+                "PERSONDONOTCALL" => $data->personDoNotCall,
+                "CONFIRMA_OK__C" => $data->confirmaOk,
+                "PERSONLEADSOURCE" => $data->personLeadSource,
+                "ELECTRONICAID_OK__C" => $data->electronicaIdOk,
+                "CREATEDDATE" => $data->createdDate,
+                "LASTMODIFIEDDATE" => $data->lastModifiedDate,
+                "RATING" => $data->rating,
+                "CLIENT_ESTADO__C" => $data->clientEstado,
+                "TIPO_DE_IDENTIFICACION__C" => $data->tipoDeIdentificacion,
+                "CLIENTTYPE" => $data->clientType,
+                "STEPID" => $data->stepId,
+                "URL_SALESFORCE" => $data->urlSalesforce,
+                "URL_SOURCE" => $data->urlSource,
+                "ESTADO_CONFIRMA__C" => $data->estadoConfirma,
+                "GESTION__C" => $data->gestion,
+                "SUBGESTION__C" => $data->subgestion,
+                "BLOQUEO_CLIENTE__C" => $data->bloqueoCliente,
+                "ELECTRONICID_ESTADO__C" => $data->electronicIdEstado,
+                "GESTION_BACKOFFICE__C" => $data->gestionBackOffice,
+                "EVENT__C" => $data->event,
+                "REJECTIONMESSAGE__C" => $data->rejectionMessage,
+                "LOGALTYID" => $data->logaltyId,
+                "LOGALTY_ESTADO__C" => $data->logaltyEstado,
+                "DESCARGA_DE_CONTRATO__C" => $data->descargaDeContrato,
+                "DOCUMENTACION_SUBIDA__C" => $data->documentacionSubida,
+                "DESCARGA_DE_CERTIFICADO__C" => $data->descargaDeCertificado,
+                "RECORDNUMBER" => $data->recordNumber,
+                "IDPERSONIRIS" => $data->idPersonIris,
+                "CONTRACTSTATUS" => $data->contractStatus,
+                "LOGALTYDATE" => $data->logaltyDate,
+                "FECHA_FORMALIZACION" => $data->fechaFormalizacion,
+                "PRODUCT_CODE" => $data->productCode,
+                "IDCONTRACT" => $data->idContract,
+                "CLIENT" => $data->client,
+                "METODO_ENTRADA" => $data->metodoEntrada,
+                "MOTIVO_DESESTIMACION" => $data->motivoDesestimacion
             ];
             
             $array_tipo_leontel = App\Functions\LeadLeontel::getIdTipoLeontel($datos["LOGALTY_ESTADO__C"], $datos["CLIENT_ESTADO__C"], $datos["STEPID"], $datos["CONTRACTSTATUS"]);
@@ -1045,7 +1096,7 @@ $app->group('/evobanco', function(){
                     || $datos["STEPID"] == "datos-contacto" || $datos["STEPID"] == "datos-laboral" 
                     ? NULL : $destinyF;
                         
-            if($destiny !== NULL && $data["clientId"] != "IDE-00009683" && $data["clientId"] != "IDE-00027350" && $data["personMobilePhone"] != ""){
+            if($destiny !== NULL && $data->clientId != "IDE-00009683" && $data->clientId != "IDE-00027350" && $data->personMobilePhone != ""){
                 $datos["even_destiny"] = $destiny;
             }
 
@@ -1096,18 +1147,18 @@ $app->group('/evobanco', function(){
 
         if($request->isPost()){
             $data = $request->getParsedBody();
-            $typ = $data["type"];
+            $typ = $data->type;
             $type = ($typ == 2 || $typ == "2") ? 3 : 1;
-            $codRecommendation = array_key_exists("codRecommendation", $data) ? $data["codRecommendation"] : "";
+            $codRecommendation = array_key_exists("codRecommendation", $data) ? $data->codRecommendation : "";
             $lea_destiny = array_key_exists("test", $data) ? 'TEST' : 'LEONTEL';
             list($url, $ip) = $this->funciones->getServerParams($request);
 
             
             $datos = [
-                "lea_phone" => $data["phone"],
+                "lea_phone" => $data->phone,
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "lea_aux1" => $data["stepId"],
+                "lea_aux1" => $data->stepId,
                 "lea_aux2" =>  $codRecommendation,
                 "lea_destiny" => $lea_destiny,
                 "sou_id" => 3,
@@ -1115,10 +1166,10 @@ $app->group('/evobanco', function(){
             ];
             
             $datosDuplicates = [
-                "lea_phone" => $data["phone"],
+                "lea_phone" => $data->phone,
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "stepid" => $data["stepId"],
+                "stepid" => $data->stepId,
                 "sou_id" => 3,
                 "leatype_id" => $type,
                 "codRecommendation" =>  $codRecommendation
@@ -1211,7 +1262,6 @@ $app->group('/evobanco', function(){
 
 
 
-
 $app->group('/yoigo', function(){
   
     $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
@@ -1234,7 +1284,7 @@ $app->group('/yoigo', function(){
             19	YOIGO NEGOCIOS SEM	27
             20	YOIGO NEGOCIOS EMAILING	28
             */
-            $utm_source_sanitized = strtolower(trim($data["utm_source"]));
+            $utm_source_sanitized = strtolower(trim($data->utm_source));
 
             switch($utm_source_sanitized){
                 case "clck":
@@ -1249,7 +1299,7 @@ $app->group('/yoigo', function(){
                     $sou_id = 18;
             }
             
-            if(!empty($data["gclid"])){
+            if(!empty($data->gclid)){
             	$sou_id = 19;
             }
 
@@ -1261,14 +1311,14 @@ $app->group('/yoigo', function(){
             $consTimeTable = $this->funciones->consultaTimeTableC2C($datosHorario, $this->db_report_panel);
             $leatype_id = is_array($consTimeTable) ? 1 : 20;
             
-            $lea_aux3 = $data["cobertura"]."//".$data["impuesto"];
+            $lea_aux3 = $data->cobertura."//".$data->impuesto;
                     
             $datos = [
-                "lea_phone" => $data["phone"],
+                "lea_phone" => $data->phone,
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "lea_aux2" =>  $data["producto"],
-                "observations" => $data["producto"],
+                "lea_aux2" =>  $data->producto,
+                "observations" => $data->producto,
                 "lea_aux3" => $lea_aux3,
                 "lea_destiny" => 'LEONTEL',
                 "sou_id" => $sou_id,
@@ -1311,16 +1361,16 @@ $app->group('/doctordinero', function(){
             $salida = array();
             $salidaTxt = "";
 
-            $datos['telf'] = $data["movil"];
-            $datos['dninie'] = $data["dni"];
-            $datos['importe'] = $data["importe"];
-            $datos['ingresosMensuales'] = $data["ingresosMensuales"];
-            $datos['nombre'] = $data["nombre"];
-            $datos['apellido1'] =$data["apellido1"];
-            $datos['apellido2'] =$data["apellido2"];
-            $datos['fechaNacimiento'] = $data["fechaNacimiento"];
-            $datos['email'] = $data["email"];
-            $datos['cp'] = $data["cp"];
+            $datos['telf'] = $data->movil;
+            $datos['dninie'] = $data->dni;
+            $datos['importe'] = $data->importe;
+            $datos['ingresosMensuales'] = $data->ingresosMensuales;
+            $datos['nombre'] = $data->nombre;
+            $datos['apellido1'] =$data->apellido1;
+            $datos['apellido2'] =$data->apellido2;
+            $datos['fechaNacimiento'] = $data->fechaNacimiento;
+            $datos['email'] = $data->email;
+            $datos['cp'] = $data->cp;
             
             foreach($datos as $key => $value){
                 if(empty($value)){
@@ -1329,18 +1379,18 @@ $app->group('/doctordinero', function(){
                 }
             }
 
-            if(!App\Functions\NifNieCifValidator::isValidIdNumber($data['dni'])){
+            if(!App\Functions\NifNieCifValidator::isValidIdNumber($data->dni)){
                 array_push($salida,"KO-notValid_dninie");
                 $salidaTxt .= "KO-notValid_dninie///";
             }
 
-            if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($data->email, FILTER_VALIDATE_EMAIL)) {
                 array_push($salida,"KO-notValid_email");
                 $salidaTxt .= "KO-notValid_email///";
             }
 
             $valido = empty($salida);
-            $telfValido = App\Functions\Functions::phoneFormatValidator($data['movil']);
+            $telfValido = App\Functions\Functions::phoneFormatValidator($data->movil);
             
             $sou_id = 9;        
             $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
@@ -1352,49 +1402,28 @@ $app->group('/doctordinero', function(){
             }           
             
             list($url, $ip) = $this->funciones->getServerParams($request);
-            
-//            $datosLead = [
-////                "sou_id" => $sou_id,
-//                "sou_id" => $this->sou_id_test,
-//                "leatype_id" => $leatype_id,
-//                "lea_phone" => $data["movil"],
-//                "lea_url" => $url,
-//                "lea_ip" => $ip,
-//                "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
-//                "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
-//                "lea_aux1" => $data["dni"],
-//                "observations" => $observations
-//            ];
 
             $datos = [
                 "lea_destiny" => '',
 //                "sou_id" => $sou_id,
                 "sou_id" => $this->sou_id_test,
                 "leatype_id" => $leatype_id,
-                "utm_source" => array_key_exists("utm_source", $data) ? $data["utm_source"] : null,
-                "sub_source" => array_key_exists("sub_source", $data) ? $data["sub_source"] : null,
-                "lea_phone" => $data["movil"],
+                "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
+                "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
+                "lea_phone" => $data->movil,
                 "lea_url" => $url,
                 "lea_ip" => $ip,
-                "lea_aux1" => $data["dni"],
+                "lea_aux1" => $data->dni,
                 "observations" => $observations
             ];
             
             $datosAsnef = [
                 "sou_id" => $sou_id,
-                "documento" => $data["dni"],
-                "phone" => $data["movil"]                
+                "documento" => $data->dni,
+                "phone" => $data->movil                
             ];
             
             if($telfValido){
-             
-//                if($valido){
-//                    $datos["lea_destiny"] = 'LEONTEL';
-//                    $datos["lea_aux3"] = "Ok_DoctorDinero";
-//                }else{
-//                    $datos["lea_destiny"] = '';
-//                    $datos["lea_aux3"] = $salidaTxt;
-//                }
                 
                 $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
 
@@ -1435,7 +1464,7 @@ $app->group('/doctordinero', function(){
             }else{
                 //telefono no valido
                 $datos["lea_destiny"] = '';
-                $datos["lea_aux3"] = $data["movil"]."_notValid";
+                $datos["lea_aux3"] = $data->movil."_notValid";
                 
                 $parametros = UtilitiesConnection::getParametros($datos,null);
 
@@ -1444,54 +1473,57 @@ $app->group('/doctordinero', function(){
                 $salida = json_encode(['success' => false, 'message' => 'KO-notValid_telf']);
             }
             
-//            $todoOk = false;
-//            if($telfValido){
-//              
-//                $datosAsnef = array(
-////                    "sou_id" => $sou_idcrm,
-////                    "sou_id" => $sou_id,
-//                    "sou_id" => $this->sou_id_test,
-//                    "documento" => $data["dni"],
-//                    "phone" => $data["movil"]
-//                );  
-//                
-//                $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
-//                     
-//                if($rAsnef->success){
-//                    //lead no valido asnef
-//                    $datosLead["lea_aux3"] = "asnef_yacliente_notValid";                    
-//                }else if($valido){
-//                    //lead valido
-//                    $datosLead["lea_destiny"] = 'LEONTEL';
-//                    $datosLead["lea_aux3"] = "Ok_DoctorDinero";
-//                    $todoOk = true;
-//                }else{ 
-//                    $datosLead["lea_destiny"] = 'LEONTEL';
-//                    $datosLead["lea_aux3"] = $salidaTxt;
-//                    $todoOk = true;
-//                }
-//            }else{
-//                $datosLead["lea_aux3"] = $datos['telf']."_notValid";
-//            }        
-//            
-//            $db = $this->db_webservice;
-//            $mensaje = "KO-notValid";
-//            
-//            if($todoOk){
-//                $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datosLead,$db));
-//                if($valido)
-//                    $mensaje = $result->message;
-//                
-//                $salida = array(['success' => true, 'message' => $mensaje]);                       
-//            }else{
-//                $this->funciones->prepareAndSendLeadLeontel($datosLead, $db, null, false);
-//                $salida = array(['success' => false, 'message' => $mensaje ]);
-//            }
-//            return $response->withJson($salida); 
+            /*
+                $todoOk = false;
+                if($telfValido){
+
+                    $datosAsnef = array(
+    //                    "sou_id" => $sou_id,
+                        "sou_id" => $this->sou_id_test,
+                        "documento" => $data["dni"],
+                        "phone" => $data["movil"]
+                    );  
+
+                    $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
+
+                    if($rAsnef->success){
+                        //lead no valido asnef
+                        $datosLead["lea_aux3"] = "asnef_yacliente_notValid";                    
+                    }else if($valido){
+                        //lead valido
+                        $datosLead["lea_destiny"] = 'LEONTEL';
+                        $datosLead["lea_aux3"] = "Ok_DoctorDinero";
+                        $todoOk = true;
+                    }else{ 
+                        $datosLead["lea_destiny"] = 'LEONTEL';
+                        $datosLead["lea_aux3"] = $salidaTxt;
+                        $todoOk = true;
+                    }
+                }else{
+                    $datosLead["lea_aux3"] = $datos['telf']."_notValid";
+                }        
+
+                $db = $this->db_webservice;
+                $mensaje = "KO-notValid";
+
+                if($todoOk){
+                    $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datosLead,$db));
+                    if($valido)
+                        $mensaje = $result->message;
+
+                    $salida = array(['success' => true, 'message' => $mensaje]);                       
+                }else{
+                    $this->funciones->prepareAndSendLeadLeontel($datosLead, $db, null, false);
+                    $salida = array(['success' => false, 'message' => $mensaje ]);
+                }
+                return $response->withJson($salida); 
+            */
+            
             return $response->withJson(json_decode($salida, true));
         }
    });
 });
+
 
 
 $app->group('/microsoft', function(){
@@ -1501,7 +1533,7 @@ $app->group('/microsoft', function(){
         $this->logger->info("Microsoft incomingC2C request");
         
         if($request->isPost()){
-            $data = (object) $request->getParsedBody();
+            $data = $request->getParsedBody();
             
             $domain = $data->domain;
             
@@ -1563,7 +1595,15 @@ $app->group('/microsoft', function(){
                 $check1 = $data->check1;
                 $check2 = $data->check2;
                 $check3 = $data->check3;
-                $pcsOk = implode(", ", $data->pcsOk);
+                $pcsOk = "";
+                if(is_object($data->pcsOk)){
+                    foreach($data->pcsOk as $key => $val){
+                        $pcsOk .= $val. ", ";
+                    }
+                    $pcsOk = substr_replace($pcsOk ,"",-2);
+                }else{
+                    $pcsOk = implode(", ", $data->pcsOk);
+                }
                 
                 $datos1 = [
                     "lea_aux4" => $data->tipo_ordenador,
@@ -1636,22 +1676,24 @@ $app->group('/microsoft', function(){
 });
 
 
+
 $app->group('/sanitas', function(){
+    
     $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
 
         $this->logger->info("Sanitas incomingC2C request");
         
         if($request->isPost()){
             
-            $data = (object) $request->getParsedBody();
-            
+            $data = $request->getParsedBody();
+
+            //  there is not sou_id value for Sanitas
             $sou_id = $this->sou_id_test;
             $lea_type = 1;
             list($url, $ip) = $this->funciones->getServerParams($request);
-            $gclid = $data->gclid;
             
             $datos = [
-                "lea_destiny" => 'LEONTEL',
+                "lea_destiny" => 'TEST',
                 "sou_id" => $sou_id,
                 "leatype_id" => $lea_type,
                 "utm_source" => $data->utm_source,
@@ -1663,9 +1705,7 @@ $app->group('/sanitas', function(){
                 // acepCond ??
                 // acepBd ??
             ];
-            
-//            $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice));
-            
+                        
             $db = $this->db_webservice;            
             $parametros = UtilitiesConnection::getParametros($datos,null); 
             $salida = json_decode($db->insertPrepared("leads", $parametros),true);

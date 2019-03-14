@@ -64,8 +64,8 @@ class JSONContentMiddleware {
                 //Methods holds all of the HTTP Verbs that a particular route handles.
             } else {
                 $methods[] = $request->getMethod();
-            }
-
+            }           
+            
             $response = $next($request, $response);
 
             return $response->withHeader("Access-Control-Allow-Methods", implode(",", $methods));

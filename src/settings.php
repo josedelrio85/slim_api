@@ -20,11 +20,13 @@ return [
             "host" => "192.168.50.20",
 //            "host" => "localhost",
             "dbname" => "webservice",
-            "user" => "admin",
-            "password" => "dalema22"
 //            "user" => "root",
 //            "password" => "dalema22"
-            // en prod usar los valores comentados
+            "user" => "admin",
+            "password" => "dalema22"
+//            "user" => "webservice",
+//            "password" => "xp5555"
+//            en prod usar root dal y localhost
         ],
         
         'db_report_panel' => [

@@ -490,6 +490,73 @@ $app->group('/test', function(){
         return $response->withJson($dataalt2);
 
     });
+    
+    $this->post('/testRandom', function(Request $request, Response $response, array $args){
+
+        $db = $this->db_crmti;
+
+        $sqlPrevSources = "select sou_id from crmti.sou_sources where sou_description like ? ;";
+        $datosPrevSources = [
+          0 => "%CREDI%"
+        ];
+
+        $resultSC = $db->selectPrepared($sqlPrevSources, $datosPrevSources, true);
+        $paramPrevSources = UtilitiesConnection::arrayToPreparedParam($resultSC, "sou_id");
+
+//        '%00000000T%' OR TELEFONO = '631934474'
+//        '%79317432T%' '665932355'
+//        $datosPrevIds = [
+//          0 => "%00000000T%",
+//          1 => "631934474"
+//        ];
+        $datosPrevIds = [
+          0 => "%79317432T%",
+          1 => "665932355"
+        ];
+
+        $sqlPrevIds = "SELECT lea_id FROM crmti.lea_leads where dninie like ? OR TELEFONO = ? ORDER BY lea_id desc limit 10;";
+        $resultSI = $db->selectPrepared($sqlPrevIds, $datosPrevIds, true);
+        $paramPrevIds = UtilitiesConnection::arrayToPreparedParam($resultSI, "lea_id");
+
+        $fecha = new \DateTime('2018-02-18');
+        $fecha->sub(new \DateInterval('P1M')); // 1 mes
+        $dateMySql  = $fecha->format('Y-m-d');
+//        ,389,390,391,393,394,400,402,403,404,405,407,411,499,501,502,503,504,505,507,508,510,511,512,513,514,515,516,519,521,522,523,524,525,526,527,528,530,531,532,533,536,537,542,543,544,549,550,553,556,557,616,617,618,620,621,622,623,624,625,646,647,648,649,650,674,675,676,677,678,679,680,681,682,683,684,686,687
+        $arrSubid = array(383,385,386,387,388);
+
+        $datos = [
+          0 => $paramPrevSources["values"],
+          1 => $dateMySql,
+          2 => 'SI',
+          3 => $arrSubid,
+          4 => $paramPrevIds["values"]
+        ];
+
+        $questionsA = $paramPrevSources["questions"];
+        $questionsB = UtilitiesConnection::generaQuestions($arrSubid);
+        $questionsC = $paramPrevIds["questions"];
+
+        $sql = "SELECT * "
+          . "FROM crmti.lea_leads ll "
+          . "INNER JOIN crmti.his_history hh ON ll.lea_id = hh.his_lead "
+          . "WHERE "
+          . "ll.lea_source IN ($questionsA)"
+          . "AND date(ll.lea_ts) >=  ? "
+          . "AND (ll.asnef = ? "
+          . "OR "
+          . "hh.his_sub in ($questionsB) "
+          . ") "
+          . "AND hh.his_lead in ($questionsC) "
+          . " LIMIT 10;";        
+
+        $result = $db->selectPrepared($sql, $datos);
+        
+        if(!is_null($result)){
+            return json_encode(['success'=> true, 'message' => 'KO-notValid']);
+        }else{
+            return json_encode(['success'=> false, 'message' => true]);
+        }
+    });
 });
 
 
@@ -671,7 +738,6 @@ $app->group('/creditea', function(){
             list($url, $ip) = $this->funciones->getServerParams($request);
             
             $sou_id = 9;
-
             $leatype_id = 1;
             
             $datos = [
@@ -787,6 +853,7 @@ $app->group('/creditea', function(){
                 $salida = json_encode(['success' => false, 'message' => $test->message]);
             }            
         }
+        
         return $response->withJson(json_decode($salida, true));
     });
 

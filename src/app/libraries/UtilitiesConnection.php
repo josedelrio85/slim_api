@@ -228,18 +228,23 @@ class UtilitiesConnection {
      */
     public static function arrayToPreparedParam($array, $prop = null){
         
-        foreach($array as $k => $v){           
-            $valores[$k] = ($prop === null) ? $v : $v[$prop];
+        if(!empty($array)){
+            foreach($array as $k => $v){           
+                $valores[$k] = ($prop === null) ? $v : $v[$prop];
+            }
+
+            $questions = implode(",", array_fill(0, count($valores), "?"));
+
+            if(empty($questions))
+                $questions = "?";
+
+            $salida['questions'] = $questions;
+            $salida['values'] = $valores;
+            
+        }else{
+            $salida['questions'] = "?";
+            $salida['values'] = "null";
         }
-        
-        $questions = implode(",", array_fill(0, count($valores), "?"));
-        
-        if(empty($questions))
-            $questions = "?";
-             
-        $salida['questions'] = $questions;
-        $salida['values'] = $valores;
-        
         return $salida;
     }
     

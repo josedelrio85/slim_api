@@ -118,8 +118,8 @@ class LeadLeontel {
             if(!is_null($r)){
                 
                 $id_origen_leontel = $r[0]->source;
-		$id_tipo_leontel = $r[0]->type;
-		$lea_id = $r[0]->lea_id;
+		        $id_tipo_leontel = $r[0]->type;
+		        $lea_id = $r[0]->lea_id;
 
                 $lead = self::paramsLead($r, $data["sou_id"]);
                 

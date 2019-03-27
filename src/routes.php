@@ -274,9 +274,9 @@ $app->group('/test', function(){
         $data = $request->getParsedBody();
 
         $datosAsnef = [
-            "sou_id" => $data["sou_id"],
-            "documento" => $data["documento"],
-            "phone" => $data["phone"]
+            "sou_id" => $data->sou_id,
+            "documento" => $data->documento,
+            "phone" => $data->phone
         ];
 
         // Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion, ['success'=> false, 'message' => true] si pasa validacion

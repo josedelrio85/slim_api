@@ -928,6 +928,9 @@ $app->group('/creditea', function(){
             $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
 
             if(!$rAsnefPre->success){
+                //sou_id de crmti
+                $sou_id_crmti = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+                $datosAsnef["sou_id"] = $sou_id_crmti;
 
                 $db_crmti = $this->db_crmti;
 
@@ -1626,7 +1629,8 @@ $app->group('/doctordinero', function(){
                 $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
 
                 if(!$rAsnefPre->success){
-
+                    
+                    $datosAsnef["sou_id"] = $sou_idcrm;
                     $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
 
                     if(!$rAsnef->success){

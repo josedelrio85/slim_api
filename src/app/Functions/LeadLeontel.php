@@ -653,7 +653,8 @@ class LeadLeontel {
                         . "l.lea_ip";
                     break;
                 case 9:
-                    //Creditea EndToEnd
+                case 58:
+                    //Creditea EndToEnd + CREDITEA HM CORTO
                     $querySource = "l.lea_mail,"
                         . "l.lea_url,"
                         . "l.lea_aux1,"
@@ -774,7 +775,8 @@ class LeadLeontel {
                     ];
                     break;
                 case 9:
-                    //EndToEnd
+                case 58:
+                    //Creditea EndToEnd + CREDITEA HM CORTO
                     $dninie = $r[0]->lea_aux1;
                     $url = $r[0]->lea_url;
                     $cantidadSolicitada = $r[0]->lea_aux2;

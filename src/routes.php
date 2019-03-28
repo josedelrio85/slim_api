@@ -1102,7 +1102,7 @@ $app->group('/creditea', function(){
     */
     $this->post('/ipf', function(Request $request, Response $response, array $args){
 
-        $this->logger->info("WS para validacion datos LP Creditea.");
+        $this->logger->info("Method for receiving array of leads from IPF.");
 
         $results = [];
 

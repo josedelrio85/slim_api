@@ -1110,8 +1110,8 @@ $app->group('/creditea', function(){
             
             $leads = (object) $request->getParsedBody();
 
-            $sou_id = $this->sou_id_test;
-            // $sou_id = 53;
+            // $sou_id = $this->sou_id_test;
+            $sou_id = 53;
             $lea_type = 1;
 
             list($url, $ip) = $this->funciones->getServerParams($request);
@@ -1157,7 +1157,6 @@ $app->group('/creditea', function(){
                 idStatusDate => 2019-02-11T14:17:45.000Z    Observaciones (observaciones)			observations
             */
         }
-
         return $response->withJson($results);
     });
 });

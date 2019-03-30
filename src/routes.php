@@ -1047,7 +1047,6 @@ $app->group('/creditea', function(){
         $results = [];
 
         if($request->isPost()){
-            
             $leads = (object) $request->getParsedBody();
 
             // $sou_id = $this->sou_id_test;
@@ -1206,6 +1205,41 @@ $app->group('/evobanco', function(){
         }
         return null;
     });
+});
+
+$app->group('/evobanco', function(){
+
+    /* Inserción en tabla evo_user_tracking
+     * params: hashid, stepid, bsdCookie
+     * @JSON salida:
+     *      success:boolean
+     *      message:string
+    */
+    $this->post('/userTracking', function (Request $request, Response $response, array $args){
+        $this->logger->info("WS user tracking Evo Banco");
+
+        if($request->isPost()){
+            $data = $request->getParsedBody();
+
+            list($url, $ip, $device) = $this->funciones->getServerParams($request);
+
+            $datos = [
+                "hashid" => strtoupper($data->hashid),
+                "stepid" => $data->stepid,
+                "device" => $device,
+                "url_source" => $url,
+                "track_ip" => $ip,
+                "track_cookie" => $data->bsdCookie
+            ];
+
+            $db = $this->db_webservice;
+            $parametros = UtilitiesConnection::getParametros($datos,null);
+            $salida = json_decode($db->insertPrepared("evo_user_tracking", $parametros),true);
+
+            return $response->withJson($salida);
+        }
+        return null;
+    });
 
     /*
      * Captura de distintos eventos producidos en la web de EVO Banco, no se envía a Leontal
@@ -1260,7 +1294,7 @@ $app->group('/evobanco', function(){
                 "SUBGESTION__C" => $data->subgestion,
                 "BLOQUEO_CLIENTE__C" => $data->bloqueoCliente,
                 "ELECTRONICID_ESTADO__C" => $data->electronicIdEstado,
-                "GESTION_BACKOFFICE__C" => $data->gestionBackOffice,
+               "GESTION_BACKOFFICE__C" => $data->gestionBackOffice,
                 "EVENT__C" => $data->event,
                 "REJECTIONMESSAGE__C" => $data->rejectionMessage,
                 "LOGALTYID" => $data->logaltyId,
@@ -1942,6 +1976,58 @@ $app->group('/sanitas', function(){
             return $response->withJson($salida);
         }
     });
+});
+
+$app->group('/clients', function(){
+  // This handler returns the status from some records from the EVO Banco End
+  // to End, it has been created to provide lead status information to a third
+  // party agency (Nivoria).
+  $this->get('/status/{provider}', function(Request $request, Response $response, array $args){
+    $providers = array("EVO");
+    $provider = strtoupper($args['provider']);
+    if (!in_array($provider, $providers)) {
+      return $response->withStatus(422)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('Provider not found or available.');
+    }
+
+    $client_id = $request->getParam('client_id');
+    if ($client_id == "") {
+      return $response->withStatus(422)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('Client ID not provided!');
+    }
+
+    $query = "";
+    switch ($provider){
+      case "EVO":
+        $query = $this->db_webservice->Query(
+          "SELECT clientid, createddate, fecha_formalizacion
+           FROM evo_events_sf_v2_pro
+           WHERE clientid = '" . $client_id . "'
+           ORDER BY even_ts desc
+           LIMIT 1;");
+        break;
+    }
+
+    if ($query == "") {
+      return $response->withStatus(500)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('Error finding the proper query for the provider!');
+    }
+
+    $row = $query->fetch_assoc();
+    if (!$row) {
+      return $response->withStatus(404)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('No status information found for that client_id!');
+    }
+
+    $result = [];
+    $result[] = $row;
+
+    return $response->withJson($result);
+  });
 });
 
 // Catch-all route to serve a 404 Not Found page if none of the routes match

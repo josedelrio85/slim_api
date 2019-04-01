@@ -683,66 +683,6 @@ $app->group('/test', function(){
         return $response->withJson(json_decode($salida, true));
     });
 
-    $this->post('/logic_explanation', function(Request $request, Response $response, array $args){
-
-        $this->logger->info("WS para validacion datos LP Creditea.");
-    
-        if($request->isPost()){
-
-            // this sou_id value is for testing purposes. Check dependencies.php and settings_dev.php
-            $sou_id = $this->sou_id_test;
-            // in production environment use the correct sou_id, for example for this queue check in webservices.sources and use sou_id 53 (62 in crmti.sou_sources)
-            // $sou_id = 53;
-            // in production environment use the correct sou_id, for example for Creditea E2E check in webservices.sources and use sou_id 9
-
-            //lea_type identifies the type of interaction (C2C, ABANDONO, etc). Check webservice.sources for the different types.
-            $lea_type = 1;
-
-            // getServerParams returns values for url, ip and device used in request. Check functions/functions.php for documentation.
-            list($url, $ip) = $this->funciones->getServerParams($request);
-            // $gclid = $leads->gclid;
-
-            // To populate $datos array propperly, you must know what are the keys of the data received by POST, and set it to manage Leontel requirements
-            // lea_destiny, sou_id, leatype_id are mandatory fields.
-            $observations = $lead->idStatusDate."---".$lead->application;
-            if($this->funciones->phoneFormatValidator($lead->phoneId)){
-                $phone = $lead->phoneId;
-            }else{
-                $phone = substr($lead->phoneId,3);
-            }
-
-            $datos = [
-                "lea_destiny" => 'LEONTEL',
-                "sou_id" => $sou_id,
-                "leatype_id" => $lea_type,
-                "lea_phone" => $phone,
-                "lea_url" => $url,
-                "lea_ip" => $ip,
-                "lea_aux1" => $lead->nameId,
-                "lea_aux2" => $lead->productAmountTaken,
-                "lea_aux4" => $lead->clientId,
-                "observations" => $observations
-            ];
-
-            // prepareAndSendLeadLeontel works with data passed by param and implements the logic to send the lead to Leontel.
-            // Check functions/functions.php for documentation.
-
-            //NOTE: the preapareAndSendLeadLeontel inserts the lead in crmti.lea_leads and webservice.leads table too, so if you use
-            //this method you don't need to use the following code .
-
-            // With this code you can get an instance of webservice DB, generate params for using as prepared statements with MySQL
-            // and insert them into the BD. For insertPrepared function you must set the name of the table and pass the parameters
-            // formatted using getparametros function.
-            // $db = $this->db_webservice;
-            // $parametros = UtilitiesConnection::getParametros($datos,null);
-            // $salida = json_decode($db->insertPrepared("leads", $parametros),true);
-
-            // returns a JSON formatted response
-            return $response->withJson($results);
-
-        }
-
-    });
 });
 
 

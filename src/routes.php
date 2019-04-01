@@ -682,6 +682,7 @@ $app->group('/test', function(){
 
         return $response->withJson(json_decode($salida, true));
     });
+
 });
 
 
@@ -903,7 +904,7 @@ $app->group('/creditea', function(){
      * @JSON salida:
      *      success:boolean
      *      message:string
-     */
+    */
     $this->post('/validaDniTelf', function(Request $request, Response $response, array $args){
 
         $this->logger->info("WS para validacion datos LP Creditea.");
@@ -1009,104 +1010,94 @@ $app->group('/creditea', function(){
         return $response->withJson(json_decode($salida, true));
     });
 
+    /*
+     * Method to receive the leads sended by IPF and redirect to Leontel system.
+     * params:
+     *  @ [] json:
+     *  [
+     *      {
+     *          "clientId": "XXXXXX", 
+	 *	        "nameId":   "XXXXXX", 
+	 *	        "phoneId":  "+34XXXXXX",
+     *          "alternativePhoneId": "",
+     *          "lastStatusId": "Not Started",
+	 *	        "productAmountTaken": "1500€ CREDIT_LINE", 
+     *          "channel": "Web",
+     *          "type": "New application",
+     *          "putLeadDate": "",		
+	 *	        "application": "A-7590008",
+	 *          "latestTaskStatus": "Not Started",
+     *	        "idStatusDate": "2019-02-14T22:35:15.000Z"
+     *      }
+     * ]
+     * 
+     * output:
+     * @ [] json:
+     * [
+     *      {
+     *          "success":  boolean
+     *          "message":  "XXXXXX"
+     *      }
+     * ]
+    */
     $this->post('/ipf', function(Request $request, Response $response, array $args){
 
-        /* README */
-        /*
-         * There are 2 configurations used in this API.
-         * Params for dev and prod environment are setted in settings_dev.php and settings.php respectively.
-         * In dependencies.php some resources are instantiated for use in dependency injection.
-         * For example, you can use resources from functions/functions.php or functions/Utilities.php using $this->funciones->name_of_function()
-         * because this classes are instantiated and injected using this file.
-         *
-         * There is a particularity using db connections. Check /testconexion code.
-         *
-         * If you use an instance of one DB schema  ($this->db_crmti as example) and then you need to use another schema instance ($this->db_webservice)
-         * your code will work propperly.
-         *
-         * But if you need to reuse the db_crmti connection, this will "fail" and the MySQL connection will  use db_webservice params instead of the correct values.
-         * To subsane this problem, if you need to reuse the firts DB connection, create an instance of MySQL using this code snippet.
-         *
-         *     $settings_crmti = $this->settings_db_crmti;  //gets crmti db params
-         *     $connection = new \App\Libraries\Connection($settings_crmti);   //use this params to instatiate a new connection
-        */
+        $this->logger->info("Method for receiving array of leads from IPF.");
 
-        $this->logger->info("IPF leads request");
+        $results = [];
 
         if($request->isPost()){
+            
+            $leads = (object) $request->getParsedBody();
 
-            $data = $request->getParsedBody();
-
-
-            // this sou_id value is for testing purposes. Check dependencies.php and settings_dev.php
             // $sou_id = $this->sou_id_test;
-            // in production environment use the correct sou_id, for example for this queue check in webservices.sources and use sou_id 53 (62 in crmti.sou_sources)
             $sou_id = 53;
-
-            // lea_type identifies the type of interaction (C2C, ABANDONO, etc). Check webservice.sources for the different types.
             $lea_type = 1;
 
-            // getServerParams returns values for url, ip and device used in request. Check functions/functions.php for documentation.
             list($url, $ip) = $this->funciones->getServerParams($request);
-            // $gclid = $data->gclid;
 
+            foreach($leads as $lead) {
 
-            // To populate $datos array propperly, you must know what are the keys of the data received by POST, and set it to manage Leontel requirements
-            // lea_destiny, sou_id, leatype_id are mandatory fields.
-            $observations = $data->idStatusDate."---".$data->application;
+                $observations = $lead->idStatusDate."---".$lead->application;
+                if($this->funciones->phoneFormatValidator($lead->phoneId)){
+                    $phone = $lead->phoneId;
+                }else{
+                    $phone = substr($lead->phoneId,3);
+                }
 
-            if($this->funciones->phoneFormatValidator($data->phoneId)){
-               $phone = $data->phoneId;
-            }else{
-                $phone = substr($data->phoneId,3);
+                $datos = [
+                    "lea_destiny" => 'LEONTEL',
+                    "sou_id" => $sou_id,
+                    "leatype_id" => $lea_type,
+                    "lea_phone" => $phone,
+                    "lea_url" => $url,
+                    "lea_ip" => $ip,
+                    "lea_aux1" => $lead->nameId,
+                    "lea_aux2" => $lead->productAmountTaken,
+                    "lea_aux4" => $lead->clientId,
+                    "observations" => $observations
+                ];
+                array_push($results, json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice)));
             }
+            /*
+                Info recibida						        Campo Leontel						    Campo webservice.lead
+                clientId => 4169626				            Nº Cliente (ncliente)					lea_aux4
+                nameId => 15861419K				            Documento (dninie)					    lea_aux1
+                phoneId => +34522361413			            Telefono (telefono)					    lea_phone
+                alternativePhoneId =>
+                lastStatusId => Not Started
+                application => A-7590009			        Observaciones    (observaciones)		observations
+                productAmountTaken => 1500€ CREDIT_LINE	    Cantidad ofrecida (cantidadofrecida)	lea_aux2
 
-            $datos = [
-                "lea_destiny" => 'LEONTEL',
-                "sou_id" => $sou_id,
-                "leatype_id" => $lea_type,
-                "lea_phone" => $phone,
-                "lea_url" => $url,
-                "lea_ip" => $ip,
-                "lea_aux1" => $data->nameId,
-                "lea_aux2" => $data->productAmountTaken,
-                "lea_aux4" => $data->clientId,
-                "observations" => $observations
-            ];
+                channel => Web
+                type => New application	
+                putLeadDate => 2019-02-10T16:00:00Z	
+                latestTaskStatus => Not Started	
 
-            //Info recibida						Campo Leontel						Campo webservice.lead
-            // clientId => 4169626					Nº Cliente (ncliente)					lea_aux4
-            // nameId => 15861419K					Documento (dninie)					lea_aux1
-            // phoneId => +34522361413                                   Telefono (telefono)					lea_phone
-            // alternativePhoneId =>
-            // lastStatusId => Not Started
-            // application => A-7590009                                  Observaciones    (observaciones)			observations
-            // productAmountTaken => 1500€ CREDIT_LINE                   Cantidad ofrecida (cantidadofrecida)			lea_aux2
-
-            // channel => Web
-            // type => New application
-            // putLeadDate => 2019-02-10T16:00:00Z
-            // latestTaskStatus => Not Started
-
-            // idStatusDate => 2019-02-11T14:17:45.000Z                  Observaciones (observaciones)				observations
-
-            // prepareAndSendLeadLeontel works with data passed by param and implements the logic to send the lead to Leontel.
-            // Check functions/functions.php for documentation.
-             $result = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice));
-
-            // NOTE: the preapareAndSendLeadLeontel inserts the lead in crmti.lea_leads and webservice.leads table too, so if you use
-            // this method you don't need to use the following code .
-
-            // With this code you can get an instance of webservice DB, generate params for using as prepared statements with MySQL
-            // and insert them into the BD. For insertPrepared function you must set the name of the table and pass the parameters
-            // formatted using getparametros function.
-            // $db = $this->db_webservice;
-            // $parametros = UtilitiesConnection::getParametros($datos,null);
-            // $salida = json_decode($db->insertPrepared("leads", $parametros),true);
-
-            // returns a JSON formatted response
-            return $response->withJson($result);
+                idStatusDate => 2019-02-11T14:17:45.000Z    Observaciones (observaciones)			observations
+            */
         }
+        return $response->withJson($results);
     });
 });
 

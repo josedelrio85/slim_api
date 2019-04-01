@@ -173,8 +173,8 @@ class LeadLeontel {
             . "PERSONMOBILEPHONE,"
             . "CLIENT_ESTADO__C,"
             . "URL_SALESFORCE";
-//                . "LOGALTY_ESTADO__C,"
-//                . "STEPID";
+            //    . "LOGALTY_ESTADO__C,"
+            //    . "STEPID";
 
         $queryFromWhere = " FROM evo_events_sf_v2_pro "
             . "WHERE "
@@ -197,15 +197,15 @@ class LeadLeontel {
             $client_estado_c = $r[0]->CLIENT_ESTADO__C;
             $url_salesforce = $r[0]->URL_SALESFORCE;
 
-//                $stepid = $r[0]->STEPID;   
-//                $logalty_estado_c = $r[0]->LOGALTY_ESTADO__C;
+            //    $stepid = $r[0]->STEPID;   
+            //    $logalty_estado_c = $r[0]->LOGALTY_ESTADO__C;
 
             $array_tipo_leontel = self::getIdTipoLeontel($data["LOGALTY_ESTADO__C"], $data["CLIENT_ESTADO__C"], $data["STEPID"], $data["CONTRACTSTATUS"]);
             $id_tipo_leontel = $array_tipo_leontel["idTipoLeontel"];
 
             $lead = [
                 'TELEFONO' => $phone,
-//                    'observaciones' => $stepid,
+                //    'observaciones' => $stepid,
                 'observaciones' => $client_estado_c,
                 'url' => $url_salesforce,
                 'wsid' => $lea_id
@@ -444,8 +444,9 @@ class LeadLeontel {
        return $webservice;
     }
     
-    /* Se implementa lógica de sendLeadToLeontelRecoveryV2_Pro, simplificando y
-    * reutilizando código.
+    /* 
+        * Se implementa lógica de sendLeadToLeontelRecoveryV2_Pro, simplificando y
+        * reutilizando código.
     */
     public static function recoveryEvoBancoLeontel($db, $dev){
         
@@ -617,7 +618,7 @@ class LeadLeontel {
      *  $lea_id => int
      *  $datos => array o null
      * @return => resultado update
-     */
+    */
     private function updateDuplicatedEvo($db, $lea_id, $datos = null){
         
         if(is_null($datos)){
@@ -637,7 +638,7 @@ class LeadLeontel {
     /*
      * Devuelve parte de la query que se realiza en función del sou_id 
      * para la recuperación del último lead registrado en webservice.
-     */
+    */
     private function queryLead($sou_id){		
         if(!is_null($sou_id) && $sou_id!= ""){         
             
@@ -722,7 +723,7 @@ class LeadLeontel {
                         . "l.lea_aux10, "
                         . "l.observations ";
                     break;
-                    case 53: //ipf
+                case 53: //ipf
                         // Creditea IPF
                         $querySource =" "
                             . "l.lea_aux1, "
@@ -743,7 +744,7 @@ class LeadLeontel {
     
     /*
      * Devuelve array de datos en función del sou_id que se adjuntarán al WS SOAP.
-     */
+    */
     private function paramsLead($r, $sou_id){
         
         if(!is_null($r) && $sou_id != "" && !is_null($sou_id)){

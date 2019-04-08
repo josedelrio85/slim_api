@@ -67,7 +67,7 @@ class Connection implements IConnection{
      * correctas que no devuelven un resultado y false para las consultas fallidas
      */
     public function Query($query) {
-//        return \is_null($this->mysql) ? self::$mysqli->query($query) : $this->mysql->query($query);
+        
         $res = \is_null($this->mysql) ? self::$mysqli->query($query) : $this->mysql->query($query);
         if(false===$res){
             $error = $this->LastError();
@@ -204,8 +204,9 @@ class Connection implements IConnection{
         array_unshift($d, $format);
 
         // data es un array, elemento 0 es el formato, y los siguientes son los datos
-        if($d[0] != false)
+        if($d[0] != false){
           call_user_func_array(array($stmt, 'bind_param'), UtilitiesConnection::ref_values($d));       
+        }
 
         $stmt->execute();
         $result = $stmt->get_result();

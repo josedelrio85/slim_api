@@ -208,7 +208,6 @@ class Connection implements IConnection{
           call_user_func_array(array($stmt, 'bind_param'), UtilitiesConnection::ref_values($d));       
         }
 
-        $results = null;
         $stmt->execute();
         $result = $stmt->get_result();
         $results = null;

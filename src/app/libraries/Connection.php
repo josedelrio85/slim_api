@@ -181,6 +181,10 @@ class Connection implements IConnection{
         //Prepare our query for binding
         $stmt = $this->prepare($query);
         
+        if(is_null($data)){
+          $data = array();
+        }
+
         $formato = UtilitiesConnection::getFormatPreparedSql($data);
         $format = UtilitiesConnection::getStringFormato($formato);
         
@@ -197,14 +201,11 @@ class Connection implements IConnection{
         }
         /****************************************/
         // Añade format al inicio de data (en el indice 0)
-//        array_unshift($data, $format);
         array_unshift($d, $format);
 
-
-        //data es un array, elemento 0 es el formato, y los siguientes son los datos
-        //call_user_func_array(array($stmt, 'bind_param'), UtilitiesConnection::ref_values($data));
-        call_user_func_array(array($stmt, 'bind_param'), UtilitiesConnection::ref_values($d));
-        
+        // data es un array, elemento 0 es el formato, y los siguientes son los datos
+        if($d[0] != false)
+          call_user_func_array(array($stmt, 'bind_param'), UtilitiesConnection::ref_values($d));       
 
         $stmt->execute();
         $result = $stmt->get_result();

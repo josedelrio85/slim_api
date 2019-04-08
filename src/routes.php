@@ -416,10 +416,16 @@ $app->group('/test', function(){
         if($request->isPost()){
 
           $db = $this->db_webservice;
-          $sql = "SELECT * FROM webservice.sources where sou_id = ?;";
+          $sql = "SELECT * FROM webservice.sources;";
           // $sql = "SELECT * FROM webservice.log_error_load_weborama limit 10";
 
-          $r = $db->selectPrepared($sql, array());
+          // $r = $db->selectPrepared($sql, null);
+          $result = $db->Query($sql);
+          if($result->num_rows > 0){
+            while($row = $result->fetch_assoc()){
+              $r[] = $row;
+            }
+          }
 
           if(!is_null($r)){
             return $response->withJson($r);

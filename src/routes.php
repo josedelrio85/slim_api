@@ -415,15 +415,15 @@ $app->group('/test', function(){
     $this->post('/getjson', function(Request $request, Response $response, array $args){
         if($request->isPost()){
 
-            $db = $this->db_webservice;
-           $sql = "SELECT * FROM webservice.sources;";
-            $sql = "SELECT * FROM webservice.log_error_load_weborama limit 10";
+          $db = $this->db_webservice;
+          $sql = "SELECT * FROM webservice.sources where sou_id = ?;";
+          // $sql = "SELECT * FROM webservice.log_error_load_weborama limit 10";
 
-            $r = $db->selectPrepared($sql, null);
+          $r = $db->selectPrepared($sql, array());
 
-            if(!is_null($r)){
-                return $response->withJson($r);
-            }
+          if(!is_null($r)){
+            return $response->withJson($r);
+          }
         }
     });
 
@@ -1017,16 +1017,16 @@ $app->group('/creditea', function(){
      *  [
      *      {
      *          "clientId": "XXXXXX", 
-	 *	        "nameId":   "XXXXXX", 
-	 *	        "phoneId":  "+34XXXXXX",
+	   *	        "nameId":   "XXXXXX", 
+	   *	        "phoneId":  "+34XXXXXX",
      *          "alternativePhoneId": "",
      *          "lastStatusId": "Not Started",
-	 *	        "productAmountTaken": "1500€ CREDIT_LINE", 
+	   *	        "productAmountTaken": "1500€ CREDIT_LINE", 
      *          "channel": "Web",
      *          "type": "New application",
      *          "putLeadDate": "",		
-	 *	        "application": "A-7590008",
-	 *          "latestTaskStatus": "Not Started",
+	   *	        "application": "A-7590008",
+	   *          "latestTaskStatus": "Not Started",
      *	        "idStatusDate": "2019-02-14T22:35:15.000Z"
      *      }
      * ]
@@ -1042,69 +1042,72 @@ $app->group('/creditea', function(){
     */
     $this->post('/ipf', function(Request $request, Response $response, array $args){
 
-        $this->logger->info("Method for receiving array of leads from IPF.");
+      $this->logger->info("Method for receiving array of leads from IPF.");
 
-        $results = [];
+      $results = [];
 
-        if($request->isPost()){
-            $leads = (object) $request->getParsedBody();
+      if($request->isPost()){
+        $leads = (object) $request->getParsedBody();
 
-            // $sou_id = $this->sou_id_test;
-            $sou_id = 53;
-            $lea_type = 1;
+        $sou_id = 53;
+        $lea_type = 1;
 
-            list($url, $ip) = $this->funciones->getServerParams($request);
+        list($url, $ip) = $this->funciones->getServerParams($request);
 
-            foreach($leads as $lead) {
+        foreach($leads as $lead) {
 
-                $observations = $lead->idStatusDate."---".$lead->application;
-                if($this->funciones->phoneFormatValidator($lead->phoneId)){
-                    $phone = $lead->phoneId;
-                }else{
-                    $phone = substr($lead->phoneId,3);
-                }
+          foreach ($lead as $key => $value) {
+            $this->logger->info($key. " => ".$value);
+          }
+          $this->logger->info("-----------------");
 
-                $datos = [
-                    "lea_destiny" => 'LEONTEL',
-                    "sou_id" => $sou_id,
-                    "leatype_id" => $lea_type,
-                    "lea_phone" => $phone,
-                    "lea_url" => $url,
-                    "lea_ip" => $ip,
-                    "lea_aux1" => $lead->nameId,
-                    "lea_aux2" => $lead->productAmountTaken,
-                    "lea_aux4" => $lead->clientId,
-                    "observations" => $observations
-                ];
-                array_push($results, json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice)));
-            }
-            /*
-                Info recibida						        Campo Leontel						    Campo webservice.lead
-                clientId => 4169626				            Nº Cliente (ncliente)					lea_aux4
-                nameId => 15861419K				            Documento (dninie)					    lea_aux1
-                phoneId => +34522361413			            Telefono (telefono)					    lea_phone
-                alternativePhoneId =>
-                lastStatusId => Not Started
-                application => A-7590009			        Observaciones    (observaciones)		observations
-                productAmountTaken => 1500€ CREDIT_LINE	    Cantidad ofrecida (cantidadofrecida)	lea_aux2
+          $observations = $lead->idStatusDate."---".$lead->application;
+          if($this->funciones->phoneFormatValidator($lead->phoneId)){
+            $phone = $lead->phoneId;
+          }else{
+            $phone = substr($lead->phoneId,3);
+          }
 
-                channel => Web
-                type => New application	
-                putLeadDate => 2019-02-10T16:00:00Z	
-                latestTaskStatus => Not Started	
-
-                idStatusDate => 2019-02-11T14:17:45.000Z    Observaciones (observaciones)			observations
-            */
+          $datos = [
+            "lea_destiny" => 'LEONTEL',
+            "sou_id" => $sou_id,
+            "leatype_id" => $lea_type,
+            "lea_phone" => $phone,
+            "lea_url" => $url,
+            "lea_ip" => $ip,
+            "lea_aux1" => $lead->nameId,
+            "lea_aux2" => $lead->productAmountTaken,
+            "lea_aux4" => $lead->clientId,
+            "observations" => $observations
+          ];
+          array_push($results, json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice)));
         }
-        return $response->withJson($results);
+        /*
+            Info recibida						        Campo Leontel						    Campo webservice.lead
+            clientId => 4169626				            Nº Cliente (ncliente)					lea_aux4
+            nameId => 15861419K				            Documento (dninie)					    lea_aux1
+            phoneId => +34522361413			            Telefono (telefono)					    lea_phone
+            alternativePhoneId =>
+            lastStatusId => Not Started
+            application => A-7590009			        Observaciones    (observaciones)		observations
+            productAmountTaken => 1500€ CREDIT_LINE	    Cantidad ofrecida (cantidadofrecida)	lea_aux2
+
+            channel => Web
+            type => New application	
+            putLeadDate => 2019-02-10T16:00:00Z	
+            latestTaskStatus => Not Started	
+
+            idStatusDate => 2019-02-11T14:17:45.000Z    Observaciones (observaciones)			observations
+        */
+      }
+      return $response->withJson($results);
     });
 });
 
-
-
 $app->group('/evobanco', function(){
 
-    /* Inserción en tabla evo_user_tracking
+    /* 
+     * Inserción en tabla evo_user_tracking
      * params: hashid, stepid, bsdCookie
      * @JSON salida:
      *      success:boolean
@@ -1143,102 +1146,67 @@ $app->group('/evobanco', function(){
      * @JSON salida:
      *      success:boolean
      *      message:string
-     */
-    $this->post('/eventSF_v2', function (Request $request, Response $response, array $args){
-        $this->logger->info("WS EventSF_V2 Evo Banco");
-
-        if($request->isPost()){
-            $data = $request->getParsedBody();
-
-            $datos = [
-                "CLIENTID" => $data->clientId,
-                "PERSONMOBILEPHONE" => $data->personMobilePhone,
-                "PERSONEMAIL" => $data->personEmail,
-                "FIRSTNAME" => $data->firstName,
-                "LASTNAME" => $data->lastName,
-                "PERSONHASOPTEDOUTOFEMAIL" => $data->personHasOptedOutOfEmail,
-                "QUIERE_PUBLICIDAD__C" => $data->quierePublicidad,
-                "PERSONDONOTCALL" => $data->personDoNotCall,
-                "CONFIRMA_OK__C" => $data->confirmaOk,
-                "PERSONLEADSOURCE" => $data->personLeadSource,
-                "ELECTRONICAID_OK__C" => $data->electronicaIdOk,
-                "CREATEDDATE" => $data->createdDate,
-                "LASTMODIFIEDDATE" => $data->lastModifiedDate,
-                "RATING" => $data->rating,
-                "CLIENT_ESTADO__C" => $data->clientEstado,
-                "TIPO_DE_IDENTIFICACION__C" => $data->tipoDeIdentificacion,
-                "CLIENTTYPE" => $data->clientType,
-                "STEPID" => $data->stepId,
-                "URL_SALESFORCE" => $data->urlSalesforce,
-                "URL_SOURCE" => $data->urlSource,
-                "ESTADO_CONFIRMA__C" => $data->estadoConfirma,
-                "GESTION__C" => $data->gestion,
-                "SUBGESTION__C" => $data->subgestion,
-                "BLOQUEO_CLIENTE__C" => $data->bloqueoCliente,
-                "ELECTRONICID_ESTADO__C" => $data->electronicIdEstado,
-                "GESTION_BACKOFFICE__C" => $data->gestionBackOffice,
-                "EVENT__C" => $data->event,
-                "REJECTIONMESSAGE__C" => $data->rejectionMessage,
-                "LOGALTYID" => $data->logaltyId,
-                "LOGALTY_ESTADO__C" => $data->logaltyEstado,
-                "DESCARGA_DE_CONTRATO__C" => $data->descargaDeContrato,
-                "DOCUMENTACION_SUBIDA__C" => $data->documentacionSubida,
-                "DESCARGA_DE_CERTIFICADO__C" => $data->descargaDeCertificado,
-                "RECORDNUMBER" => $data->recordNumber,
-                "IDPERSONIRIS" => $data->idPersonIris,
-                "CONTRACTSTATUS" => $data->contractStatus,
-                "LOGALTYDATE" => $data->logaltyDate,
-                "FECHA_FORMALIZACION" => $data->fechaFormalizacion,
-                "PRODUCT_CODE" => $data->productCode,
-                "IDCONTRACT" => $data->idContract,
-                "CLIENT" => $data->client,
-                "METODO_ENTRADA" => $data->metodoEntrada,
-                "MOTIVO_DESESTIMACION" => $data->motivoDesestimacion
-            ];
-
-            $db = $this->db_webservice;
-
-            $parametros = UtilitiesConnection::getParametros($datos,null);
-            $salida = json_decode($db->insertPrepared("evo_events_sf_v2", $parametros),true);
-
-            return $response->withJson($salida);
-        }
-        return null;
-    });
-});
-
-$app->group('/evobanco', function(){
-
-    /* Inserción en tabla evo_user_tracking
-     * params: hashid, stepid, bsdCookie
-     * @JSON salida:
-     *      success:boolean
-     *      message:string
     */
-    $this->post('/userTracking', function (Request $request, Response $response, array $args){
-        $this->logger->info("WS user tracking Evo Banco");
+    $this->post('/eventSF_v2', function (Request $request, Response $response, array $args){
+      $this->logger->info("WS EventSF_V2 Evo Banco");
 
-        if($request->isPost()){
-            $data = $request->getParsedBody();
+      if($request->isPost()){
+        $data = $request->getParsedBody();
 
-            list($url, $ip, $device) = $this->funciones->getServerParams($request);
+        $datos = [
+            "CLIENTID" => $data->clientId,
+            "PERSONMOBILEPHONE" => $data->personMobilePhone,
+            "PERSONEMAIL" => $data->personEmail,
+            "FIRSTNAME" => $data->firstName,
+            "LASTNAME" => $data->lastName,
+            "PERSONHASOPTEDOUTOFEMAIL" => $data->personHasOptedOutOfEmail,
+            "QUIERE_PUBLICIDAD__C" => $data->quierePublicidad,
+            "PERSONDONOTCALL" => $data->personDoNotCall,
+            "CONFIRMA_OK__C" => $data->confirmaOk,
+            "PERSONLEADSOURCE" => $data->personLeadSource,
+            "ELECTRONICAID_OK__C" => $data->electronicaIdOk,
+            "CREATEDDATE" => $data->createdDate,
+            "LASTMODIFIEDDATE" => $data->lastModifiedDate,
+            "RATING" => $data->rating,
+            "CLIENT_ESTADO__C" => $data->clientEstado,
+            "TIPO_DE_IDENTIFICACION__C" => $data->tipoDeIdentificacion,
+            "CLIENTTYPE" => $data->clientType,
+            "STEPID" => $data->stepId,
+            "URL_SALESFORCE" => $data->urlSalesforce,
+            "URL_SOURCE" => $data->urlSource,
+            "ESTADO_CONFIRMA__C" => $data->estadoConfirma,
+            "GESTION__C" => $data->gestion,
+            "SUBGESTION__C" => $data->subgestion,
+            "BLOQUEO_CLIENTE__C" => $data->bloqueoCliente,
+            "ELECTRONICID_ESTADO__C" => $data->electronicIdEstado,
+            "GESTION_BACKOFFICE__C" => $data->gestionBackOffice,
+            "EVENT__C" => $data->event,
+            "REJECTIONMESSAGE__C" => $data->rejectionMessage,
+            "LOGALTYID" => $data->logaltyId,
+            "LOGALTY_ESTADO__C" => $data->logaltyEstado,
+            "DESCARGA_DE_CONTRATO__C" => $data->descargaDeContrato,
+            "DOCUMENTACION_SUBIDA__C" => $data->documentacionSubida,
+            "DESCARGA_DE_CERTIFICADO__C" => $data->descargaDeCertificado,
+            "RECORDNUMBER" => $data->recordNumber,
+            "IDPERSONIRIS" => $data->idPersonIris,
+            "CONTRACTSTATUS" => $data->contractStatus,
+            "LOGALTYDATE" => $data->logaltyDate,
+            "FECHA_FORMALIZACION" => $data->fechaFormalizacion,
+            "PRODUCT_CODE" => $data->productCode,
+            "IDCONTRACT" => $data->idContract,
+            "CLIENT" => $data->client,
+            "METODO_ENTRADA" => $data->metodoEntrada,
+            "MOTIVO_DESESTIMACION" => $data->motivoDesestimacion
+        ];
 
-            $datos = [
-                "hashid" => strtoupper($data->hashid),
-                "stepid" => $data->stepid,
-                "device" => $device,
-                "url_source" => $url,
-                "track_ip" => $ip,
-                "track_cookie" => $data->bsdCookie
-            ];
+        $db = $this->db_webservice;
 
-            $db = $this->db_webservice;
-            $parametros = UtilitiesConnection::getParametros($datos,null);
-            $salida = json_decode($db->insertPrepared("evo_user_tracking", $parametros),true);
+        $parametros = UtilitiesConnection::getParametros($datos,null);
+        $salida = json_decode($db->insertPrepared("evo_events_sf_v2", $parametros),true);
 
-            return $response->withJson($salida);
-        }
-        return null;
+        return $response->withJson($salida);
+      }
+      return null;
     });
 
     /*

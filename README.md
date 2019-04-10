@@ -4,6 +4,15 @@ The goal of this API is to handle the requests received from different kind of e
 
 Uses Slim 3 Framework and PHP 7.1 + MySQL.
 
+To install, run
+
+
+```
+php composer
+
+```
+
+
 
 ## Short Description Usecase
 

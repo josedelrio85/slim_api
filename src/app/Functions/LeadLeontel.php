@@ -27,136 +27,136 @@ class LeadLeontel {
     
     public static function sendLead($data, $db, $dev){
         
-        if(array_key_exists('sou_id', $data)){
-            
-            $datos = [
-                0 => "LEONTEL",
-                1 => NULL,
-                2 => NULL,
-                3 => $data['sou_id'],
-            ];
-                       
-            $query = "SELECT "
-                . "l.lea_id,"
-                . "s.sou_idcrm 'source',"
-                . "lt.leatype_idcrm 'type',"
-                . "l.lea_phone,"
-                . "l.lea_name,";
-            
-            $querySource = self::queryLead($data["sou_id"]);
-
-            $query .= $querySource;
-
-            $queryFromWhere = " FROM webservice.leads l "
-                . "INNER JOIN webservice.sources s ON l.sou_id = s.sou_id "
-                . "INNER JOIN webservice.leadtypes lt ON l.leatype_id = lt.leatype_id "
-                . "WHERE "
-                . "l.lea_destiny = ? "
-                . "AND l.lea_extracted <=> ? "
-                . "AND l.lea_status <=> ? "
-                . "AND l.sou_id = ? ";
-            
-            if($data["sou_id"] == 1 || $data["sou_id"] == 21 || $data["sou_id"] == 22){
-
-                switch($data["sou_id"]){
-                    case 1:
-                        $datos[4] = 21;
-                        $datos[5] = 22;
-                        break;
-                    case 21:
-                        $datos[4] = 1;
-                        $datos[5] = 22;
-                        break;
-                    case 22:
-                        $datos[4] = 1;
-                        $datos[5] = 21;
-                        break;
-                    default:
-                        $datos[3] = 1;
-                        $datos[4] = 21;
-                        $datos[5] = 22;
-                }
-                $queryFromWhere .= " OR l.sou_id = ? OR l.sou_id = ?";
-            }
-            
-            if($data["sou_id"] == 2){
-                $queryFromWhere .= " AND l.leatype_id = ? ";
-                if($data["leatype_id"] == 2){
-                    $datos[4] = $data["leatype_id"];
-                }else{
-                    $datos[4] = 2;
-                }
-                
-            }
-            
-            if($data["sou_id"] == 5){
-                $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
-
-                $queryFromWhere .= " AND l.lea_phone <> ? ";
-                
-                $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208','94.143.76.28'";
-                $datos[5] = "''";
-            }
-            
-            if($data["sou_id"] == 14){
-                $datos[4] = "'139.47.1.166', '194.39.218.10', '92.56.96.208'";
-                $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
-            }
-            
-            if($data["sou_id"] == 3){
-                $queryFromWhere .= " AND l.leatype_id <> ? ";
-                $queryFromWhere .= " AND l.lea_phone <> ? ";
-                $datos[4] = 3;
-                $datos[5] = "''";
-            }
-            
-            $query .= $queryFromWhere; 
-            $query .= " ORDER BY l.lea_id DESC LIMIT 1;";
+      if(array_key_exists('sou_id', $data)){
+          
+        $datos = [
+          0 => "LEONTEL",
+          1 => NULL,
+          2 => NULL,
+          3 => $data['sou_id'],
+        ];
+                      
+        $query = "SELECT "
+          . "l.lea_id,"
+          . "s.sou_idcrm 'source',"
+          . "lt.leatype_idcrm 'type',"
+          . "l.lea_phone,"
+          . "l.lea_name,";
         
-            $r = $db->selectPrepared($query, $datos);
+        $querySource = self::queryLead($data["sou_id"]);
 
-            if(!is_null($r)){
-                
-                $id_origen_leontel = $r[0]->source;
-		        $id_tipo_leontel = $r[0]->type;
-		        $lea_id = $r[0]->lea_id;
+        $query .= $querySource;
 
-                $lead = self::paramsLead($r, $data["sou_id"]);
-                
-                $ws = self::invokeWSLeontel();
-                
-                if(!$dev){
-                    $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                    $lea_status = "SENT";
-                }else{
-                    $retorno["success"] = true;                
-                    $retorno["id"] = 9999;      
-                    $lea_status = "PRUEBA";
-                }
-                
-                if($retorno["success"]){
-                    $datos = [
-                            "lea_extracted" => date("Y-m-d H:i:s"),
-                            "lea_crmid" => $retorno["id"],
-                            "lea_status" => $lea_status,
-                        ];
-                }else{
-                    $datos = [
-                            "lea_crmid" => "ERROR",
-                            "lea_status" => "ERROR"
-                        ];
-                }
-                
-                $where = ["lea_id" => $lea_id];
-                $parametros = UtilitiesConnection::getParametros($datos, $where);
-                
-                $result = $db->updatePrepared("webservice.leads", $parametros);               
-                $res = json_decode($result);
-  
-                return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
+        $queryFromWhere = " FROM webservice.leads l "
+          . "INNER JOIN webservice.sources s ON l.sou_id = s.sou_id "
+          . "INNER JOIN webservice.leadtypes lt ON l.leatype_id = lt.leatype_id "
+          . "WHERE "
+          . "l.lea_destiny = ? "
+          . "AND l.lea_extracted <=> ? "
+          . "AND l.lea_status <=> ? "
+          . "AND l.sou_id = ? ";
+        
+        if($data["sou_id"] == 1 || $data["sou_id"] == 21 || $data["sou_id"] == 22){
+
+            switch($data["sou_id"]){
+                case 1:
+                    $datos[4] = 21;
+                    $datos[5] = 22;
+                    break;
+                case 21:
+                    $datos[4] = 1;
+                    $datos[5] = 22;
+                    break;
+                case 22:
+                    $datos[4] = 1;
+                    $datos[5] = 21;
+                    break;
+                default:
+                    $datos[3] = 1;
+                    $datos[4] = 21;
+                    $datos[5] = 22;
             }
-            return json_encode(['success'=> false, 'message'=> 'No results']);
+            $queryFromWhere .= " OR l.sou_id = ? OR l.sou_id = ?";
         }
+        
+        if($data["sou_id"] == 2){
+            $queryFromWhere .= " AND l.leatype_id = ? ";
+            if($data["leatype_id"] == 2){
+                $datos[4] = $data["leatype_id"];
+            }else{
+                $datos[4] = 2;
+            }
+            
+        }
+        
+        if($data["sou_id"] == 5){
+            $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
+
+            $queryFromWhere .= " AND l.lea_phone <> ? ";
+            
+            $datos[4] = "139.47.1.166', '194.39.218.10', '92.56.96.208','94.143.76.28'";
+            $datos[5] = "''";
+        }
+        
+        if($data["sou_id"] == 14){
+            $datos[4] = "'139.47.1.166', '194.39.218.10', '92.56.96.208'";
+            $queryFromWhere .= " AND l.lea_ip NOT IN (?)";
+        }
+        
+        if($data["sou_id"] == 3){
+            $queryFromWhere .= " AND l.leatype_id <> ? ";
+            $queryFromWhere .= " AND l.lea_phone <> ? ";
+            $datos[4] = 3;
+            $datos[5] = "''";
+        }
+        
+        $query .= $queryFromWhere; 
+        $query .= " ORDER BY l.lea_id DESC LIMIT 1;";
+    
+        $r = $db->selectPrepared($query, $datos);
+
+        if(!is_null($r)){
+            
+          $id_origen_leontel = $r[0]->source;
+          $id_tipo_leontel = $r[0]->type;
+          $lea_id = $r[0]->lea_id;
+
+          $lead = self::paramsLead($r, $data["sou_id"]);
+            
+          $ws = self::invokeWSLeontel();
+            
+          if(!$dev){
+            $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+            $lea_status = "SENT";
+          }else{
+            $retorno["success"] = true;                
+            $retorno["id"] = 9999;      
+            $lea_status = "PRUEBA";
+          }
+            
+          if($retorno["success"]){
+            $datos = [
+              "lea_extracted" => date("Y-m-d H:i:s"),
+              "lea_crmid" => $retorno["id"],
+              "lea_status" => $lea_status,
+            ];
+          }else{
+            $datos = [
+              "lea_crmid" => "ERROR",
+              "lea_status" => "ERROR"
+            ];
+          }
+            
+          $where = ["lea_id" => $lea_id];
+          $parametros = UtilitiesConnection::getParametros($datos, $where);
+            
+          $result = $db->updatePrepared("webservice.leads", $parametros);               
+          $res = json_decode($result);
+
+          return json_encode(['success'=> $res->success, 'message'=> $res->message]);      
+        }
+        return json_encode(['success'=> false, 'message'=> 'No results']);
+      }
     }
     
     public static function sendLeadEvo($data, $db, $dev){
@@ -426,10 +426,10 @@ class LeadLeontel {
         $params = $params ? $params : ["location" => self::$locationWs, "uri" => self::$uriWs];
 
         $ws = new SoapClient(null,[
-		"location" => $params["location"],
-		"uri" => $params["uri"],
-		"compression" => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP]
-	);
+		      "location" => $params["location"],
+		      "uri" => $params["uri"],
+          "compression" => SOAP_COMPRESSION_ACCEPT | SOAP_COMPRESSION_GZIP]
+        );
         return $ws;
     }
     
@@ -640,106 +640,105 @@ class LeadLeontel {
      * para la recuperación del último lead registrado en webservice.
     */
     private function queryLead($sou_id){		
-        if(!is_null($sou_id) && $sou_id!= ""){         
-            
-            switch($sou_id){
-                case 1:
-                case 21:
-                case 22:
-                    //Creditea Abandonos
-                    $querySource = "l.lea_surname,"
-                        . "l.lea_aux2 dninie,"
-                        . "UPPER(l.lea_aux3) asnef,"
-                        . "l.lea_url,"
-                        . "l.lea_ip";
-                    break;
-                case 9:
-                case 58:
-                    //Creditea EndToEnd + CREDITEA HM CORTO
-                    $querySource = "l.lea_mail,"
-                        . "l.lea_url,"
-                        . "l.lea_aux1,"
-                        . "l.lea_aux2 ";
-                    break;
-                case 10:
-                    //Creditea FB
-                    $querySource = "l.lea_mail,"
-                        . "l.lea_ip";
-                    break;
-                case 11:
-                    //Creditea Rastreator
-                    $querySource = "l.lea_aux1,"
-                        . "l.lea_aux2,"
-                        . "l.lea_aux3,"
-                        . "l.lea_aux4";
-                    break;
-                case 2:
-                    //Creditea Stand
-                    $querySource = "l.lea_surname,"
-                        . "l.lea_aux2 dninie,"
-                        . "UPPER(l.lea_aux3) asnef,"
-                        . "l.lea_url,"
-                        . "l.lea_ip";
-                    $tam = count($datos);
-                    $datos[$tam] = $data["leatype_id"];
-                    break; 
-                case 17:
-                case 18:
-                case 19:
-                case 20:
-                    // Yoigo
-                    $querySource = "l.lea_aux2,"
-                        . "l.lea_aux3,"
-                        . "l.lea_url,"
-                        . "l.lea_ip";
-                    break;
-                case 25:
-                case 26:
-                case 27:
-                case 28:
-                case 29:
-                case 30:
-                case 31:
-                case 32:
-                case 33:
-                case 34:
-                case 35:
-                case 36:
-                case 37:
-                case 38:
-                case 39:
-                case 40:
-                    //Microsoft
-                    $querySource = "l.lea_url, "
-                        . "l.lea_ip, "
-                        . "l.lea_mail, "
-                        . "l.lea_aux3, "
-                        . "l.lea_aux4, "
-                        . "l.lea_aux5, "
-                        . "l.lea_aux6, "
-                        . "l.lea_aux7, "
-                        . "l.lea_aux8, "
-                        . "l.lea_aux9, "
-                        . "l.lea_aux10, "
-                        . "l.observations ";
-                    break;
-                case 53: //ipf
-                        // Creditea IPF
-                        $querySource =" "
-                            . "l.lea_aux1, "
-                            . "l.lea_aux2, "
-                            . "l.lea_aux4, "
-                            . "l.observations ";
-                        break;
-                default:
-                    /* case 5: case 12: case 7:case 14:case 8: case 6:*/
-                    //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar + EvoBanco (sendC2CToLeontel)
-                    $querySource = "l.lea_mail,"
-                        . "l.lea_url";
-            }
-            return $querySource;
+      if(!is_null($sou_id) && $sou_id!= ""){              
+        switch($sou_id){
+          case 1:
+          case 21:
+          case 22:
+            //Creditea Abandonos
+            $querySource = "l.lea_surname,"
+                . "l.lea_aux2 dninie,"
+                . "UPPER(l.lea_aux3) asnef,"
+                . "l.lea_url,"
+                . "l.lea_ip";
+            break;
+          case 9:
+          case 58:
+            //Creditea EndToEnd + CREDITEA HM CORTO
+            $querySource = "l.lea_mail,"
+                . "l.lea_url,"
+                . "l.lea_aux1,"
+                . "l.lea_aux2 ";
+            break;
+          case 10:
+            //Creditea FB
+            $querySource = "l.lea_mail,"
+                . "l.lea_ip";
+            break;
+          case 11:
+            //Creditea Rastreator
+            $querySource = "l.lea_aux1,"
+                . "l.lea_aux2,"
+                . "l.lea_aux3,"
+                . "l.lea_aux4";
+            break;
+          case 2:
+            //Creditea Stand
+            $querySource = "l.lea_surname,"
+                . "l.lea_aux2 dninie,"
+                . "UPPER(l.lea_aux3) asnef,"
+                . "l.lea_url,"
+                . "l.lea_ip";
+            $tam = count($datos);
+            $datos[$tam] = $data["leatype_id"];
+            break; 
+          case 17:
+          case 18:
+          case 19:
+          case 20:
+            // Yoigo
+            $querySource = "l.lea_aux2,"
+              . "l.lea_aux3,"
+              . "l.lea_url,"
+              . "l.lea_ip";
+            break;
+          case 25:
+          case 26:
+          case 27:
+          case 28:
+          case 29:
+          case 30:
+          case 31:
+          case 32:
+          case 33:
+          case 34:
+          case 35:
+          case 36:
+          case 37:
+          case 38:
+          case 39:
+          case 40:
+            //Microsoft
+            $querySource = "l.lea_url, "
+                . "l.lea_ip, "
+                . "l.lea_mail, "
+                . "l.lea_aux3, "
+                . "l.lea_aux4, "
+                . "l.lea_aux5, "
+                . "l.lea_aux6, "
+                . "l.lea_aux7, "
+                . "l.lea_aux8, "
+                . "l.lea_aux9, "
+                . "l.lea_aux10, "
+                . "l.observations ";
+            break;
+          case 53: //ipf
+            // Creditea IPF
+            $querySource =" "
+              . "l.lea_aux1, "
+              . "l.lea_aux2, "
+              . "l.lea_aux4, "
+              . "l.observations ";
+            break;
+          default:
+              /* case 5: case 12: case 7:case 14:case 8: case 6:*/
+              //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar + EvoBanco (sendC2CToLeontel)
+              $querySource = "l.lea_mail,"
+                    . "l.lea_url";
         }
-        return "";
+        return $querySource;
+      }
+      return "";
     }
     
     /*
@@ -747,236 +746,234 @@ class LeadLeontel {
     */
     private function paramsLead($r, $sou_id){
         
-        if(!is_null($r) && $sou_id != "" && !is_null($sou_id)){
-                    
-            $id_origen_leontel = $r[0]->source;
-            $id_tipo_leontel = $r[0]->type;
-            $lea_id = $r[0]->lea_id;
-            $phone = $r[0]->lea_phone;
-            $nombre = $r[0]->lea_name;
- 
-            switch($sou_id){
-                case 1                :
-                case 21:
-                case 22:
-                    //Abandonos
-                    $apellidos = $r[0]->lea_surname;
-                    $url = $r[0]->lea_url;
-                    $ip = $r[0]->lea_ip;
-                    $asnef = $r[0]->asnef;
+      if(!is_null($r) && $sou_id != "" && !is_null($sou_id)){
+                  
+        $id_origen_leontel = $r[0]->source;
+        $id_tipo_leontel = $r[0]->type;
+        $lea_id = $r[0]->lea_id;
+        $phone = $r[0]->lea_phone;
+        $nombre = $r[0]->lea_name;
 
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'nombre' => $nombre,
-                        'apellido1' => $apellidos,
-                        'asnef' => $asnef,
-                        'url' => $url,
-                        'ip' => $ip,
-                        'wsid' => $lea_id
-                    ];
-                    break;
-                case 9:
-                case 58:
-                    //Creditea EndToEnd + CREDITEA HM CORTO
-                    $dninie = $r[0]->lea_aux1;
-                    $url = $r[0]->lea_url;
-                    $cantidadSolicitada = $r[0]->lea_aux2;
+        switch($sou_id){
+          case 1                :
+          case 21:
+          case 22:
+            //Abandonos
+            $apellidos = $r[0]->lea_surname;
+            $url = $r[0]->lea_url;
+            $ip = $r[0]->lea_ip;
+            $asnef = $r[0]->asnef;
 
-                    $lead = [
-                            'TELEFONO' => $phone,
-                            'url' => $url,
-                            'wsid' => $lea_id,
-                            'dninie' => $dninie,
-                            'observaciones' => $cantidadSolicitada
-                    ];
-                    break;
-                case 10:
-                    //FB
-                    $email = $r[0]->lea_mail;
-                    $ip = $r[0]->lea_ip;
+            $lead = [
+                'TELEFONO' => $phone,
+                'nombre' => $nombre,
+                'apellido1' => $apellidos,
+                'asnef' => $asnef,
+                'url' => $url,
+                'ip' => $ip,
+                'wsid' => $lea_id
+            ];
+            break;
+          case 9:
+          case 58:
+            //Creditea EndToEnd + CREDITEA HM CORTO
+            $dninie = $r[0]->lea_aux1;
+            $url = $r[0]->lea_url;
+            $cantidadSolicitada = $r[0]->lea_aux2;
 
-                    $lead = [
-                            'TELEFONO' => $phone,
-                            'nombre' => $nombre,
-                            'Email' => $email,
-                            'ip' => $ip,
-                            'wsid' => $lea_id
-                    ];
-                    break;
-                case 11:
-                    //Rastreator
-                    $observaciones = "DNI: ".$r[0]->lea_aux4." Ingresos netos: ".$r[0]->lea_aux3." Tipo contrato: ".$r[0]->lea_aux2." Cantidad solicitada: ".$r[0]->lea_aux1;
-                    $name = $r[0]->lea_name;
+            $lead = [
+                    'TELEFONO' => $phone,
+                    'url' => $url,
+                    'wsid' => $lea_id,
+                    'dninie' => $dninie,
+                    'observaciones' => $cantidadSolicitada
+            ];
+            break;
+          case 10:
+            //FB
+            $email = $r[0]->lea_mail;
+            $ip = $r[0]->lea_ip;
 
-                    $lead = [
-                            'TELEFONO' => $phone,
-                            'observaciones' => $observaciones,
-                            'nombre' => $name,
-                            'wsid' => $lea_id
-                    ];
-                    break;
-                case 2:
-                    $apellidos = $r[0]->lea_surname;
-                    $dninie = $r[0]->dninie;
-                    $asnef = $r[0]->asnef;
-                    $url = $r[0]->lea_url;
-                    $ip = $r[0]->lea_ip;
+            $lead = [
+                    'TELEFONO' => $phone,
+                    'nombre' => $nombre,
+                    'Email' => $email,
+                    'ip' => $ip,
+                    'wsid' => $lea_id
+            ];
+            break;
+          case 11:
+            //Rastreator
+            $observaciones = "DNI: ".$r[0]->lea_aux4." Ingresos netos: ".$r[0]->lea_aux3." Tipo contrato: ".$r[0]->lea_aux2." Cantidad solicitada: ".$r[0]->lea_aux1;
+            $name = $r[0]->lea_name;
 
-                    $lead = [
-                            'TELEFONO' => $phone,
-                            'nombre' => $nombre,
-                            'apellido1' => $apellidos,
-                            'dninie' => $dninie,
-                            'asnef' => $asnef,
-                            'url' => $url,
-                            'ip' => $ip,
-                            'wsid' => $lea_id
-                    ];
-                    break;            
-                case 5:
-                case 14:
-                case 3:
-                case 15:
-                    $url = $r[0]->lea_url;
-                    $email = $r[0]->lea_mail;
+            $lead = [
+                    'TELEFONO' => $phone,
+                    'observaciones' => $observaciones,
+                    'nombre' => $name,
+                    'wsid' => $lea_id
+            ];
+            break;
+          case 2:
+            $apellidos = $r[0]->lea_surname;
+            $dninie = $r[0]->dninie;
+            $asnef = $r[0]->asnef;
+            $url = $r[0]->lea_url;
+            $ip = $r[0]->lea_ip;
 
-                    $lead = [
-                            'TELEFONO' => $phone,
-                            'nombre' => $nombre,
-                            'Email' => $email,
-                            'url' => $url,
-                            'wsid' => $lea_id
-                    ];
-                    break;
-                case 12:
-                    $url = $r[0]->lea_url;
+            $lead = [
+                    'TELEFONO' => $phone,
+                    'nombre' => $nombre,
+                    'apellido1' => $apellidos,
+                    'dninie' => $dninie,
+                    'asnef' => $asnef,
+                    'url' => $url,
+                    'ip' => $ip,
+                    'wsid' => $lea_id
+            ];
+            break;            
+          case 5:
+          case 14:
+          case 3:
+          case 15:
+            $url = $r[0]->lea_url;
+            $email = $r[0]->lea_mail;
 
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'url' => $url,
-                        'wsid' => $lea_id
-                    ];
-                    break;
-                case 7:
-                case 8:
-                case 6:
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'wsid' => $lea_id
-                    ];
-                    break;
-                case 17:
-                case 18:
-                case 19:
-                case 20:
-                    $observaciones = $r[0]->lea_aux2;
-                    $url = $r[0]->lea_url;
-                    $ip = $r[0]->lea_ip;
-                    $observaciones2 = $r[0]->lea_aux3;
-                    
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'url' => $url,
-                        'wsid' => $lea_id,
-                        'ip' => $ip,
-                        'observaciones' => $observaciones,
-                        'observaciones2' => $observaciones2
-                    ];
-                    break;
-                case 26:                
-                case 27:
-                case 28:
-                case 29:
-                case 30:
-                    $url = $r[0]->lea_url;                    
-                    $ip = $r[0]->lea_ip;
-                    $lea_aux4 = $r[0]->lea_aux4;
-                    $lea_aux5 = $r[0]->lea_aux5;
-                    $lea_aux6 = $r[0]->lea_aux6;
-                    $lea_aux7 = $r[0]->lea_aux7;
-                    $lea_aux8 = $r[0]->lea_aux8;
-                    $lea_aux9 = $r[0]->lea_aux9;
-                    $lea_aux10 = $r[0]->lea_aux10;
-                    $observations = $r[0]->observations;
-                    
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'url' => $url,
-                        'wsid' => $lea_id,
-                        'ip' => $ip,
-                        'tipoordenador' => $lea_aux4,
-                        'sector' => $lea_aux5,
-                        'presupuesto' => $lea_aux6,
-                        'rendimiento' => $lea_aux7,
-                        'movilidad' => $lea_aux8,
-                        'tipouso' => $lea_aux9." ".$sou_id,
-                        'Office365' => $lea_aux10,
-                        'observaciones2' => $observations
-                    ];
-                    break;
-                case 25:
-                case 31:                
-                case 32:
-                case 33:
-                case 34:
-                case 35:
-                    $url = $r[0]->lea_url;                    
-                    $ip = $r[0]->lea_ip;
-                    
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'url' => $url,
-                        'wsid' => $lea_id,
-                        'ip' => $ip
-                    ];
-                    break;
-                case 36:
-                case 37:
-                case 38:
-                case 39:
-                case 40:
-                    $observations = $r[0]->lea_aux10;
-                    $url = $r[0]->lea_url;
-                    $ip = $r[0]->lea_ip;
+            $lead = [
+                    'TELEFONO' => $phone,
+                    'nombre' => $nombre,
+                    'Email' => $email,
+                    'url' => $url,
+                    'wsid' => $lea_id
+            ];
+            break;
+          case 12:
+            $url = $r[0]->lea_url;
 
-                    $lead = [
-                            'TELEFONO' => $phone,
-                            'url' => $url,
-                            'wsid' => $lea_id,
-                            'ip' => $ip,
-                            'observaciones2' => $observations
-                    ];
-                    break;
-                case 53: //ipf 
-                    $lea_aux1 = $r[0]->lea_aux1;
-                    $lea_aux2 = $r[0]->lea_aux2;
-                    $lea_aux4 = $r[0]->lea_aux4;
-                    $observations = $r[0]->observations;
-                    
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'wsid' => $lea_id,
-                        'ncliente' => $lea_aux4,
-                        'dninie' => $lea_aux1,
-                        'observaciones' => $observations,
-                        'cantidadofrecida' => $lea_aux2
-                    ];
-                    break;
-                default:
-                   
-                    $observations = $r[0]->lea_aux10;
+            $lead = [
+                'TELEFONO' => $phone,
+                'url' => $url,
+                'wsid' => $lea_id
+            ];
+            break;
+          case 7:
+          case 8:
+          case 6:
+            $lead = [
+                'TELEFONO' => $phone,
+                'wsid' => $lea_id
+            ];
+            break;
+          case 17:
+          case 18:
+          case 19:
+          case 20:
+            $observaciones = $r[0]->lea_aux2;
+            $url = $r[0]->lea_url;
+            $ip = $r[0]->lea_ip;
+            $observaciones2 = $r[0]->lea_aux3;
+            
+            $lead = [
+                'TELEFONO' => $phone,
+                'url' => $url,
+                'wsid' => $lea_id,
+                'ip' => $ip,
+                'observaciones' => $observaciones,
+                'observaciones2' => $observaciones2
+            ];
+            break;
+          case 26:                
+          case 27:
+          case 28:
+          case 29:
+          case 30:
+            $url = $r[0]->lea_url;                    
+            $ip = $r[0]->lea_ip;
+            $lea_aux4 = $r[0]->lea_aux4;
+            $lea_aux5 = $r[0]->lea_aux5;
+            $lea_aux6 = $r[0]->lea_aux6;
+            $lea_aux7 = $r[0]->lea_aux7;
+            $lea_aux8 = $r[0]->lea_aux8;
+            $lea_aux9 = $r[0]->lea_aux9;
+            $lea_aux10 = $r[0]->lea_aux10;
+            $observations = $r[0]->observations;
+            
+            $lead = [
+                'TELEFONO' => $phone,
+                'url' => $url,
+                'wsid' => $lea_id,
+                'ip' => $ip,
+                'tipoordenador' => $lea_aux4,
+                'sector' => $lea_aux5,
+                'presupuesto' => $lea_aux6,
+                'rendimiento' => $lea_aux7,
+                'movilidad' => $lea_aux8,
+                'tipouso' => $lea_aux9." ".$sou_id,
+                'Office365' => $lea_aux10,
+                'observaciones2' => $observations
+            ];
+            break;
+          case 25:
+          case 31:                
+          case 32:
+          case 33:
+          case 34:
+          case 35:
+            $url = $r[0]->lea_url;                    
+            $ip = $r[0]->lea_ip;
+            
+            $lead = [
+                'TELEFONO' => $phone,
+                'url' => $url,
+                'wsid' => $lea_id,
+                'ip' => $ip
+            ];
+            break;
+          case 36:
+          case 37:
+          case 38:
+          case 39:
+          case 40:
+            $observations = $r[0]->lea_aux10;
+            $url = $r[0]->lea_url;
+            $ip = $r[0]->lea_ip;
 
-                    $lead = [
-                        'TELEFONO' => $phone,
-                        'url' => $url,
-                        'wsid' => $lea_id,
-                        'ip' => $ip,
-                        'observaciones2' => $observations
-                    ];
-            }
-            return $lead;
+            $lead = [
+                    'TELEFONO' => $phone,
+                    'url' => $url,
+                    'wsid' => $lea_id,
+                    'ip' => $ip,
+                    'observaciones2' => $observations
+            ];
+            break;
+          case 53: //ipf 
+            $lea_aux1 = $r[0]->lea_aux1;
+            $lea_aux2 = $r[0]->lea_aux2;
+            $lea_aux4 = $r[0]->lea_aux4;
+            $observations = $r[0]->observations;
+            
+            $lead = [
+                'TELEFONO' => $phone,
+                'wsid' => $lea_id,
+                'ncliente' => $lea_aux4,
+                'dninie' => $lea_aux1,
+                'observaciones' => $observations,
+                'cantidadofrecida' => $lea_aux2
+            ];
+            break;
+          default:               
+            $observations = $r[0]->lea_aux10;
+            $lead = [
+              'TELEFONO' => $phone,
+              'url' => $url,
+              'wsid' => $lea_id,
+              'ip' => $ip,
+              'observaciones2' => $observations
+            ];
         }
-        return [];
+        return $lead;
+      }
+      return [];
     }  
     
     /*
@@ -984,105 +981,108 @@ class LeadLeontel {
      */
     public static function getIdTipoLeontel($LOGALTY_ESTADO__C, $CLIENT_ESTADO__C, $STEPID, $CONTRACTSTATUS){
 	
-	/*
-	- SI EL PASO ES metodo-validacion y el estado cliente es potencial o pendiente revisión captación -> lo enviamos a INCOMPLETOS. si el estado cliente es activo u otro NO lo enviamos
-	- SI EL PASO ES identificacion-video y el estado cliente es potencial o pendiente revisión captación -> lo enviamos A PENDIENTE EID. EN CASO DE OTRO ESTADO NADA
-	- SI EL PASO ES identificacion-iban y el estado cliente es potencial o pendiente revisión captación -> lo enviamos A PENDIENTE CONFIRMA. EN CASO DE OTRO ESTADO NADA
-	- SI EL PASO ES previa-firma, proceso-firma, casi-lo-tenemos, contratacion-ci, confirmacion-datos  y el estado cliente es activo, pendiente revision captacion, potencial o PENDIENTE DE ELECTRONICA ID si estado logalty es '', tiempo expirado, Pendiente Firma OTP, Cancela Cliente
-	o Error de Validación OTP Logalty lo enviamos a PENDIENTE DE FIRMA
-	*/
+      /*
+      - SI EL PASO ES metodo-validacion y el estado cliente es potencial o pendiente revisión captación -> lo enviamos a INCOMPLETOS. si el estado cliente es activo u otro NO lo enviamos
+      - SI EL PASO ES identificacion-video y el estado cliente es potencial o pendiente revisión captación -> lo enviamos A PENDIENTE EID. EN CASO DE OTRO ESTADO NADA
+      - SI EL PASO ES identificacion-iban y el estado cliente es potencial o pendiente revisión captación -> lo enviamos A PENDIENTE CONFIRMA. EN CASO DE OTRO ESTADO NADA
+      - SI EL PASO ES previa-firma, proceso-firma, casi-lo-tenemos, contratacion-ci, confirmacion-datos  y el estado cliente es activo, pendiente revision captacion, potencial o PENDIENTE DE ELECTRONICA ID si estado logalty es '', tiempo expirado, Pendiente Firma OTP, Cancela Cliente
+      o Error de Validación OTP Logalty lo enviamos a PENDIENTE DE FIRMA
+      */
 	
-	switch($STEPID){
-            case 'metodo-validacion':
-                switch($CLIENT_ESTADO__C) {
-                    case 'Potencial':
-                    case 'Pendiente revisión Captación':
-                        return ["destiny"=> "LEONTEL",
-                            // "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelIncompletosV2.php",
-                            "idTipoLeontel" => 22
-			];
-                    break;
-                    default:
-                        return null;
-                }
-            break;
-		
-            case 'identificacion-video':
-                switch($CLIENT_ESTADO__C) {
-                    case 'Potencial':
-                    case 'Pendiente revisión Captación':
-			return ["destiny"=> "LEONTEL",
-//                          "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteElectronicaIDV2.php"
-                            "idTipoLeontel" => 19
-			];
-                        break;
-                    default:
-                        return null; 
-                        break;
-                }
-            break;
-
-            case 'identificacion-iban':
-                switch($CLIENT_ESTADO__C) {
-                    case 'Potencial':
-                    case 'Pendiente revisión Captación':
-                        return ["destiny"=> "LEONTEL",
-                            //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteConfirmaV2.php"
-                            "idTipoLeontel" => 20
-                        ];
-                        break;
-                    default:
-                        return null;
-                        break;
-                }
-            break;
-
-            case 'confirmacion-datos':
-            case 'previa-firma':
-            case 'proceso-firma':
-            case 'casi-lo-tenemos':
-            case 'contratacion-ci':
-                switch($CLIENT_ESTADO__C) {
-                    case 'Potencial':
-                    case 'Pendiente revisión Captación':
-                    case 'Activo':
-                    case 'Pendiente de Electronica ID':
-                        switch($LOGALTY_ESTADO__C) {
-                            case '':
-                            case 'Tiempo Expirado':
-                            case 'Cancela Cliente':
-                            case 'Error de Validación OTP Logalty':
-                            case 'Pendiente Firma OTP':
-                                switch ($CONTRACTSTATUS){
-                                    case 'Pre-firma':
-                                        return ["destiny" => "LEONTEL",
-                                            //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
-                                            "idTipoLeontel" => 18];
-                                        break;
-                                    case 'Firma':
-                                        return ["destiny" => "LEONTEL",
-                                            //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
-                                            "idTipoLeontel" => 18];
-                                        break;
-                                    default:
-                                        return NULL;
-                                        break;
-                                }
-                                break;
-                            default:
-                               return NULL;
-                               break;
-                        }
-                        break;
-                    default:
-                        return null;                
-                        break;
-                }
-                break;
-
+	    switch($STEPID){
+        case 'metodo-validacion':
+          switch($CLIENT_ESTADO__C) {
+            case 'Potencial':
+            case 'Pendiente revisión Captación':
+              return [
+                "destiny"=> "LEONTEL",
+                // "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelIncompletosV2.php",
+                "idTipoLeontel" => 22
+              ];
+              break;
             default:
-                return NULL;
-	}
+              return null;
+          }
+          break;
+        case 'identificacion-video':
+          switch($CLIENT_ESTADO__C) {
+            case 'Potencial':
+            case 'Pendiente revisión Captación':
+              return [
+                "destiny"=> "LEONTEL",
+                // "filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteElectronicaIDV2.php"
+                "idTipoLeontel" => 19
+              ];
+              break;
+            default:
+              return null; 
+              break;
+          }
+          break;
+        case 'identificacion-iban':
+          switch($CLIENT_ESTADO__C) {
+            case 'Potencial':
+            case 'Pendiente revisión Captación':
+              return [
+                "destiny"=> "LEONTEL",
+                //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteConfirmaV2.php"
+                "idTipoLeontel" => 20
+              ];
+              break;
+            default:
+              return null;
+              break;
+          }
+          break;
+        case 'confirmacion-datos':
+        case 'previa-firma':
+        case 'proceso-firma':
+        case 'casi-lo-tenemos':
+        case 'contratacion-ci':
+          switch($CLIENT_ESTADO__C) {
+            case 'Potencial':
+            case 'Pendiente revisión Captación':
+            case 'Activo':
+            case 'Pendiente de Electronica ID':
+              switch($LOGALTY_ESTADO__C) {
+                case '':
+                case 'Tiempo Expirado':
+                case 'Cancela Cliente':
+                case 'Error de Validación OTP Logalty':
+                case 'Pendiente Firma OTP':
+                  switch ($CONTRACTSTATUS){
+                    case 'Pre-firma':
+                      return [
+                        "destiny" => "LEONTEL",
+                        //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
+                        "idTipoLeontel" => 18
+                      ];
+                      break;
+                    case 'Firma':
+                      return [
+                        "destiny" => "LEONTEL",
+                        //"filePath"=> "/var/www/html/Leontel/EvoBanco/FullOnline2.0/sendLeadToLeontelPendienteOTPV2.php"
+                        "idTipoLeontel" => 18
+                      ];
+                      break;
+                    default:
+                      return NULL;
+                      break;
+                  }
+                  break;
+                default:
+                  return NULL;
+                  break;
+              }
+              break;
+            default:
+              return null;                
+              break;
+          }
+          break;
+        default:
+          return NULL;
+	    }
     }
     
     /*

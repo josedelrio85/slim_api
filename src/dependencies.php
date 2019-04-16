@@ -23,7 +23,7 @@ $container['errorHandler'] = function($c){
     return new \App\Libraries\CustomError($c['logger']);
 };
 
-/* Settings DB Producción */
+/* Settings DB */
 $container['settings_db_report_panel'] = function($c){
     $dbSettings = $c->get('settings')['db_report_panel'];
     return $dbSettings;
@@ -39,30 +39,11 @@ $container['settings_db_crmti'] = function($c){
     return $dbSettings;
 };
 
-
-/* Settings DB Desarrollo */
-//$container['settings_db_report_panel_dev'] = function($c){
-//    $dbSettings = $c->get('settings')['db_report_panel_dev'];
-//    return $dbSettings;
-//};
-//
-//$container['settings_db_webservice_dev'] = function($c){
-//    $dbSettings = $c->get('settings')['db_webservice_dev'];   
-//    return $dbSettings;
-//};
-//
-//$container['settings_db_crmti_dev'] = function($c){
-//    $dbSettings = $c->get('settings')['db_crmti_dev'];
-//    return $dbSettings;
-//};
-
-
-/* Conexión DB Producción */
+/* Connections DB */
 $container['db_report_panel'] = function($c){
     $dbSettings = $c->get('settings')['db_report_panel'];
     $a = new \App\Libraries\Connection($dbSettings);   
-    return $a;
-    
+    return $a;    
 };
 
 $container['db_webservice'] = function($c){
@@ -78,39 +59,18 @@ $container['db_crmti'] = function($c){
 };
 
 
-/* Conexión DB Desarrollo */
-//$container['db_report_panel_dev'] = function($c){
-//    $dbSettings = $c->get('settings')['db_report_panel_dev'];
-//    $a = new \App\Libraries\Connection($dbSettings);
-//    return $a;
-//};
-//
-//$container['db_webservice_dev'] = function($c){
-//    $dbSettings = $c->get('settings')['db_webservice_dev'];
-//    $a = new \App\Libraries\Connection($dbSettings);     
-//    return $a;
-//};
-//
-//$container['db_crmti_dev'] = function($c){
-//    $dbSettings = $c->get('settings')['db_crmti_dev'];
-//    $a = new \App\Libraries\Connection($dbSettings);
-//    return $a;
-//};
-
-
-
 $container['funciones'] = function($c){
     return new \App\Functions\Functions($c->get('settings')['dev']);
 };
 
-$container['utilities'] = function(){
-    return new \App\Functions\Utilities();
+$container['utilities'] = function($c){
+  $logger = $c->get('logger');
+  return new \App\Functions\Utilities($logger);
 };
 
 $container['sou_id_test'] = function($c){
     return $c->get('settings')['sou_id_test'];
 };
-
 
 $container['dev'] = function($c){
     return $c->get('settings')['dev'];

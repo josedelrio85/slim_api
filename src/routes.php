@@ -861,7 +861,8 @@ $app->group('/creditea', function(){
      */
     $this->post('/almacenaLeadNoValido', function(Request $request, Response $response, array $args){
 
-        $this->logger->info("WS C2C Creditea E2E almacena lead no válido.");
+        // $this->logger->info("WS C2C Creditea E2E almacena lead no válido.");
+        $this->utilities->infoLog("WS C2C Creditea E2E almacena lead no válido.");
 
         if($request->isPost()){
 
@@ -913,7 +914,8 @@ $app->group('/creditea', function(){
     */
     $this->post('/validaDniTelf', function(Request $request, Response $response, array $args){
 
-        $this->logger->info("WS para validacion datos LP Creditea.");
+        // $this->logger->info("WS para validacion datos LP Creditea.");
+        $this->utilities->infoLog("WS para validacion datos LP Creditea.");
 
         if($request->isPost()){
             $data = $request->getParsedBody();
@@ -1048,7 +1050,7 @@ $app->group('/creditea', function(){
     */
     $this->post('/ipf', function(Request $request, Response $response, array $args){
 
-      $this->logger->info("Method for receiving array of leads from IPF.");
+      $this->utilities->infoLog("Method for receiving array of leads from IPF.");
 
       $results = [];
 
@@ -1063,9 +1065,11 @@ $app->group('/creditea', function(){
         foreach($leads as $lead) {
 
           foreach ($lead as $key => $value) {
-            $this->logger->info($key. " => ".$value);
+            // $this->logger->info($key. " => ".$value);
+            $this->utilities->infoLog($key. " => ".$value);
           }
-          $this->logger->info("-----------------");
+          // $this->logger->info("-----------------");
+          $this->utilities->infoLog("-----------------");
 
           $observations = $lead->idStatusDate."---".$lead->application;
           if($this->funciones->phoneFormatValidator($lead->phoneId)){
@@ -1106,9 +1110,21 @@ $app->group('/creditea', function(){
             idStatusDate => 2019-02-11T14:17:45.000Z    Observaciones (observaciones)			observations
         */
       }
+      // $this->logger->info("----------RESULTS-------");
+      $this->utilities->infoLog("----------RESULTS-------");
+
+      foreach ($results as $key => $value) {
+        // $this->logger->info($key. " => ".$value->success. " ". $value->message);
+        $this->utilities->infoLog($key. " => ".$value->success. " ". $value->message);
+      }
+      // $this->logger->info("----------END RESULTS-------");
+      $this->utilities->infoLog("----------END RESULTS-------");
+
+
       return $response->withJson($results);
     });
 });
+
 
 $app->group('/evobanco', function(){
 
@@ -1880,77 +1896,78 @@ $app->group('/microsoft', function(){
 
 $app->group('/sanitas', function(){
 
-    $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
+  $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
+    
+    $this->utilities->infoLog("Sanitas incomingC2C request");
 
-        $this->logger->info("Sanitas incomingC2C request");
+    if($request->isPost()){
 
-        if($request->isPost()){
+      $data = $request->getParsedBody();
 
-            $data = $request->getParsedBody();
+      // $sou_id = $this->sou_id_test;           
+      $sou_id = 57;
+      $lea_type = 1;
+      list($url, $ip) = $this->funciones->getServerParams($request);
 
-            // $sou_id = $this->sou_id_test;           
-            $sou_id = 57;
-            $lea_type = 1;
-            list($url, $ip) = $this->funciones->getServerParams($request);
+      $datos = [
+        "lea_destiny" => 'GSS',
+        "sou_id" => $sou_id,
+        "leatype_id" => $lea_type,
+        "utm_source" => $data->utm_source,
+        "sub_source" => $data->sub_source,
+        "lea_phone" => $data->phone,
+        "lea_url" => $url,
+        "lea_ip" => $ip,
+        "lea_aux2" => $data->producto,
+        "lea_name" => $data->name
+        // acepCond ??
+        // acepBd ??
+      ];
 
-            $datos = [
-                "lea_destiny" => 'GSS',
-                "sou_id" => $sou_id,
-                "leatype_id" => $lea_type,
-                "utm_source" => $data->utm_source,
-                "sub_source" => $data->sub_source,
-                "lea_phone" => $data->phone,
-                "lea_url" => $url,
-                "lea_ip" => $ip,
-                "lea_aux2" => $data->producto,
-                "lea_name" => $data->name
-                // acepCond ??
-                // acepBd ??
-            ];
+      $db = $this->db_webservice;
+      $parametros = UtilitiesConnection::getParametros($datos,null);
+      $salida = json_decode($db->insertPrepared("leads", $parametros),true);
 
-            $db = $this->db_webservice;
-            $parametros = UtilitiesConnection::getParametros($datos,null);
-            $salida = json_decode($db->insertPrepared("leads", $parametros),true);
+      if(!$salida['success'])
+          $salida['message'] = 'KO';
 
-            if(!$salida['success'])
-                $salida['message'] = 'KO';
+      return $response->withJson($salida);
+    }
+  });
 
-            return $response->withJson($salida);
-        }
-    });
+  $this->post('/statusLeadGSS', function(Request $request, Response $response, array $args){
+      $this->logger->info("GSS status lead request");
 
-    $this->post('/statusLeadGSS', function(Request $request, Response $response, array $args){
-        $this->logger->info("GSS status lead request");
+      if($request->isPost()){
+          $data = (object) $request->getParsedBody();
 
-        if($request->isPost()){
-            $data = (object) $request->getParsedBody();
+          $datos = [
+              // "lea_id" => $data->idLead,
+              // "lea_phone" => $data->Telefono,
+              "__status" => $data->codEstado,
+              "__resultado" => $data->codResultado,
+              "__motivo" => $data->codMotivo,
+          ];
 
-            $datos = [
-                // "lea_id" => $data->idLead,
-                // "lea_phone" => $data->Telefono,
-                "__status" => $data->codEstado,
-                "__resultado" => $data->codResultado,
-                "__motivo" => $data->codMotivo,
-            ];
+          // nombre de los campos a actualizar¿¿¿????
+          // HABRÁ QUE ACTUALIZAR EL ESTADO DEL LEAD, PERO COMO HACEMOS ESTO??? EL LEAD ESTÁ ALMACENADO EN webservice.leads
+          // USAR COMO REFERENCIA $lea_id y $lea_phone
 
-            // nombre de los campos a actualizar¿¿¿????
-            // HABRÁ QUE ACTUALIZAR EL ESTADO DEL LEAD, PERO COMO HACEMOS ESTO??? EL LEAD ESTÁ ALMACENADO EN webservice.leads
-            // USAR COMO REFERENCIA $lea_id y $lea_phone
+          $where = [
+              "lea_id" => $data->lea_id,
+              "lea_phone" => $data->Telefono
+          ];
 
-            $where = [
-                "lea_id" => $data->lea_id,
-                "lea_phone" => $data->Telefono
-            ];
+          $parametros = UtilitiesConnection::getParametros($datos, $where);
 
-            $parametros = UtilitiesConnection::getParametros($datos, $where);
+          $tabla = "webservice.leads";
+          $salida = json_decode($db->updatePrepared($tabla, $parametros), true);
 
-            $tabla = "webservice.leads";
-            $salida = json_decode($db->updatePrepared($tabla, $parametros), true);
-
-            return $response->withJson($salida);
-        }
-    });
+          return $response->withJson($salida);
+      }
+  });
 });
+
 
 $app->group('/clients', function(){
   // This handler returns the status from some records from the EVO Banco End

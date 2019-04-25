@@ -97,13 +97,65 @@ $app->group('/test', function(){
       throw new Exception("hola cara de bola!");
       try {
         throw new Exception();
-        //  throw new App\Libraries\CustomException("ei parroquia!");
-      } catch (App\Libraries\CustomException $e) {      // Será atrapada
+      } catch (App\Libraries\CustomException $e) {
         echo "Atrapada mi excepción\n", $e;
-      } catch (Exception $e) {        // Skipped
+      } catch (Exception $e) {
         //  echo "Atrapada la Excepción Predeterminada\n", $e;
       }
       echo "\n\n";
+    });
+
+    $this->post('/testErrorsForExceptions', function(Request $request, Response $response, array $args){
+      
+      $data = $request->getParsedBody();
+
+      switch($data->test){
+        case '1':
+          // Log file blocked and can't write inside
+          $this->utilities->infoLog("Testing log!");
+          break;
+        case '2':
+          // generate a runtime error that has to be managed by CustomPHPErrorHandler class
+          $var = 1;
+          $var->method();
+          break;
+        case '3':
+          // Needed param is missing, exception managed by CustomException class
+          $datos = [
+            0 => "LEONTEL",
+            // 1 => $data->sou_id,
+          ];
+  
+          $query = "SELECT * "
+          . "FROM webservice.leads l "
+          . "WHERE "
+          . "l.lea_destiny = ? "
+          . "AND l.sou_id = ? ";
+    
+          $db = $this->db_webservice;
+          $r = $db->selectPrepared($query, $datos);
+          break;
+        case '4':
+          // Needed where param is missing, exception managed by CustomException class
+          $datos = [
+            0 => "LEONTEL",
+            1 => $data->sou_id,
+          ];
+
+          $query = "SELECT * "
+          . "FROM webservice.leads l "
+          . "WHERE "
+          . "l.lea_destiny = ? "
+          // . "AND l.sou_id = ? "
+          ;
+    
+          $db = $this->db_webservice;
+          $r = $db->selectPrepared($query, $datos);
+          break;
+        default:
+        break;
+      }
+      return $response->withJson($r);        
     });
 
     $this->post('/testWS_dev', function (Request $request, Response $response, array $args){
@@ -402,7 +454,7 @@ $app->group('/test', function(){
     $this->post('/getjson', function(Request $request, Response $response, array $args){
       if($request->isPost()){
         $this->utilities->infoLog("hola!");
-        
+
         $output = null;
         $db = $this->db_webservice;
         $sql = "SELECT * FROM webservice.sources;";

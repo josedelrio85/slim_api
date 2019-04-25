@@ -14,7 +14,7 @@ final class CustomPHPErrorHandler extends \Slim\Handlers\PhpError {
   }
   
   public function __invoke(Request $request, Response $response, \Throwable $error){   
-    //create a JSON error string for the Response body
+    // create a JSON error string for the Response body
     $body = json_encode([
       'error' => $error->getMessage(),
       'code' => $error->getCode(),
@@ -22,9 +22,13 @@ final class CustomPHPErrorHandler extends \Slim\Handlers\PhpError {
       'line' => $error->getLine()
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             
-    //Log the message
-    // $this->logger->critical($body);
+    // Log the message
+    try{
+      $this->logger->critical($body);
+    }catch(\Exception $e){
+    }
 
+    // send an alarm
     CustomErrorHandler::exception_handlerAlarm($error);
     
     return $response

@@ -14,7 +14,7 @@ final class CustomErrorHandler extends \Slim\Handlers\Error {
   }
   
   public function __invoke(Request $request, Response $response, \Exception $exception){   
-    //create a JSON error string for the Response body
+    // create a JSON error string for the Response body
     $body = json_encode([
       'error' => $exception->getMessage(),
       'code' => $exception->getCode(),
@@ -22,9 +22,13 @@ final class CustomErrorHandler extends \Slim\Handlers\Error {
       'line' => $exception->getLine()
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
             
-    //Log the message
-    // $this->logger->critical($body);
+    // Log the message
+    try{
+      $this->logger->WARNING($body);
+    }catch(\Exception $e){
+    }
 
+    // Send an alarm
     self::exception_handlerAlarm($exception);
     
     return $response
@@ -73,8 +77,7 @@ final class CustomErrorHandler extends \Slim\Handlers\Error {
 
     $ch = curl_init($url);
     curl_setopt_array($ch, $options);
-    // $content  = curl_exec($ch);
-    $content = null;
+    $content  = curl_exec($ch);
     curl_close($ch);
     return $content;
   }

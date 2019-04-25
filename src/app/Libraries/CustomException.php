@@ -34,26 +34,19 @@ class CustomException extends \Exception {
     protected $trace;
     
     public function __construct($message, $code = 0, Exception $previous = null){
-      if(!$message){
-        throw new $this('Unknwon '. get_class($this));
+      if(!is_null($message)){
+        $this->message = $message;
       }
-      parent::__construct($message, $code, $previous);
+      parent::__construct($this->message, $code, $previous);
     }
     
     public function __toString(){  
-      $logger = new Logger('CustomExceptionLogger');
-      $logger->pushProcessor(new UidProcessor());
-      $logger->pushHandler(new StreamHandler(__DIR__.'/logs/app.log', Logger::INFO));
-      
       $a = [
         "message" => $this->message,
         "file" => $this->file,
         "line" => $this->line,
         "trace" => $this->getTraceAsString()
-      ];
-      
-      $logger->info('Custom_exception => ',$a);
-      
+      ];     
       return json_encode($a);
     }
 }

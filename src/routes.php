@@ -401,7 +401,9 @@ $app->group('/test', function(){
 
     $this->post('/getjson', function(Request $request, Response $response, array $args){
       if($request->isPost()){
-
+        $this->utilities->infoLog("hola!");
+        
+        $output = null;
         $db = $this->db_webservice;
         $sql = "SELECT * FROM webservice.sources;";
         // $sql = "SELECT * FROM webservice.log_error_load_weborama limit 10";
@@ -415,8 +417,9 @@ $app->group('/test', function(){
         }
 
         if(!is_null($r)){
-          return $response->withJson($r);
+          $output = $r;
         }
+        return $response->withJson($output);
       }
     });
 
@@ -677,17 +680,16 @@ $app->get('/pruebaSelect/{sou_id}', function (Request $request, Response $respon
 
   $this->utilities->infoLog('Prueba consulta select libreria mysql prepared');
 
-  //$data = $request->getParsedBody();
-  // $data = $request->getQueryParams();
-  //     $data = $args;
-  // $headers = $request->getHeaders();
-  // $headerValueArray = $request->getHeader('Accept');
+  // $data = $request->getParsedBody();
+  $data = $request->getQueryParams();
 
   $datos = [
     0 => "LEONTEL",
     1 => NULL,
     2 => NULL,
-    3 => $data['sou_id'],
+    3 => $data,
+    // 3 => $data['sou_id'],
+    // 3 => $data->sou_id,
   ];
 
   $query = "SELECT "
@@ -1538,131 +1540,131 @@ $app->group('/doctordinero', function(){
     *      success:boolean
     *      message:string
   */
-    $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
+  $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
 
-      $this->utilities->infoLog('WS incoming Doctor Dinero.');
+    $this->utilities->infoLog('WS incoming Doctor Dinero.');
 
-      if($request->isPost()){
-        $data = $request->getParsedBody();
+    if($request->isPost()){
+      $data = $request->getParsedBody();
 
-        $datos = array();
-        $salida = array();
-        $salidaTxt = "";
+      $datos = array();
+      $salida = array();
+      $salidaTxt = "";
 
-        $datos['telf'] = $data->movil;
-        $datos['dninie'] = $data->dni;
-        $datos['importe'] = $data->importe;
-        $datos['ingresosMensuales'] = $data->ingresosMensuales;
-        $datos['nombre'] = $data->nombre;
-        $datos['apellido1'] =$data->apellido1;
-        $datos['apellido2'] =$data->apellido2;
-        $datos['fechaNacimiento'] = $data->fechaNacimiento;
-        $datos['email'] = $data->email;
-        $datos['cp'] = $data->cp;
+      $datos['telf'] = $data->movil;
+      $datos['dninie'] = $data->dni;
+      $datos['importe'] = $data->importe;
+      $datos['ingresosMensuales'] = $data->ingresosMensuales;
+      $datos['nombre'] = $data->nombre;
+      $datos['apellido1'] =$data->apellido1;
+      $datos['apellido2'] =$data->apellido2;
+      $datos['fechaNacimiento'] = $data->fechaNacimiento;
+      $datos['email'] = $data->email;
+      $datos['cp'] = $data->cp;
 
-        foreach($datos as $key => $value){
-          if(empty($value)){
-            array_push($salida,"KO-notValid_".$key);
-            $salidaTxt .= "KO-notValid_".$key."///";
-          }
+      foreach($datos as $key => $value){
+        if(empty($value)){
+          array_push($salida,"KO-notValid_".$key);
+          $salidaTxt .= "KO-notValid_".$key."///";
         }
+      }
 
-        if(!App\Functions\NifNieCifValidator::isValidIdNumber($data->dni)){
-          array_push($salida,"KO-notValid_dninie");
-          $salidaTxt .= "KO-notValid_dninie///";
-        }
+      if(!App\Functions\NifNieCifValidator::isValidIdNumber($data->dni)){
+        array_push($salida,"KO-notValid_dninie");
+        $salidaTxt .= "KO-notValid_dninie///";
+      }
 
-        if (!filter_var($data->email, FILTER_VALIDATE_EMAIL)) {
-          array_push($salida,"KO-notValid_email");
-          $salidaTxt .= "KO-notValid_email///";
-        }
+      if (!filter_var($data->email, FILTER_VALIDATE_EMAIL)) {
+        array_push($salida,"KO-notValid_email");
+        $salidaTxt .= "KO-notValid_email///";
+      }
 
-        $valido = empty($salida);
-        $telfValido = App\Functions\Functions::phoneFormatValidator($data->movil);
+      $valido = empty($salida);
+      $telfValido = App\Functions\Functions::phoneFormatValidator($data->movil);
 
-        $sou_id = 9;
-        $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
-        $leatype_id = 1;
+      $sou_id = 9;
+      $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+      $leatype_id = 1;
 
-        $observations = "";
-        foreach($data as $v){
-          $observations .= $v."--";
-        }
+      $observations = "";
+      foreach($data as $v){
+        $observations .= $v."--";
+      }
 
-        list($url, $ip) = $this->funciones->getServerParams($request);
+      list($url, $ip) = $this->funciones->getServerParams($request);
 
-        $datos = [
-          "lea_destiny" => '',
-          // "sou_id" => $sou_id,
-          "sou_id" => $this->sou_id_test,
-          "leatype_id" => $leatype_id,
-          "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
-          "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
-          "lea_phone" => $data->movil,
-          "lea_url" => $url,
-          "lea_ip" => $ip,
-          "lea_aux1" => $data->dni,
-          "observations" => $observations
-        ];
+      $datos = [
+        "lea_destiny" => '',
+        "sou_id" => $sou_id,
+        // "sou_id" => $this->sou_id_test,
+        "leatype_id" => $leatype_id,
+        "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
+        "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
+        "lea_phone" => $data->movil,
+        "lea_url" => $url,
+        "lea_ip" => $ip,
+        "lea_aux1" => $data->dni,
+        "observations" => $observations
+      ];
 
-        $datosAsnef = [
-          "sou_id" => $sou_id,
-          "documento" => $data->dni,
-          "phone" => $data->movil
-        ];
+      $datosAsnef = [
+        "sou_id" => $sou_id,
+        "documento" => $data->dni,
+        "phone" => $data->movil
+      ];
 
-        if($telfValido){
+      if($telfValido){
 
-          $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
+        $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
 
-          if(!$rAsnefPre->success){               
-            $datosAsnef["sou_id"] = $sou_idcrm;
-            $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
+        if(!$rAsnefPre->success){               
+          $datosAsnef["sou_id"] = $sou_idcrm;
+          $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
 
-            if(!$rAsnef->success){
-              $datos["lea_destiny"] = 'LEONTEL';
-              $datos["lea_aux3"] = "Ok_DoctorDinero";
+          if(!$rAsnef->success){
+            $datos["lea_destiny"] = 'LEONTEL';
+            $datos["lea_aux3"] = "Ok_DoctorDinero";
 
-              $setwebservice = $this->settings_db_webservice;
-              $db = new \App\Libraries\Connection($setwebservice);
+            $setwebservice = $this->settings_db_webservice;
+            $db = new \App\Libraries\Connection($setwebservice);
 
-              $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
-              if(!$valido){
-                $salida = json_encode(['success' => false, 'message' => 'KO-notValid_params']);;
-              }
-              $db = null;
-            }else{
-              $salida = json_encode(['success' => false, 'message' => $rAsnef->message]);
+            $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
+            if(!$valido){
+              $salida = json_encode(['success' => false, 'message' => 'KO-notValid_params']);;
             }
+            $db = null;
           }else{
-            $salida = json_encode(['success' => false, 'message' => $rAsnefPre->message]);
-          }
-
-          $test = json_decode($salida);
-          if(!$test->success){
-            $datos["lea_destiny"] = '';
-            $datos["lea_aux3"] = $test->message;
-
-            $parametros = UtilitiesConnection::getParametros($datos,null);
-
-            $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
-
-            $salida = json_encode(['success' => false, 'message' => $test->message]);
+            $salida = json_encode(['success' => false, 'message' => $rAsnef->message]);
           }
         }else{
-          //telefono no valido
+          $salida = json_encode(['success' => false, 'message' => $rAsnefPre->message]);
+        }
+
+        $test = json_decode($salida);
+        if(!$test->success){
           $datos["lea_destiny"] = '';
-          $datos["lea_aux3"] = $data->movil."_notValid";
+          $datos["lea_aux3"] = $test->message;
 
           $parametros = UtilitiesConnection::getParametros($datos,null);
 
           $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
 
-          $salida = json_encode(['success' => false, 'message' => 'KO-notValid_telf']);
+          $salida = json_encode(['success' => false, 'message' => $test->message]);
         }
-        return $response->withJson(json_decode($salida, true));
+      }else{
+        //telefono no valido
+        $datos["lea_destiny"] = '';
+        $datos["lea_aux3"] = $data->movil."_notValid";
+
+        $parametros = UtilitiesConnection::getParametros($datos,null);
+
+        $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+
+        $salida = json_encode(['success' => false, 'message' => 'KO-notValid_telf']);
       }
-   });
+      return $response->withJson(json_decode($salida, true));
+    }
+  });
 });
 
 

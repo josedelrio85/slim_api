@@ -1,11 +1,5 @@
 <?php
 
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 namespace App\Functions;
 
 /**
@@ -20,12 +14,13 @@ class Utilities {
   function __construct($logger){
     $this->logger = $logger;
   }
- /*
+  
+  /*
    *  Array insert
    *  @array      the array to add an element to
    *  @element    the element to add to the array
    *  @position   the position in the array to add the element
- */
+  */
   public static function array_insert($array, $element, $position) {
       // if the array is empty just add the element to it
       if(empty($array)) {
@@ -60,7 +55,6 @@ class Utilities {
   }
   
   public function infoLog($message){
-    
     try{
       $this->logger->info($message);
     }catch(\Exception $e){

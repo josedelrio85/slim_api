@@ -25,7 +25,7 @@ final class CustomErrorHandler extends \Slim\Handlers\Error {
     //Log the message
     // $this->logger->critical($body);
 
-    $this->exception_handlerAlarm($exception);
+    self::exception_handlerAlarm($exception);
     
     return $response
       ->withStatus(500)
@@ -34,7 +34,7 @@ final class CustomErrorHandler extends \Slim\Handlers\Error {
       ->write($body);
   }
 
-  public function exception_handlerAlarm($exception){
+  public static function exception_handlerAlarm($exception){
     $url = "https://alert.victorops.com/integrations/generic/20131114/alert/2f616629-de63-4162-bb6f-11966bbb538d/test";
 
     switch(get_class($exception)){
@@ -55,12 +55,12 @@ final class CustomErrorHandler extends \Slim\Handlers\Error {
       "state_start_time" => time(),
     ];
 
-    $result = $this->curl($url, json_encode($params));
+    $result = self::curl($url, json_encode($params));
     return $result;
   }
 
 
-  private function curl($url, $params){
+  private static function curl($url, $params){
     $options = array(
       CURLOPT_RETURNTRANSFER => true,   // return web page
       CURLOPT_HEADER         => false,  // don't return headers

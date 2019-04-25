@@ -20,8 +20,20 @@ $container['logger'] = function ($c) {
 };
 
 $container['errorHandler'] = function($c){
-  return new \App\Libraries\CustomError($c['logger']);
+  return new \App\Libraries\CustomErrorHandler($c['logger']);
 };
+
+$container['phpErrorHandler'] = function ($c) {
+  return new \App\Libraries\CustomPHPErrorHandler($c['logger']);
+};
+
+set_error_handler(function ($severity, $message, $file, $line) {
+  if (!(error_reporting() & $severity)) {
+    // This error code is not included in error_reporting, so ignore it
+    return;
+  }
+  throw new ErrorException($message, 0, $severity, $file, $line);
+});
 
 /* Settings DB */
 $container['settings_db_report_panel'] = function($c){

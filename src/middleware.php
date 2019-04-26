@@ -12,8 +12,6 @@ $config=[
 //Estable criterios para permitir acceder a una request
 $app->add(new \Bairwell\MiddlewareCors($config));
 
-//$app->add(new App\Middleware\ExampleMiddleware());
-
 //Forzar a que el content-type sea application/json
 $app->add(new App\Middleware\JSONContentMiddleware());
 

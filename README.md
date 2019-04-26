@@ -19,8 +19,8 @@ php composer
 ```
     $this->post('/logic_explanation', function(Request $request, Response $response, array $args){
 
-        // logs a message
-        $this->logger->info("WS para validacion datos LP Creditea.");
+        // logs a message using a Monolog instance
+        $this->utilities->infoLog("WS para validacion datos LP Creditea.");
 
         // if request is POST
         if($request->isPost()){

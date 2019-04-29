@@ -912,7 +912,7 @@ $app->group('/creditea', function(){
       $leatype_id = 1;
 
       $datos = [
-        "lea_destiny" => 'LEONTEL',
+        "lea_destiny" => '',
         "sou_id" => $sou_id,
         "leatype_id" => $leatype_id,
         "utm_source" => $data->utm_source,
@@ -978,13 +978,13 @@ $app->group('/creditea', function(){
         $db_crmti = $this->db_crmti;
 
         $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti));
+        // $this->utilities->infoLog("rAsnef->success".$rAsnef->success);
 
         if(!$rAsnef->success){
 
           $datos = [
             "lea_destiny" => 'LEONTEL',
             "sou_id" => $sou_id,
-            // "sou_id" => $this->sou_id_test,
             "leatype_id" => $leatype_id,
             "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
             "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
@@ -1007,12 +1007,12 @@ $app->group('/creditea', function(){
       }
 
       $test = json_decode($salida);
+
       if(!$test->success){
 
         $datosInsert = [
           "lea_destiny" => '',
           "sou_id" => $sou_id,
-          // "sou_id" => $this->sou_id_test,
           "leatype_id" => $leatype_id,
           "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
           "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
@@ -1030,6 +1030,7 @@ $app->group('/creditea', function(){
         $salida = json_encode(['success' => false, 'message' => $test->message]);
       }
     }
+    // $this->utilities->infoLog("salida".$salida);
     return $response->withJson(json_decode($salida, true));
   });
 

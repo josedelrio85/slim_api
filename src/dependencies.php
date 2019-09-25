@@ -72,7 +72,7 @@ $container['db_crmti'] = function($c){
 
 
 $container['funciones'] = function($c){
-  return new \App\Functions\Functions($c->get('settings')['dev']);
+  return new \App\Functions\Functions($c->get('settings')['dev'], $c);
 };
 
 $container['utilities'] = function($c){
@@ -86,4 +86,8 @@ $container['sou_id_test'] = function($c){
 
 $container['dev'] = function($c){
   return $c->get('settings')['dev'];
+};
+
+$container['leads_table'] = function($c){
+  return $c->get('settings')['leads_table'];
 };

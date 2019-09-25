@@ -46,5 +46,7 @@ return [
     'sou_id_test' => 15,
     
     'dev' => false,
+
+    'leads_table' => 'webservice.leads',
   ],
 ];

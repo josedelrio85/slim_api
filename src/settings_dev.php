@@ -41,5 +41,6 @@ return [
     
     'dev' => true,
 
+    'leads_table' => 'webservice.leads_oldschool',
   ],
 ];

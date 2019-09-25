@@ -13,9 +13,11 @@ use App\Libraries\UtilitiesConnection;
 class Functions {
 
   private $dev = null;
-  
-  public function __construct($dev){
+  private $container = null;
+
+  public function __construct($dev, $container){
     $this->dev = $dev;
+    $this->container = $container;
   }
   
   /*
@@ -123,15 +125,15 @@ class Functions {
     * 			}
   */
   public function checkAsnefCreditea($data, $db){
-    $a = $data->sou_id;
-    $b = $data->documento;
-    $c = $data->phone;
+    $a = $data['sou_id'];
+    $b = $data['documento'];
+    $c = $data['phone'];
       
     if(!empty($db)){
       if(!empty($a) && !empty($b) && !empty($c)){
         //db tiene que ser report panel        
         $previa = [
-          0 => $data->sou_id
+          0 => $data['sou_id']
         ];
         $sqlPrevia = "select distinct(left(sou_description,5)) 'categoria' from crmti.sou_sources where sou_id = ?;";      
         $previaSC = $db->selectPrepared($sqlPrevia, $previa);
@@ -147,8 +149,8 @@ class Functions {
           $paramPrevSources = UtilitiesConnection::arrayToPreparedParam($resultSC, "sou_id");
 
           $datosPrevIds = [
-            0 => "%".$data->documento."%",
-            1 => $data->phone  
+            0 => "%".$data['documento']."%",
+            1 => $data['phone']
           ];
 
           $sqlPrevIds = "SELECT lea_id FROM crmti.lea_leads where dninie like ? OR TELEFONO = ? ;";
@@ -202,7 +204,7 @@ class Functions {
   }   
   
   /*
-    *  Se evalúa que no haya registros en webservice.leads, para el par DNI-telefono, que tengan
+    *  Se evalúa que no haya registros en webservice.leads_oldschool, para el par DNI-telefono, que tengan
     *  asnef/yacliente dentro del periodo inferior a 1 mes para el día actual. 
     *  @parametros:
     *  - sou_id del origen a evaluar
@@ -221,9 +223,9 @@ class Functions {
     *  }
   */
   public function checkAsnefCrediteaPrev($data, $db){
-    $a = $data->sou_id;
-    $b = $data->documento;
-    $c = $data->phone;
+    $a = $data['sou_id'];
+    $b = $data['documento'];
+    $c = $data['phone'];
     
     if(!empty($db)){
       if(!empty($a) && !empty($b) && !empty($c)){  
@@ -242,7 +244,7 @@ class Functions {
         ];
         
         $sql = " SELECT ll.lea_id "
-          ."FROM webservice.leads ll "
+          ."FROM ".$this->container->leads_table." ll "
           ."WHERE "
           ."ll.sou_id = ? "
           ."AND ll.lea_destiny = ? "
@@ -264,7 +266,7 @@ class Functions {
   }
   
   /*
-    * Encapsulación de la lógica de inserción de lead (inserción en webservice.leads 
+    * Encapsulación de la lógica de inserción de lead (inserción en webservice.leads_oldschool 
     * a través de stored procedure + envío a la cola de Leontel a través de WS SOAP de Leontel).
     * params:
     * @datos: array con conjunto de datos a insertar en bd
@@ -274,7 +276,7 @@ class Functions {
   public function prepareAndSendLeadLeontel($datos, $db, $tabla = null, $leontel = true){
     if(is_array($datos) && !is_null($db)){
       if($tabla == null){
-        $tabla = "leads";
+        $tabla = $this->container->leads_table;
       }
 
       $parametros = UtilitiesConnection::getParametros($datos,null);    
@@ -289,10 +291,10 @@ class Functions {
         $db->NextResult();
         $result->close();
         
-        $leontel ? LeadLeontel::sendLead($datos, $db, $this->dev) : null;
+        $leontel ? LeadLeontel::sendLead($datos, $db, $this->container) : null;
         
         $db->close();
-        //Hay que devolver el resultado de la inserción en webservice.leads, no el update de Leontel
+        //Hay que devolver el resultado de la inserción en webservice.leads_oldschool, no el update de Leontel
         return json_encode(['success'=> true, 'message'=> $lastid]);
       }else{
         return json_encode(['success'=> false, 'message'=> $db->LastError()]);
@@ -343,7 +345,7 @@ class Functions {
   */
   public function sendC2CToLeontel($data, $db){
     if(!empty($data) && !empty($db)){
-      return LeadLeontel::sendLead($data, $db, $this->dev);
+      return LeadLeontel::sendLead($data, $db, $this->container);
     }
     return null;
   }
@@ -608,7 +610,7 @@ class Functions {
   }
   
   /*
-    * Sends a lead to webservice.leads table throw wsInsertLead stored procedure
+    * Sends a lead to webservice.leads_oldschool table throw wsInsertLead stored procedure
     * @params
     *  - settingsDb (array) => array with setting to create a db connection
     *  - params (array) => array with the data to insert. One of the params must be phone.
@@ -620,7 +622,7 @@ class Functions {
       $phone = $params["datos"]["lea_phone"];
 
       $db = new \App\Libraries\Connection($settingsDb);
-      $query = $db->insertStatementPrepared("leads", $params);
+      $query = $db->insertStatementPrepared($this->container->leads_table, $params);
       $sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
       $result = $db->Query($sp);   
       
@@ -639,5 +641,21 @@ class Functions {
       }  
     }
     return json_encode(['success'=> false, 'message'=> 'Error in params.']);
+  }
+
+
+  public function checkGclid($data) {
+    if(is_object($data)){
+      $gclid = array_key_exists("gclid", $data) ? $data->gclid : null;
+      if(!empty($gclid)){
+        return true;
+      } 
+    } else if (is_array($data)) {
+      $gclid = array_key_exists("gclid", $data) ? $data['gclid'] : null;
+      if(!empty($gclid)){
+        return true;
+      } 
+    }
+    return false;
   }
 }

@@ -25,8 +25,10 @@ class LeadLeontel {
         }
     }
     
-    public static function sendLead($data, $db, $dev){
-        
+    public static function sendLead($data, $db, $container){
+      $dev = $container->dev;
+      $leads_table = $container->leads_table;
+
       if(array_key_exists('sou_id', $data)){
           
         $datos = [
@@ -47,7 +49,7 @@ class LeadLeontel {
 
         $query .= $querySource;
 
-        $queryFromWhere = " FROM webservice.leads l "
+        $queryFromWhere = " FROM ".$leads_table." l "
           . "INNER JOIN webservice.sources s ON l.sou_id = s.sou_id "
           . "INNER JOIN webservice.leadtypes lt ON l.leatype_id = lt.leatype_id "
           . "WHERE "
@@ -150,7 +152,7 @@ class LeadLeontel {
           $where = ["lea_id" => $lea_id];
           $parametros = UtilitiesConnection::getParametros($datos, $where);
             
-          $result = $db->updatePrepared("webservice.leads", $parametros);               
+          $result = $db->updatePrepared($leads_table, $parametros);               
           $res = json_decode($result);
 
           return json_encode(['success'=> $res->success, 'message'=> $res->message]);      

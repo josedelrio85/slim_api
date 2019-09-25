@@ -32,7 +32,7 @@ $app->post('/testconexion', function (Request $request, Response $response, arra
   $mysqli2 = $this->db_webservice;
 
 
-  $sql2 = "select * from webservice.leads where lea_id = 119854;";
+  $sql2 = "select * from ".$this->leads_table." where lea_id = 119854;";
   $r2 = $mysqli2->Query($sql2);
   $res2 = $r2->fetch_assoc();
   array_push($salida,$res2);
@@ -47,49 +47,6 @@ $app->post('/testconexion', function (Request $request, Response $response, arra
 
   return $response->withJson($salida);
 });
-
-
-$app->post('/testconexionIntensivo', function (Request $request, Response $response, array $args){
-
-  $salida = array();
-
-  $sou_id = $this->sou_id_test;
-  // $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice_dev);
-  // $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
-
-  // array_push($salida,$sou_idcrm);
-
-
-  // $params_crmti_rp = $this->settings_db_crmti_dev;
-  // $params_crmti_rp = $this->settings_db_crmti;
-
-  // $db_crmti_rp = new \App\Libraries\Connection($params_crmti_rp);
-  // $datosAsnef = $request->getParsedBody();
-  // $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti_rp);
-  // $r = json_decode($rAsnef);
-
-  // array_push($salida,$r);
-
-  // $datos = [
-  //     "sou_id" => $sou_id,
-  //     "leatype_id" => 1,
-  //     "lea_phone" => $data["phone"],
-  //     "lea_aux1" => $data["documento"]
-  // ];
-
-  // $datos["lea_destiny"] = 'LEONTEL';
-
-  // $set = $this->settings_db_webservice_dev;
-  $set = $this->settings_db_webservice;
-  $mysqli2 = new \App\Libraries\Connection($set);
-
-  $z = $this->funciones->prepareAndSendLeadLeontel($datos,$mysqli2, null, false);
-
-  array_push($salida,json_decode($z));
-
-  return $response->withJson($salida);
-});
-
 
 $app->group('/test', function(){
 
@@ -127,7 +84,7 @@ $app->group('/test', function(){
           ];
   
           $query = "SELECT * "
-          . "FROM webservice.leads l "
+          . "FROM ".$this->leads_table." l "
           . "WHERE "
           . "l.lea_destiny = ? "
           . "AND l.sou_id = ? ";
@@ -143,7 +100,7 @@ $app->group('/test', function(){
           ];
 
           $query = "SELECT * "
-          . "FROM webservice.leads l "
+          . "FROM ".$this->leads_table." l "
           . "WHERE "
           . "l.lea_destiny = ? "
           // . "AND l.sou_id = ? "
@@ -156,113 +113,6 @@ $app->group('/test', function(){
         break;
       }
       return $response->withJson($r);        
-    });
-
-    $this->post('/testWS_dev', function (Request $request, Response $response, array $args){
-      $salida = array();
-      $db = $this->db_webservice;
-
-      $datos = [ "lea_id" => "119707" ];
-      $query = "SELECT * FROM webservice.leads where lea_id = ? ;";
-      $resultado = $db->selectPrepared($query, $datos);
-      array_push($salida, array("select" => $resultado));
-
-      $datosWs ['lea_phone'] = "666666666";
-      $query = "INSERT INTO webservice.leads(lea_phone) values (".$datosWs["lea_phone"].");";
-      $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
-
-      $result = $db->Query($sp);
-
-      if($db->AffectedRows() > 0){
-        $r = $result->fetch_assoc();
-        $db->NextResult();
-        $result->close();
-      }else{
-        $r = array(["result" => false, "message" => "puta mirda"]);
-      }
-      array_push($salida, array("insert" => $r));
-
-      $where = ["lea_id" => $datos["lea_id"]];
-      $datosUpd = [
-        "lea_extracted" => date("Y-m-d H:i:s"),
-        "lea_crmid" => 9999,
-        "lea_status" => "PRUEBA"
-      ];
-      $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
-
-      $tabla = "webservice.leads";
-      $result = $db->updatePrepared($tabla, $parametros);
-
-      $ru = json_decode($result);
-      array_push($salida, array("update" => $ru));
-
-      return $response->withJson($salida);
-    });
-
-    $this->post('/testRP_dev', function (Request $request, Response $response, array $args){
-      $salida = array();
-
-      $db = $this->db_report_panel;
-
-      $datos = [ "sou_id" => "23" ];
-      $query = "SELECT * FROM report_panel.c2c_timetable where sou_id = ? ;";
-      $resultado = $db->selectPrepared($query, $datos);
-      array_push($salida, array("select" => $resultado));
-
-      $datos = [
-        "sou_id" => 99,
-        "num_dia" => 2,
-        "laborable" => 1,
-        "h_ini" => "09:00",
-        "h_fin" => "15:00",
-        "tmt_activo" => 1
-      ];
-
-      $parametros = UtilitiesConnection::getParametros($datos,null);
-      $z = $db->insertStatementPrepared("c2c_timetable", $parametros);
-      $result = $db->insertPrepared("c2c_timetable", $parametros);
-
-      array_push($salida, array("insert" => $z));
-      array_push($salida, array("insert2" => $result));
-
-      $where = ["sou_id" => $datos["sou_id"]];
-      $datosUpd = [
-        "h_ini" => "09:30",
-        "tmt_activo" => 0
-      ];
-      $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
-
-      $tabla = "report_panel.c2c_timetable";
-      $result = $db->updatePrepared($tabla, $parametros);
-      $ru = json_decode($result);
-      array_push($salida, array("update" => $ru));
-
-      return $response->withJson($salida);
-    });
-
-    $this->post('/testCRMTI_dev', function (Request $request, Response $response, array $args){
-      $salida = array();
-
-      $db = $this->db_crmti;
-
-      $datos = [ "lea_id" => "119707" ];
-      $query = "SELECT * FROM crmti.lea_leads where lea_id = ? ;";
-      $resultado = $db->selectPrepared($query, $datos);
-      array_push($salida, array("select" => $resultado));
-
-      $where = ["lea_id" => $datos["lea_id"]];
-      $datosUpd = [
-        "lea_scheduled" => date("Y-m-d H:i:s"),
-        "wsid" => 9999
-      ];
-      $parametros = UtilitiesConnection::getParametros($datosUpd, $where);
-
-      $tabla = "crmti.lea_leads";
-      $result = $db->updatePrepared($tabla, $parametros);
-      $ru = json_decode($result);
-      array_push($salida, array("update" => $ru));
-
-      return $response->withJson($salida);
     });
 
     /*
@@ -310,45 +160,11 @@ $app->group('/test', function(){
       }
     });
 
-    $this->post('/checkAsnefCreditea', function(Request $request, Response $response, array $args){
-
-      $data = $request->getParsedBody();
-
-      $datosAsnef = [
-        "sou_id" => $data->sou_id,
-        "documento" => $data->documento,
-        "phone" => $data->phone
-      ];
-
-      // Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion, ['success'=> false, 'message' => true] si pasa validacion
-      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
-      return $response->withJson(json_decode($rAsnef));
-    });
-
-    $this->post('/checkAsnefDoctorDinero', function(Request $request, Response $response, array $args){
-
-      $data = $request->getParsedBody();
-
-      $datosAsnef = [
-        "sou_id" => $data["sou_id"],
-        "documento" => $data["documento"],
-        "phone" => $data["phone"]
-      ];
-
-      /*
-        *  Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion,
-        *  ['success'=> true, 'message' => true] si pasa validacion
-        *  ['result'=> true, 'data' => 'KO-paramsNeeded'] si faltan parámetros
-      */
-      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
-      return $response->withJson(json_decode($rAsnef));
-    });
-
     $this->post('/sendLeadToLeontel', function(Request $request, Response $response, array $args){
 
       $data = $request->getParsedBody();
-      if(!empty($data["sou_id"])){
-        $sou_id = $data["sou_id"];
+      if(!empty($data->sou_id)){
+        $sou_id = $data->sou_id;
       }else{
         $sou_id = $this->sou_id_test;
       }
@@ -364,8 +180,8 @@ $app->group('/test', function(){
       $parametros = UtilitiesConnection::getParametros($datos,null);
 
       $db = $this->db_webservice;
-      $z = $db->insertStatementPrepared("leads", $parametros);
-      $result = $db->insertPrepared("leads", $parametros);
+      $z = $db->insertStatementPrepared($this->leads_table, $parametros);
+      $result = $db->insertPrepared($this->leads_table, $parametros);
       $r = json_decode($result);
 
       if($r->success){
@@ -375,7 +191,7 @@ $app->group('/test', function(){
           *    Devuelve ['success'=> $res->success, 'message'=> $res->message] si hay resultados para la consulta
           *    ['success'=> $res->success, 'message'=> 'No results'] => si no hay resultados para la consulta
         */
-        $res = App\Functions\LeadLeontel::sendLead($data, $db);
+        $res = App\Functions\LeadLeontel::sendLead($data, $db, $this);
 
         $rs = json_decode($res,true);
 
@@ -410,8 +226,8 @@ $app->group('/test', function(){
 
           $parametros = UtilitiesConnection::getParametros($datos,null);
 
-          $z = $db->insertStatementPrepared("leads", $parametros);
-          $result = $db->insertPrepared("leads", $parametros);
+          $z = $db->insertStatementPrepared($this->leads_table, $parametros);
+          $result = $db->insertPrepared($this->leads_table, $parametros);
           $r = json_decode($result);
 
           if($r->success){
@@ -472,21 +288,6 @@ $app->group('/test', function(){
           $output = $r;
         }
         return $response->withJson($output);
-      }
-    });
-
-    $this->post('/testAsnefPrev', function(Request $request, Response $response, array $args){
-      if($request->isPost()){
-
-        $db = $this->db_webservice;
-        $data = [
-          "sou_id" => "9",
-          "documento" => "24345796C",
-          "phone" => "666666666"
-        ];
-        $res = $this->funciones->checkAsnefCrediteaPrev($data, $db);
-
-        return $response->withJson(json_decode($res));
       }
     });
 
@@ -635,7 +436,7 @@ $app->group('/test', function(){
 
         $db = $this->db_webservice;
         $parametros = UtilitiesConnection::getParametros($datos,null);
-        $salida = json_decode($db->insertPrepared("leads", $parametros),true);
+        $salida = json_decode($db->insertPrepared($this->leads_table, $parametros),true);
 
         return $response->withJson($salida);
       }
@@ -724,112 +525,56 @@ $app->group('/test', function(){
       return $response->withJson(json_decode($salida, true));
     });
 
-});
+    $this->post('/testAsnefPrev', function(Request $request, Response $response, array $args){
+      if($request->isPost()){
 
+        $db = $this->db_webservice;
+        $data = $request->getParsedBody();
 
-/* Tests funciones interacción BD */
-$app->get('/pruebaSelect/{sou_id}', function (Request $request, Response $response, array $args){
+        $datosAsnef = [
+          "sou_id" => $data->sou_id,
+          "documento" => $data->documento,
+          "phone" => $data->phone
+        ];
+        $res = $this->funciones->checkAsnefCrediteaPrev($datosAsnef, $db);
 
-  $this->utilities->infoLog('Prueba consulta select libreria mysql prepared');
+        return $response->withJson(json_decode($res));
+      }
+    });
 
-  // $data = $request->getParsedBody();
-  $data = $request->getQueryParams();
+    $this->post('/checkAsnefCreditea', function(Request $request, Response $response, array $args){
 
-  $datos = [
-    0 => "LEONTEL",
-    1 => NULL,
-    2 => NULL,
-    3 => $data,
-    // 3 => $data['sou_id'],
-    // 3 => $data->sou_id,
-  ];
+      $data = $request->getParsedBody();
 
-  $query = "SELECT "
-  . "l.lea_id,"
-  . "l.lea_phone,"
-  . "s.sou_idcrm 'source',"
-  . "lt.leatype_idcrm 'type',"
-  . "l.lea_name,"
-  . "l.lea_mail,"
-  . "l.lea_url,"
-  . "l.lea_aux1,"
-  . "l.lea_aux2 "
-  . "FROM webservice.leads l "
-  . "INNER JOIN webservice.sources s ON l.sou_id = s.sou_id "
-  . "INNER JOIN webservice.leadtypes lt ON l.leatype_id = lt.leatype_id "
-  . "WHERE "
-  . "l.lea_destiny = ? "
-  . "AND l.lea_extracted <=> ? "
-  . "AND l.lea_status <=> ? "
-  . "AND l.sou_id = ? "
-  . "ORDER BY l.lea_id DESC LIMIT 1;";
+      $datosAsnef = [
+        "sou_id" => $data->sou_id,
+        "documento" => $data->documento,
+        "phone" => $data->phone
+      ];
 
-  $db = $this->db_webservice;
-  $r = $db->selectPrepared($query, $datos);
+      // Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion, ['success'=> false, 'message' => true] si pasa validacion
+      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
+      return $response->withJson(json_decode($rAsnef));
+    });
 
-  return $response->withJson($r);
-});
+    $this->post('/checkAsnefDoctorDinero', function(Request $request, Response $response, array $args){
 
-$app->post('/pruebaUpdate', function(Request $request, Response $response, array $args){
+      $data = $request->getParsedBody();
 
-  $datos = [
-    "lea_extracted" => date("Y-m-d H:i:s"),
-    "lea_crmid" => 9999,
-    "lea_status" => "PRUEBA"
-  ];
+      $datosAsnef = [
+        "sou_id" => $data->sou_id,
+        "documento" => $data->documento,
+        "phone" => $data->phone
+      ];
 
-  $where = ["lea_id" => 119735];
-  $parametros = UtilitiesConnection::getParametros($datos, $where);
-
-  $tabla = "webservice.leads";
-  // $db = $this->db_webservice_dev;
-  $db = $this->db_webservice;
-
-  $result = $db->updatePrepared($tabla, $parametros);
-
-  $r = json_decode($result);
-
-  if($r->success){
-    exit(json_encode(['success'=> true, 'message'=> $r->message]));
-  }else{
-    exit(json_encode(['success'=> false, 'message'=> $r->message]));
-  }
-});
-
-$app->post('/pruebaInsert', function(Request $request, Response $response, Array $args){
-
-  $data = $request->getParsedBody();
-  $serverParams = $request->getServerParams();
-  $url = "????";
-  if(array_key_exists("HTTP_REFERER", $serverParams)){
-      $url = $serverParams["HTTP_REFERER"];
-  }
-  $ip = $serverParams["REMOTE_ADDR"];
-
-  $datos = [
-    "lea_phone" => $data["phone"],
-    "lea_url" => $url,
-    "lea_ip" => $ip,
-    "lea_destiny" => "TEST",
-    "sou_id" => $data["sou_id"],
-    "leatype_id" => 1
-  ];
-
-  $parametros = UtilitiesConnection::getParametros($datos,null);
-
-  // $db = $this->db_webservice_dev;
-  $db = $this->db_webservice;
-  $z = $db->insertStatementPrepared("leads", $parametros);
-
-  $result = $db->insertPrepared("leads", $parametros);
-
-  $r = json_decode($result);
-
-  if($r->success){
-    $response->withJson(['success'=> true, 'message'=> $r->message]);
-  }else{
-    $response->withJson(['success'=> false, 'message'=> $r->message]);
-  }
+      /*
+        *  Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion,
+        *  ['success'=> true, 'message' => true] si pasa validacion
+        *  ['result'=> true, 'data' => 'KO-paramsNeeded'] si faltan parámetros
+      */
+      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
+      return $response->withJson(json_decode($rAsnef));
+    });
 });
 
 
@@ -909,24 +654,27 @@ $app->group('/creditea', function(){
       if(property_exists($data, "sou_id")){
         $sou_id = $data->sou_id;
       }
+      $sou_id = $this->funciones->checkGclid($data) ? 9999 : $sou_id;
       $leatype_id = 1;
 
       $datos = [
         "lea_destiny" => '',
         "sou_id" => $sou_id,
         "leatype_id" => $leatype_id,
-        "utm_source" => $data->utm_source,
+        "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
+        "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
         "lea_phone" => $data->phone,
         "lea_url" => $url,
         "lea_ip" => $ip,
         "lea_aux1" => $data->documento,
         "lea_aux2" => $data->cantidadsolicitada,
-        "lea_aux3" => $data->motivo
+        "lea_aux3" => $data->motivo,
+        "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
       ];
 
       $db = $this->db_webservice;
       $parametros = UtilitiesConnection::getParametros($datos,null);
-      $salida = json_decode($db->insertPrepared("leads", $parametros),true);
+      $salida = json_decode($db->insertPrepared($this->leads_table, $parametros),true);
 
       return $response->withJson($salida);
     }
@@ -960,6 +708,8 @@ $app->group('/creditea', function(){
       if(property_exists($data, "sou_id")){
         $sou_id = $data->sou_id;
       }
+      $sou_id = $this->funciones->checkGclid($data) ? 9999 : $sou_id;
+
       $leatype_id = 1;
 
       $datosAsnef = [
@@ -992,7 +742,8 @@ $app->group('/creditea', function(){
             "lea_url" => $url,
             "lea_ip" => $ip,
             "lea_aux1" => $data->documento,
-            "lea_aux2" => $data->cantidadsolicitada
+            "lea_aux2" => $data->cantidadsolicitada,
+            "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
           ];
 
           $setwebservice = $this->settings_db_webservice;
@@ -1021,7 +772,8 @@ $app->group('/creditea', function(){
           "lea_ip" => $ip,
           "lea_aux1" => $data->documento,
           "lea_aux2" => $data->cantidadsolicitada,
-          "lea_aux3" => $test->message
+          "lea_aux3" => $test->message,
+          "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
         ];
         $parametros = UtilitiesConnection::getParametros($datosInsert,null);
 
@@ -1044,9 +796,9 @@ $app->group('/creditea', function(){
 
     $db = $this->db_crmti;
 
-    $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db);
+    $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db, $this->dev);
 
-    $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db);
+    $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db, $this->dev);
 
 
     return $response->withJson(json_decode($salida, true));
@@ -1421,7 +1173,7 @@ $app->group('/evobanco', function(){
 
       $db = $this->db_webservice;
       $parametros = UtilitiesConnection::getParametros($datos,null);
-      $query = $db->insertStatementPrepared("leads", $parametros);
+      $query = $db->insertStatementPrepared($this->leads_table, $parametros);
 
       if($type == 1){
         $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
@@ -1465,13 +1217,12 @@ $app->group('/evobanco', function(){
     if($request->isPost()){
       $data->request->getParsedBody();
 
-      $sql = "UPDATE
-              webservice.leads wl
+      $sql = "UPDATE ".$this->leads_table." wl
               INNER JOIN (
                 SELECT
                 l.lea_id
                 FROM
-                webservice.leads l
+                ".$this->leads_table." l
                 INNER JOIN webservice.leads_evo_duplicados d ON l.lea_phone = d.lea_phone
                 WHERE
                 TIMESTAMPDIFF(MINUTE, d.lea_ts, now()) < 59
@@ -1901,7 +1652,7 @@ $app->group('/sanitas', function(){
 
       $db = $this->db_webservice;
       $parametros = UtilitiesConnection::getParametros($datos,null);
-      $salida = json_decode($db->insertPrepared("leads", $parametros),true);
+      $salida = json_decode($db->insertPrepared($this->leads_table, $parametros),true);
 
       if(!$salida['success'])
         $salida['message'] = 'KO';
@@ -1935,7 +1686,7 @@ $app->group('/sanitas', function(){
 
       $parametros = UtilitiesConnection::getParametros($datos, $where);
 
-      $tabla = "webservice.leads";
+      $tabla = $this->leads_table;
       $salida = json_decode($db->updatePrepared($tabla, $parametros), true);
 
       return $response->withJson($salida);

@@ -651,11 +651,16 @@ $app->group('/creditea', function(){
       list($url, $ip) = $this->funciones->getServerParams($request);
 
       $sou_id = 9;
+      $leatype_id = 1;     
       if(property_exists($data, "sou_id")){
         $sou_id = $data->sou_id;
       }
-      $sou_id = $this->funciones->checkGclid($data) ? 9999 : $sou_id;
-      $leatype_id = 1;
+      
+      if(property_exists($data, "web_source")){
+        if($data->web_source == "prestamoscreditea.com" && $sou_id == 9) {
+          $leatype_id = $this->funciones->checkGclid($data) ? 25 : $leatype_id;
+        }
+      }
 
       $datos = [
         "lea_destiny" => '',
@@ -705,12 +710,15 @@ $app->group('/creditea', function(){
       list($url, $ip) = $this->funciones->getServerParams($request);
 
       $sou_id = 9;
+      $leatype_id = 1;
       if(property_exists($data, "sou_id")){
         $sou_id = $data->sou_id;
       }
-      $sou_id = $this->funciones->checkGclid($data) ? 9999 : $sou_id;
-
-      $leatype_id = 1;
+      if(property_exists($data, "web_source")){
+        if($data->web_source == "prestamoscreditea.com" && $sou_id == 9) {
+          $leatype_id = $this->funciones->checkGclid($data) ? 25 : $leatype_id;
+        }
+      }
 
       $datosAsnef = [
         "sou_id" => $sou_id,

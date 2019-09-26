@@ -1,0 +1,5 @@
+/phpcs.xml
+/phpunit.xml
+/vendor/
+/build
+composer.lock

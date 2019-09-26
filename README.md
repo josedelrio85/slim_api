@@ -8,7 +8,7 @@ To install, run
 
 
 ```
-php composer
+[php] composer install
 
 ```
 

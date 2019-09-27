@@ -186,8 +186,8 @@ class Functions {
             . "hh.his_sub in ($questionsB) "
             . ") "
             . "AND hh.his_lead in ($questionsC) "
-            . " LIMIT 10;";        
-          
+            . " LIMIT 10;";
+
           $result = $db->selectPrepared($sql, $datos);
 
           if(!is_null($result)){
@@ -247,7 +247,7 @@ class Functions {
           ."FROM ".$this->container->leads_table." ll "
           ."WHERE "
           ."ll.sou_id = ? "
-          ."AND ll.lea_destiny = ? "
+          ."AND (ll.lea_destiny is null OR ll.lea_destiny = ?) "
           ."AND DATE(ll.lea_ts) > ? "
           ."AND (ll.lea_aux1 LIKE ? OR ll.lea_phone = ?) "
           ."AND (ll.lea_aux3 = ? OR ll.lea_aux3 = ?);";

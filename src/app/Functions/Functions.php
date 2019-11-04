@@ -34,7 +34,8 @@ class Functions {
   */
   public function consultaTimeTableC2C($data){  
     $laborable = 1;
-    $db = $this->container->db_report_panel;
+    $settings = $this->container->settings_db_report_panel;
+    $db = new \App\Libraries\Connection($settings);
     if(array_key_exists('hora', $data)){
       $datos = [
         0 => $laborable, 
@@ -128,7 +129,8 @@ class Functions {
     $a = $data['sou_id'];
     $b = $data['documento'];
     $c = $data['phone'];
-    $db = $this->container->db_crmti;
+    $settings = $this->container->settings_db_crmti;
+    $db = new \App\Libraries\Connection($settings);
 
     if(!empty($a) && !empty($b) && !empty($c)){
       //db tiene que ser report panel        

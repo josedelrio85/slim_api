@@ -421,7 +421,7 @@ class Functions {
   public function getServerParams($request){
     if(!empty($request)){
       $serverParams = $request->getServerParams();
-      $url = "????";
+      $url = null;
       if(array_key_exists("HTTP_REFERER", $serverParams)){
         $url = $serverParams["HTTP_REFERER"];            
       }

@@ -530,14 +530,13 @@ $app->group('/test', function(){
 
 
 
-$app->group('/RCable', function(){
+$app->group('/rcable', function(){
 
   /*
     * Función para gestionar la info asociada a un evento C2C para LP de RCable. Devuelve un array JSON {result:boolean, message:objConexion}
     * -> JSON entrada:
     *  {
     *    "phone": "XXXXXX",
-    *    "url": "XXXX",
     * }
     *   
   */

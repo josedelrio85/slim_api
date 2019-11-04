@@ -278,149 +278,149 @@ class LeadLeontel {
      *      @array: array id's tratados
      */
     public static function sendLeadLeontelPagoRecurrente($tipo, $db, $dev){
-        
-        $test = "SET NAMES 'utf8';";
-        $db->Query($test);
-    
-        $salida = array();
-        $nombreFunc = "";
+       
+      $test = "SET NAMES 'utf8';";
+      $db->Query($test);
+  
+      $salida = array();
+      $nombreFunc = "";
 
-        if($tipo == "cliente"){
-            
-            $arrSources = array(2,9,10,13,29,30);
-            
-            $datos = [
-                0 => $arrSources,
-                1 => 732,
-                2 => NULL,
-                3 => '2018-06-01'
-            ];
-            $questionsA = UtilitiesConnection::generaQuestions($arrSources);
+      if($tipo == "cliente"){
+          
+          $arrSources = array(2,9,10,13,29,30);
+          
+          $datos = [
+              0 => $arrSources,
+              1 => 732,
+              2 => NULL,
+              3 => '2018-06-01'
+          ];
+          $questionsA = UtilitiesConnection::generaQuestions($arrSources);
 
-            
-            $sql = "
-                SELECT 
-                    hh.his_id, 
-                    hh.his_ts, 
-                    hh.his_user, 
-                    hh.his_code,
-                    hh.his_cdrid, 
-                    ll.lea_id, 
-                    ll.lea_source,
-                    ll.lea_type,
-                    ll.lea_ts, 
-                    ll.TELEFONO, 
-                    ll.nombre, 
-                    ll.apellido1,
-                    ll.apellido2, 
-                    ll.dninie, 
-                    c.numerocliente,
-                    CONCAT('Cliente que llama a recepción el día ',date(hh.his_ts),' para solicitar activación pago recurrente') as obsalt
-                FROM his_history hh 
-                INNER JOIN lea_leads ll ON hh.his_lead = ll.lea_id
-                INNER JOIN ord_orders oo ON hh.his_order = oo.ord_id
-                INNER JOIN cli_clients c ON oo.ord_client = c.cli_id 
-                WHERE 
-                ll.lea_source IN ($questionsA)
-                AND hh.his_sub = ?
-                AND ll.observaciones2 <=> ?                    
-                AND date(ll.lea_ts) >= ?;
-            ";
+          
+          $sql = "
+              SELECT 
+                  hh.his_id, 
+                  hh.his_ts, 
+                  hh.his_user, 
+                  hh.his_code,
+                  hh.his_cdrid, 
+                  ll.lea_id, 
+                  ll.lea_source,
+                  ll.lea_type,
+                  ll.lea_ts, 
+                  ll.TELEFONO, 
+                  ll.nombre, 
+                  ll.apellido1,
+                  ll.apellido2, 
+                  ll.dninie, 
+                  c.numerocliente,
+                  CONCAT('Cliente que llama a recepción el día ',date(hh.his_ts),' para solicitar activación pago recurrente') as obsalt
+              FROM his_history hh 
+              INNER JOIN lea_leads ll ON hh.his_lead = ll.lea_id
+              INNER JOIN ord_orders oo ON hh.his_order = oo.ord_id
+              INNER JOIN cli_clients c ON oo.ord_client = c.cli_id 
+              WHERE 
+              ll.lea_source IN ($questionsA)
+              AND hh.his_sub = ?
+              AND ll.observaciones2 <=> ?                    
+              AND date(ll.lea_ts) >= ?;
+          ";
 
-            $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";
+          $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";
 
-        }else if($tipo == "leads"){
-            
-            $arrSources = array(9,10);
-            
-            $datos = [
-                0 => $arrSources,
-                1 => 732,
-                2 => NULL,
-                3 => '2018-06-01'
-            ];
-            $questionsA = UtilitiesConnection::generaQuestions($arrSources);
-            
-            $sql = "
-                SELECT 
-                    hh.his_id, 
-                    hh.his_ts, 
-                    hh.his_user, 
-                    hh.his_code,
-                    hh.his_cdrid, 
-                    ll.lea_id, 
-                    ll.lea_source,
-                    ll.lea_type,
-                    ll.lea_ts, 
-                    ll.TELEFONO, 
-                    ll.nombre, 
-                    ll.apellido1,
-                    ll.apellido2, 
-                    CONCAT('Cliente que llama a recepción el día ',date(hh.his_ts),' para solicitar activación pago recurrente') as obsalt
-                FROM his_history hh 
-                INNER JOIN lea_leads ll on hh.his_lead = ll.lea_id
-                WHERE 
-                ll.lea_source IN ($questionsA)
-                AND hh.his_sub = ?
-                AND ll.observaciones2 <=> ?                    
-                AND date(ll.lea_ts) >= ?;";
-            
-            $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";            
-        }
-        
-        $result = $db->selectPrepared($sql, $datos);
-        
-        if(!is_null($result)){
-            foreach($result as $k => $r){
-                $id_origen_leontel = 31;
-                $id_tipo_leontel = 8;
-                $lea_id = $r->lea_id;
-                $phone = $r->TELEFONO;
-                $nombre = $r->nombre;
-                $apellido1 = $r->apellido1;
-                $apellido2 = $r->apellido2;
-                $obsalt = $r->obsalt;
+      }else if($tipo == "leads"){
+          
+          $arrSources = array(9,10);
+          
+          $datos = [
+              0 => $arrSources,
+              1 => 732,
+              2 => NULL,
+              3 => '2018-06-01'
+          ];
+          $questionsA = UtilitiesConnection::generaQuestions($arrSources);
+          
+          $sql = "
+              SELECT 
+                  hh.his_id, 
+                  hh.his_ts, 
+                  hh.his_user, 
+                  hh.his_code,
+                  hh.his_cdrid, 
+                  ll.lea_id, 
+                  ll.lea_source,
+                  ll.lea_type,
+                  ll.lea_ts, 
+                  ll.TELEFONO, 
+                  ll.nombre, 
+                  ll.apellido1,
+                  ll.apellido2, 
+                  CONCAT('Cliente que llama a recepción el día ',date(hh.his_ts),' para solicitar activación pago recurrente') as obsalt
+              FROM his_history hh 
+              INNER JOIN lea_leads ll on hh.his_lead = ll.lea_id
+              WHERE 
+              ll.lea_source IN ($questionsA)
+              AND hh.his_sub = ?
+              AND ll.observaciones2 <=> ?                    
+              AND date(ll.lea_ts) >= ?;";
+          
+          $nombreFunc = "sendLeadLeontelPagoRecurrente_cliente";            
+      }
+      
+      $result = $db->selectPrepared($sql, $datos);
+      
+      if(!is_null($result)){
+          foreach($result as $k => $r){
+              $id_origen_leontel = 31;
+              $id_tipo_leontel = 8;
+              $lea_id = $r->lea_id;
+              $phone = $r->TELEFONO;
+              $nombre = $r->nombre;
+              $apellido1 = $r->apellido1;
+              $apellido2 = $r->apellido2;
+              $obsalt = $r->obsalt;
 
-                $lead = [
-                    'TELEFONO' => $phone,
-                    'nombre' => $nombre,
-                    'apellido1' => $apellido1,
-                    'apellido2' => $apellido2,
-                    'observaciones' => $obsalt
-                ];
-                
-                if($tipo == "cliente"){
-                    $dninie = $r->dninie;
-                    $numerocliente = $r->numerocliente;
-                    
-                    $lead['dninie'] = $dninie;
-                    $lead['observaciones'] = $obsalt ."//". $numerocliente;
-                }
+              $lead = [
+                  'TELEFONO' => $phone,
+                  'nombre' => $nombre,
+                  'apellido1' => $apellido1,
+                  'apellido2' => $apellido2,
+                  'observaciones' => $obsalt
+              ];
+              
+              if($tipo == "cliente"){
+                  $dninie = $r->dninie;
+                  $numerocliente = $r->numerocliente;
+                  
+                  $lead['dninie'] = $dninie;
+                  $lead['observaciones'] = $obsalt ."//". $numerocliente;
+              }
 
-                $ws = self::invokeWSLeontel();
-                if(!$dev){
-                    $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
-                }else{
-                    $retorno["success"] = true;                
-                    $retorno["id"] = 9999;                    
-                }
+              $ws = self::invokeWSLeontel();
+              if(!$dev){
+                  $retorno = $ws->sendLead($id_origen_leontel, $id_tipo_leontel, $lead);
+              }else{
+                  $retorno["success"] = true;                
+                  $retorno["id"] = 9999;                    
+              }
 
-                if($retorno["success"] == true){
-                    $datos = [
-                        "observaciones2" => $retorno["id"]
-                    ];
+              if($retorno["success"] == true){
+                  $datos = [
+                      "observaciones2" => $retorno["id"]
+                  ];
 
-                    $where = ["lea_id" => $lea_id];
-                    $parametros = UtilitiesConnection::getParametros($datos, $where);
-                    $result = $db->updatePrepared("crmti.lea_leads", $parametros);               
-                    array_push($salida, $lea_id);
-                }
-            }
-            $success = true;
-        }else{
-            $success = false;
-        }
-        return json_encode(["success" => $success, "message" => $nombreFunc, "salida" => $salida ]);
+                  $where = ["lea_id" => $lea_id];
+                  $parametros = UtilitiesConnection::getParametros($datos, $where);
+                  $result = $db->updatePrepared("crmti.lea_leads", $parametros);               
+                  array_push($salida, $lea_id);
+              }
+          }
+          $success = true;
+      }else{
+          $success = false;
+      }
+      return json_encode(["success" => $success, "message" => $nombreFunc, "salida" => $salida ]);
     }
     
     private static function invokeWSLeontel($params = null){

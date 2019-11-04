@@ -15,39 +15,6 @@ $app->get('/', function (Request $request, Response $response, array $args) {
 });
 
 
-$app->post('/testconexion', function (Request $request, Response $response, array $args){
-
-  $salida = array();
-
-  // $mysqli = $this->db_crmti_dev;
-  // $mysqli = $this->db_crmti;
-
-  // $sql = "select * from crmti.lea_leads where lea_id = 266189;";
-  // $r = $mysqli->Query($sql);
-  // $res = $r->fetch_assoc();
-  // array_push($salida,$res);
-
-
-  // $mysqli2 = $this->db_webservice_dev;
-  $mysqli2 = $this->db_webservice;
-
-
-  $sql2 = "select * from ".$this->leads_table." where lea_id = 119854;";
-  $r2 = $mysqli2->Query($sql2);
-  $res2 = $r2->fetch_assoc();
-  array_push($salida,$res2);
-
-  $aa = $this->settings_db_crmti;
-  $a = new \App\Libraries\Connection($aa);
-
-  $sql3 = "select * from crmti.lea_leads where lea_id = 265336;";
-  $rr = $a->Query($sql3);
-  $res3 = $rr->fetch_assoc();
-  array_push($salida,$res3);
-
-  return $response->withJson($salida);
-});
-
 $app->group('/test', function(){
 
     $this->post('/testException', function (Request $request, Response $response, array $args){
@@ -128,7 +95,7 @@ $app->group('/test', function(){
       if($request->isPost()){
         $data = $request->getParsedBody();
 
-        $elements = $this->funciones->consultaTimeTableC2C($data,$this->db_report_panel);
+        $elements = $this->funciones->consultaTimeTableC2C($data);
         if(is_array($elements)){
           exit(json_encode(['success'=> true, 'data' => $elements]));
         }else{
@@ -140,7 +107,7 @@ $app->group('/test', function(){
     $this->post('/getSouIdcrm', function(Request $request, Response $response, array $args){
       if($request->isPost()){
         $sou_id = $this->sou_id_test;
-        $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+        $sou_idcrm = $this->funciones->getSouIdcrm($sou_id);
 
         $body = $response->getBody();
         $body->write($sou_idcrm);
@@ -152,10 +119,10 @@ $app->group('/test', function(){
 
       if($request->isPost()){
         $sou_id = $this->sou_id_test;
-        $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+        $sou_idcrm = $this->funciones->getSouIdcrm($sou_id);
 
         // si está en horario, devuelve true, si no false
-        $salida = $this->funciones->horarioEntradaLeads($sou_idcrm, $this->db_report_panel);
+        $salida = $this->funciones->horarioEntradaLeads($sou_idcrm);
         return $response->withJson($salida);
       }
     });
@@ -245,15 +212,6 @@ $app->group('/test', function(){
         }
       }
       return $response->withJson($salida);
-    });
-
-    $this->post('/testTest', function(Request $request, Response $response, array $args){
-
-      $db = $this->db_crmti_dev;
-      $db = $this->db_crmti;
-      $a = $this->funciones->test($db);
-
-      var_dump($a);
     });
 
     $this->post('/testLeadStatusProd', function(Request $request, Response $response, array $args){
@@ -463,20 +421,16 @@ $app->group('/test', function(){
           "phone" => $data->phone
         ];
 
-        $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
+        $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef));
 
         if(!$rAsnefPre->success){
-
-          $db_crmti = $this->db_crmti;
-
-          $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti));
+          $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef));
 
           if(!$rAsnef->success){
 
             $datos = [
               "lea_destiny" => 'LEONTEL',
               "sou_id" => $sou_id,
-              // "sou_id" => $this->sou_id_test,
               "leatype_id" => $leatype_id,
               "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
               "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
@@ -489,7 +443,7 @@ $app->group('/test', function(){
 
             $setwebservice = $this->settings_db_webservice;
             $db = new \App\Libraries\Connection($setwebservice);
-            $salida = $this->funciones->prepareAndSendLeadLeontel($datos,$db);
+            $salida = $this->funciones->prepareAndSendLeadLeontel($datos);
             $db = null;
           }else{
             $salida = json_encode(['success' => false, 'message' => $rAsnef->message]);
@@ -501,10 +455,9 @@ $app->group('/test', function(){
         $test = json_decode($salida);
         if(!$test->success){
 
-          $datosInsert = [
+          $datainsert = [
             "lea_destiny" => '',
             "sou_id" => $sou_id,
-            // "sou_id" => $this->sou_id_test,
             "leatype_id" => $leatype_id,
             "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
             "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
@@ -515,9 +468,7 @@ $app->group('/test', function(){
             "lea_aux2" => $data->cantidadsolicitada,
             "lea_aux3" => $test->message
           ];
-          $parametros = UtilitiesConnection::getParametros($datosInsert,null);
-
-          $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+          $this->funciones->sendLeadToWebservice($datainsert);
 
           $salida = json_encode(['success' => false, 'message' => $test->message]);
         }
@@ -536,7 +487,7 @@ $app->group('/test', function(){
           "documento" => $data->documento,
           "phone" => $data->phone
         ];
-        $res = $this->funciones->checkAsnefCrediteaPrev($datosAsnef, $db);
+        $res = $this->funciones->checkAsnefCrediteaPrev($datosAsnef);
 
         return $response->withJson(json_decode($res));
       }
@@ -553,7 +504,7 @@ $app->group('/test', function(){
       ];
 
       // Devuelve array ['success'=> true, 'message' => 'KO-notValid'] si no pasa validacion, ['success'=> false, 'message' => true] si pasa validacion
-      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
+      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef);
       return $response->withJson(json_decode($rAsnef));
     });
 
@@ -572,7 +523,7 @@ $app->group('/test', function(){
         *  ['success'=> true, 'message' => true] si pasa validacion
         *  ['result'=> true, 'data' => 'KO-paramsNeeded'] si faltan parámetros
       */
-      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti);
+      $rAsnef = $this->funciones->checkAsnefCreditea($datosAsnef);
       return $response->withJson(json_decode($rAsnef));
     });
 });
@@ -598,23 +549,29 @@ $app->group('/RCable', function(){
       $data = $request->getParsedBody();
       $phone = $data->phone;
 
+      if (!$this->funciones->phoneFormatValidator($phone)){
+        return $response->withJson(['success' => false, 'message' => 'Malformed phone'])->withStatus(422);
+      }
+
       list($url, $ip) = $this->funciones->getServerParams($request);
 
-      $sou_id = 5;
-      $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+      $sou_id = $this->dev ? $this->sou_id_test : 5;
+      $sou_idcrm = $this->funciones->getSouIdcrm($sou_id);
+      
+      $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm) ? 1 : 9;
 
-      $leatype_id = $this->funciones->horarioEntradaLeads($sou_idcrm, $this->db_report_panel) ? 1 : 9;
+      $destiny = $this->dev ? 'TEST' : 'LEONTEL';
 
       $datos = [
         "lea_phone" => $phone,
         "lea_url" => $url,
         "lea_ip" => $ip,
-        "lea_destiny" => "LEONTEL",
+        "lea_destiny" => $destiny,
         "sou_id" => $sou_id,
         "leatype_id" => $leatype_id
       ];
 
-      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice), true);
+      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos), true);
 
       return $response->withJson($resultLeontel);
     }
@@ -726,17 +683,14 @@ $app->group('/creditea', function(){
         "phone" => $data->phone
       ];
 
-      $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
+      $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef));
 
       if(!$rAsnefPre->success){
         //sou_id de crmti
-        $sou_id_crmti = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+        $sou_id_crmti = $this->funciones->getSouIdcrm($sou_id);
         $datosAsnef["sou_id"] = $sou_id_crmti;
 
-        $db_crmti = $this->db_crmti;
-
-        $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $db_crmti));
-        // $this->utilities->infoLog("rAsnef->success".$rAsnef->success);
+        $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef));
 
         if(!$rAsnef->success){
 
@@ -769,7 +723,7 @@ $app->group('/creditea', function(){
 
       if(!$test->success){
 
-        $datosInsert = [
+        $dataInsert = [
           "lea_destiny" => '',
           "sou_id" => $sou_id,
           "leatype_id" => $leatype_id,
@@ -783,9 +737,7 @@ $app->group('/creditea', function(){
           "lea_aux3" => $test->message,
           "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
         ];
-        $parametros = UtilitiesConnection::getParametros($datosInsert,null);
-
-        $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+        $this->funciones->sendLeadToWebservice($dataInsert);
 
         $salida = json_encode(['success' => false, 'message' => $test->message]);
       }
@@ -803,7 +755,6 @@ $app->group('/creditea', function(){
   $this->post('/sendLeadLeontelPagoRecurrente', function(Request $request, Response $response, array $args){
 
     $db = $this->db_crmti;
-
     $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("leads", $db, $this->dev);
 
     $salida = App\Functions\LeadLeontel::sendLeadLeontelPagoRecurrente("cliente", $db, $this->dev);
@@ -882,7 +833,7 @@ $app->group('/creditea', function(){
           "lea_aux4" => $lead->clientId,
           "observations" => $observations
         ];
-        array_push($results, json_decode($this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice)));
+        array_push($results, json_decode($this->funciones->prepareAndSendLeadLeontel($datos)));
       }
       /*
           Info recibida						        Campo Leontel						    Campo webservice.lead
@@ -1124,8 +1075,7 @@ $app->group('/evobanco', function(){
         $data = $request->getParsedBody();
         $data["sou_id"] = 3;
 
-        $db = $this->db_webservice;
-        $result = json_decode($this->funciones->sendC2CToLeontel($data, $db));
+        $result = json_decode($this->funciones->sendC2CToLeontel($data));
 
         return $response->withJson($result);
       }
@@ -1307,10 +1257,10 @@ $app->group('/yoigo', function(){
 
       // Hay q que repasar esto ya que el source 17 no está contemplado en esta logica.
       // $sou_id = 17;
-      $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+      $sou_idcrm = $this->funciones->getSouIdcrm($sou_id);
 
       $datosHorario = ["sou_id" => $sou_idcrm, "hora" => date('H:i'), "num_dia" => intval(date('N'))];
-      $consTimeTable = $this->funciones->consultaTimeTableC2C($datosHorario, $this->db_report_panel);
+      $consTimeTable = $this->funciones->consultaTimeTableC2C($datosHorario);
       $leatype_id = is_array($consTimeTable) ? 1 : 20;
 
       $lea_aux3 = $data->cobertura."//".$data->impuesto;
@@ -1327,7 +1277,7 @@ $app->group('/yoigo', function(){
         "leatype_id" => $leatype_id
       ];
 
-      $salida = json_decode($this->funciones->prepareAndSendLeadLeontel($datos,$this->db_webservice));
+      $salida = json_decode($this->funciones->prepareAndSendLeadLeontel($datos));
     }
     return $response->withJson($salida);
   });
@@ -1395,7 +1345,7 @@ $app->group('/doctordinero', function(){
       $telfValido = App\Functions\Functions::phoneFormatValidator($data->movil);
 
       $sou_id = 9;
-      $sou_idcrm = $this->funciones->getSouIdcrm($sou_id, $this->settings_db_webservice);
+      $sou_idcrm = $this->funciones->getSouIdcrm($sou_id);
       $leatype_id = 1;
 
       $observations = "";
@@ -1408,7 +1358,6 @@ $app->group('/doctordinero', function(){
       $datos = [
         "lea_destiny" => '',
         "sou_id" => $sou_id,
-        // "sou_id" => $this->sou_id_test,
         "leatype_id" => $leatype_id,
         "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
         "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
@@ -1427,11 +1376,11 @@ $app->group('/doctordinero', function(){
 
       if($telfValido){
 
-        $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef, $this->db_webservice));
+        $rAsnefPre = json_decode($this->funciones->checkAsnefCrediteaPrev($datosAsnef));
 
         if(!$rAsnefPre->success){               
           $datosAsnef["sou_id"] = $sou_idcrm;
-          $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef, $this->db_crmti));
+          $rAsnef = json_decode($this->funciones->checkAsnefCreditea($datosAsnef));
 
           if(!$rAsnef->success){
             $datos["lea_destiny"] = 'LEONTEL';
@@ -1457,9 +1406,7 @@ $app->group('/doctordinero', function(){
           $datos["lea_destiny"] = '';
           $datos["lea_aux3"] = $test->message;
 
-          $parametros = UtilitiesConnection::getParametros($datos,null);
-
-          $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+          $this->funciones->sendLeadToWebservice($datos);
 
           $salida = json_encode(['success' => false, 'message' => $test->message]);
         }
@@ -1468,9 +1415,7 @@ $app->group('/doctordinero', function(){
         $datos["lea_destiny"] = '';
         $datos["lea_aux3"] = $data->movil."_notValid";
 
-        $parametros = UtilitiesConnection::getParametros($datos,null);
-
-        $this->funciones->sendLeadToWebservice($this->settings_db_webservice, $parametros);
+        $this->funciones->sendLeadToWebservice($datos);
 
         $salida = json_encode(['success' => false, 'message' => 'KO-notValid_telf']);
       }
@@ -1619,7 +1564,7 @@ $app->group('/microsoft', function(){
           $datos = array_merge($datosIni, $datos4);
         }
 
-        $result = $this->funciones->prepareAndSendLeadLeontel($datos, $this->db_webservice);
+        $result = $this->funciones->prepareAndSendLeadLeontel($datos);
 
         return $response->withJson(json_decode($result));
       }
@@ -1638,7 +1583,6 @@ $app->group('/sanitas', function(){
 
       $data = $request->getParsedBody();
 
-      // $sou_id = $this->sou_id_test;           
       $sou_id = 57;
       $lea_type = 1;
       list($url, $ip) = $this->funciones->getServerParams($request);

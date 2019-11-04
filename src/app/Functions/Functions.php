@@ -32,9 +32,9 @@ class Functions {
     * si (2) => array que contiene horario con indices 'primerDia' y 'ultimoDia' en caso de que exista horario para el sou_id, hora y dia recibido, 
     * o null en caso contrario
   */
-  public function consultaTimeTableC2C($data, $db){  
+  public function consultaTimeTableC2C($data){  
     $laborable = 1;
-
+    $db = $this->container->db_report_panel;
     if(array_key_exists('hora', $data)){
       $datos = [
         0 => $laborable, 
@@ -86,14 +86,14 @@ class Functions {
     return null;
   }
   
-  public function horarioEntradaLeads($sou_id, $db){
+  public function horarioEntradaLeads($sou_id){
     $diaSemana = intval(date('N'));
     $horaActual = date('H:i');
 
     //sou_id de report_panel!!!
     $data = (object) ['sou_id'=> $sou_id, 'num_dia'=> $diaSemana, 'hora'=> $horaActual];
 
-    $result = $this->consultaTimeTableC2C($data, $db);
+    $result = $this->consultaTimeTableC2C($data);
 
     if(is_array($result)){
       return true;
@@ -124,83 +124,83 @@ class Functions {
     *                      "data": true
     * 			}
   */
-  public function checkAsnefCreditea($data, $db){
+  public function checkAsnefCreditea($data){
     $a = $data['sou_id'];
     $b = $data['documento'];
     $c = $data['phone'];
-      
-    if(!empty($db)){
-      if(!empty($a) && !empty($b) && !empty($c)){
-        //db tiene que ser report panel        
-        $previa = [
-          0 => $data['sou_id']
+    $db = $this->container->db_crmti;
+
+    if(!empty($a) && !empty($b) && !empty($c)){
+      //db tiene que ser report panel        
+      $previa = [
+        0 => $data['sou_id']
+      ];
+      $sqlPrevia = "select distinct(left(sou_description,5)) 'categoria' from crmti.sou_sources where sou_id = ?;";      
+      $previaSC = $db->selectPrepared($sqlPrevia, $previa);
+      $categ = $previaSC[0]->categoria;
+
+      if(!empty($categ)){
+        $sqlPrevSources = "select sou_id from crmti.sou_sources where sou_description like ? ;";
+        $datosPrevSources = [
+          0 => "%".$categ."%"
         ];
-        $sqlPrevia = "select distinct(left(sou_description,5)) 'categoria' from crmti.sou_sources where sou_id = ?;";      
-        $previaSC = $db->selectPrepared($sqlPrevia, $previa);
-        $categ = $previaSC[0]->categoria;
+        
+        $resultSC = $db->selectPrepared($sqlPrevSources, $datosPrevSources, true);
+        $paramPrevSources = UtilitiesConnection::arrayToPreparedParam($resultSC, "sou_id");
 
-        if(!empty($categ)){
-          $sqlPrevSources = "select sou_id from crmti.sou_sources where sou_description like ? ;";
-          $datosPrevSources = [
-            0 => "%".$categ."%"
-          ];
-          
-          $resultSC = $db->selectPrepared($sqlPrevSources, $datosPrevSources, true);
-          $paramPrevSources = UtilitiesConnection::arrayToPreparedParam($resultSC, "sou_id");
+        $datosPrevIds = [
+          0 => "%".$data['documento']."%",
+          1 => $data['phone']
+        ];
 
-          $datosPrevIds = [
-            0 => "%".$data['documento']."%",
-            1 => $data['phone']
-          ];
+        $sqlPrevIds = "SELECT lea_id FROM crmti.lea_leads where dninie like ? OR TELEFONO = ? ;";
+        $resultSI = $db->selectPrepared($sqlPrevIds, $datosPrevIds, true);
+        $paramPrevIds = UtilitiesConnection::arrayToPreparedParam($resultSI, "lea_id");
 
-          $sqlPrevIds = "SELECT lea_id FROM crmti.lea_leads where dninie like ? OR TELEFONO = ? ;";
-          $resultSI = $db->selectPrepared($sqlPrevIds, $datosPrevIds, true);
-          $paramPrevIds = UtilitiesConnection::arrayToPreparedParam($resultSI, "lea_id");
+        $fecha = new \DateTime();
+        $fecha->sub(new \DateInterval('P1M')); // 1 mes
+        $dateMySql  = $fecha->format('Y-m-d');
 
-          $fecha = new \DateTime();
-          $fecha->sub(new \DateInterval('P1M')); // 1 mes
-          $dateMySql  = $fecha->format('Y-m-d');
+        $arrSubid = array(383,385,386,387,388,389,390,391,393,394,400,402,403,404,405,407,411,499,501,502,503,504,505,507,508,510,511,512,513,514,515,516,519,521,522,523,524,525,526,527,528,530,531,532,533,536,537,542,543,544,549,550,553,556,557,616,617,618,620,621,622,623,624,625,646,647,648,649,650,674,675,676,677,678,679,680,681,682,683,684,686,687);
+        
+        $datos = [
+          0 => $paramPrevSources["values"],
+          1 => $dateMySql,
+          2 => 'SI',
+          3 => $arrSubid,
+          4 => $paramPrevIds["values"]
+        ];
+        
+        $questionsA = $paramPrevSources["questions"];
+        $questionsB = UtilitiesConnection::generaQuestions($arrSubid);
+        $questionsC = $paramPrevIds["questions"];
+        
+        $sql = "SELECT * "
+          . "FROM crmti.lea_leads ll "
+          . "INNER JOIN crmti.his_history hh ON ll.lea_id = hh.his_lead "
+          . "WHERE "
+          . "ll.lea_source IN ($questionsA)"
+          . "AND date(ll.lea_ts) >=  ? "
+          . "AND (ll.asnef = ? "
+          . "OR "
+          . "hh.his_sub in ($questionsB) "
+          . ") "
+          . "AND hh.his_lead in ($questionsC) "
+          . " LIMIT 10;";
 
-          $arrSubid = array(383,385,386,387,388,389,390,391,393,394,400,402,403,404,405,407,411,499,501,502,503,504,505,507,508,510,511,512,513,514,515,516,519,521,522,523,524,525,526,527,528,530,531,532,533,536,537,542,543,544,549,550,553,556,557,616,617,618,620,621,622,623,624,625,646,647,648,649,650,674,675,676,677,678,679,680,681,682,683,684,686,687);
-          
-          $datos = [
-            0 => $paramPrevSources["values"],
-            1 => $dateMySql,
-            2 => 'SI',
-            3 => $arrSubid,
-            4 => $paramPrevIds["values"]
-          ];
-          
-          $questionsA = $paramPrevSources["questions"];
-          $questionsB = UtilitiesConnection::generaQuestions($arrSubid);
-          $questionsC = $paramPrevIds["questions"];
-          
-          $sql = "SELECT * "
-            . "FROM crmti.lea_leads ll "
-            . "INNER JOIN crmti.his_history hh ON ll.lea_id = hh.his_lead "
-            . "WHERE "
-            . "ll.lea_source IN ($questionsA)"
-            . "AND date(ll.lea_ts) >=  ? "
-            . "AND (ll.asnef = ? "
-            . "OR "
-            . "hh.his_sub in ($questionsB) "
-            . ") "
-            . "AND hh.his_lead in ($questionsC) "
-            . " LIMIT 10;";
+        $result = $db->selectPrepared($sql, $datos);
 
-          $result = $db->selectPrepared($sql, $datos);
-
-          if(!is_null($result)){
-            return json_encode(['success'=> true, 'message' => 'KO-notValid']);
-          }else{
-            return json_encode(['success'=> false, 'message' => true]);
-          }
-        }  
-      }else{
-        return json_encode(['success'=> true, 'message' => 'KO-paramsNeeded']);
-      }
-      return null;
+        if(!is_null($result)){
+          return json_encode(['success'=> true, 'message' => 'KO-notValid']);
+        }else{
+          return json_encode(['success'=> false, 'message' => true]);
+        }
+      }  
+    }else{
+      return json_encode(['success'=> true, 'message' => 'KO-paramsNeeded']);
     }
+    return null;
+  
   }   
   
   /*
@@ -222,87 +222,106 @@ class Functions {
     *      "data": true
     *  }
   */
-  public function checkAsnefCrediteaPrev($data, $db){
+  public function checkAsnefCrediteaPrev($data){
     $a = $data['sou_id'];
     $b = $data['documento'];
     $c = $data['phone'];
-    
-    if(!empty($db)){
-      if(!empty($a) && !empty($b) && !empty($c)){  
-        $fecha = new \DateTime();
-        $fecha->sub(new \DateInterval('P1M')); // 1 mes
-        $dateMySql = $fecha->format('Y-m-d');
-            
-        $datos = [
-          0 => $a,
-          1 => '',
-          2 => $dateMySql,
-          3 => "%".$b."%",
-          4 => $c,
-          5 => 'Check Cliente marcado.',
-          6 => 'Check Asnef marcado.',
-        ];
-        
-        $sql = " SELECT ll.lea_id "
-          ."FROM ".$this->container->leads_table." ll "
-          ."WHERE "
-          ."ll.sou_id = ? "
-          ."AND (ll.lea_destiny is null OR ll.lea_destiny = ?) "
-          ."AND DATE(ll.lea_ts) > ? "
-          ."AND (ll.lea_aux1 LIKE ? OR ll.lea_phone = ?) "
-          ."AND (ll.lea_aux3 = ? OR ll.lea_aux3 = ?);";
-        
-        $result = $db->selectPrepared($sql, $datos);
+    $db = $this->container->db_webservice;
 
-        if(!is_null($result)){
-          return json_encode(['success'=> true, 'message' => 'KO-notValid_pre']);
-        }else{
-          return json_encode(['success'=> false, 'message' => true]);
-        }                
-      }else{
-        return json_encode(['success'=> true, 'message' => 'KO-paramsNeeded']);
-      }
-    }
-  }
-  
-  /*
-    * Encapsulación de la lógica de inserción de lead (inserción en webservice.leads_oldschool 
-    * a través de stored procedure + envío a la cola de Leontel a través de WS SOAP de Leontel).
-    * params:
-    * @datos: array con conjunto de datos a insertar en bd
-    * @db: instancia bd
-    * @tabla: por si hay que hacer la inserción en otra tabla
-  */
-  public function prepareAndSendLeadLeontel($datos, $db, $tabla = null, $leontel = true){
-    if(is_array($datos) && !is_null($db)){
-      if($tabla == null){
-        $tabla = $this->container->leads_table;
-      }
-
-      $parametros = UtilitiesConnection::getParametros($datos,null);    
-      $query = $db->insertStatementPrepared($tabla, $parametros);
-      $sp = 'CALL wsInsertLead("'.$datos["lea_phone"].'", "'.$query.'");';
-
-      $result = $db->Query($sp);           
+    if(!empty($a) && !empty($b) && !empty($c)){  
+      $fecha = new \DateTime();
+      $fecha->sub(new \DateInterval('P1M')); // 1 mes
+      $dateMySql = $fecha->format('Y-m-d');
+          
+      $datos = [
+        0 => $a,
+        1 => '',
+        2 => $dateMySql,
+        3 => "%".$b."%",
+        4 => $c,
+        5 => 'Check Cliente marcado.',
+        6 => 'Check Asnef marcado.',
+      ];
       
-      if($db->AffectedRows() > 0){
-        $resultSP = $result->fetch_assoc();
-        $lastid = $resultSP["@result"];
-        $db->NextResult();
-        $result->close();
-        
-        $leontel ? LeadLeontel::sendLead($datos, $db, $this->container) : null;
-        
-        $db->close();
-        //Hay que devolver el resultado de la inserción en webservice.leads_oldschool, no el update de Leontel
-        return json_encode(['success'=> true, 'message'=> $lastid]);
+      $sql = " SELECT ll.lea_id "
+        ."FROM ".$this->container->leads_table." ll "
+        ."WHERE "
+        ."ll.sou_id = ? "
+        ."AND (ll.lea_destiny is null OR ll.lea_destiny = ?) "
+        ."AND DATE(ll.lea_ts) > ? "
+        ."AND (ll.lea_aux1 LIKE ? OR ll.lea_phone = ?) "
+        ."AND (ll.lea_aux3 = ? OR ll.lea_aux3 = ?);";
+      
+      $result = $db->selectPrepared($sql, $datos);
+
+      if(!is_null($result)){
+        return json_encode(['success'=> true, 'message' => 'KO-notValid_pre']);
       }else{
-        return json_encode(['success'=> false, 'message'=> $db->LastError()]);
-      }            
+        return json_encode(['success'=> false, 'message' => true]);
+      }                
+    }else{
+      return json_encode(['success'=> true, 'message' => 'KO-paramsNeeded']);
     }
-    return json_encode(['success'=> false, 'message'=> '??']);
   }
   
+  /**
+    * Lead insert logic. Previous checks to decide if it is an allowed lead.
+    * @array lead: lead data
+    * @object db: [optional] database instance
+    * @bool leontel: [optional] if smartcenter insert is not needed
+    * @return array with success result (bool) and a descriptive message (string)  
+  */
+  public function prepareAndSendLeadLeontel($lead, $dbinput = null, $leontel = false){
+    if(is_array($lead)){
+
+      $db = is_null($dbinput) ? $this->container->db_webservice : $dbinput;
+      $error = 'KO';
+
+      if (empty($lead['lea_phone']) || is_null($lead['lea_phone'])){
+        return json_encode(['success'=> false, 'message'=> $error]);
+      }
+  
+      $data = [
+        0 => $lead['lea_phone']
+      ];
+  
+      $sqlone = "SELECT count(*) as phoneExists FROM {$this->container->leads_table} where lea_phone = ? and date(lea_ts) = curdate();";
+      $rone = $db->selectPrepared($sqlone, $data, true);
+  
+      if($rone[0]['phoneExists'] > 0) {
+        $sqltwo = "SELECT TIMESTAMPDIFF(SECOND, lea_ts, NOW()) as diff FROM {$this->container->leads_table} where lea_phone = ? and date(lea_ts) = curdate() ORDER BY lea_id desc limit 1;";
+        $rtwo = $db->selectPrepared($sqltwo, $data, true);
+  
+        if($rtwo[0]['diff'] > 60) {
+          // If the difference between last lead and actual interaction is > 60 seconds, insert the lead but not send to Leontel as it is a duplicated one.
+          $resp = $this->createLead($lead);
+          $message = 'DUPLICATED-'.$resp->message;
+          return json_encode(['success'=> true, 'message'=> $message]);
+        }
+      } else {
+        $resp = $this->createLead($lead);
+        if ($resp->success) {
+          $smartcenter = $leontel ? LeadLeontel::sendLead($lead, $db, $this->container) : null;
+          $lastid = $resp->message;
+          return json_encode(['success'=> true, 'message'=> $lastid]);
+        }
+      }
+      return json_encode(['success'=> false, 'message'=> $error]);
+    }
+  }
+  
+
+  /**
+   * createLead formats the array passed as param and creates an insert prepared statement
+   * @array $lead: data lead
+   * @return array with success result (bool) and a descriptive message (string)
+   */
+  public function createLead($lead) {
+    $db = $this->container->db_webservice;
+    $params = UtilitiesConnection::getParametros($lead,null);
+    return json_decode($db->insertPrepared($this->container->leads_table, $params));
+  }
+
   /*
     * Encapsulación de la lógica de inserción de lead Evo Banco (inserción en webservice.evo_events_sf_v2_pro 
     * + envío a la cola de Leontel a través de WS SOAP de Leontel con credenciales).
@@ -343,28 +362,28 @@ class Functions {
   /*
     * Invocación tarea C2C Leontel (usada mayormente para cron Evo Banco)
   */
-  public function sendC2CToLeontel($data, $db){
-    if(!empty($data) && !empty($db)){
+  public function sendC2CToLeontel($data){
+    if(!empty($data)){
+      $db = $this->container->db_webservice;
       return LeadLeontel::sendLead($data, $db, $this->container);
     }
     return null;
   }
   
-  /*
-    * Obtiene el sou_id de crmti en función del sou_id de webservice
-    * params:
-    * @sou_id: sou_id de webservice
-    * @db: instancia bd
-    * return:
-    * @sou_idcrm (sou_id de crmti)
-    */
-  public function getSouIdcrm($sou_id, $paramsDb){
-    if(!empty($sou_id) && !empty($paramsDb)){
-      $datos = [ 0 => $sou_id];
-      $db = new \App\Libraries\Connection($paramsDb);
+  /**
+    * Returns smartcenter sou_id for the provided input
+    * @params:
+    *  @sou_id: webservice sou_id 
+    * @return
+    *  sou_idcrm: smartcenter source id
+  */
+  public function getSouIdcrm($sou_id){
+    if(!empty($sou_id)){
+      $data = [ 0 => $sou_id];
+      $db = $this->container->db_webservice;
       $sql = "SELECT sou_idcrm FROM webservice.sources WHERE sou_id = ?;";
       
-      $r = $db->selectPrepared($sql, $datos);
+      $r = $db->selectPrepared($sql, $data);
       
       if(!is_null($r)){
         return $r[0]->sou_idcrm;
@@ -411,34 +430,6 @@ class Functions {
       return array($url, $ip, $device);
     }
     return null;
-  }
-  
-  public function test($db){
-    $sqlPrevSources = "select sou_id from crmti.sou_sources where sou_description like ? and sou_active = ? ;";
-    
-    $datosPrevSources = [
-      0 => "%CREDI%",
-      1 => 1
-    ];
-
-    $resultSC = $db->selectPrepared($sqlPrevSources, $datosPrevSources, true);
-    
-    $paramPrevSources = UtilitiesConnection::arrayToPreparedParam($resultSC, "sou_id");
-
-    $datos = [
-      0 => $paramPrevSources["values"]
-    ];
-    
-    $questions = $paramPrevSources["questions"];
-    
-    $sql = "SELECT * "
-    . "FROM crmti.lea_leads ll "
-    . "WHERE "
-    . "ll.lea_source IN ($questions) "
-    . "LIMIT 10;";
-            
-    $result = $db->selectPrepared($sql, $datos);
-    return $result;
   }
   
   /*
@@ -609,36 +600,17 @@ class Functions {
     return $sou_id;
   }
   
-  /*
+  /**
     * Sends a lead to webservice.leads_oldschool table throw wsInsertLead stored procedure
     * @params
-    *  - settingsDb (array) => array with setting to create a db connection
     *  - params (array) => array with the data to insert. One of the params must be phone.
-    * @returns (array) => success (bool); message (string)
+    * @return (array) => success (bool); message (string)
   */
-  public function sendLeadToWebservice($settingsDb, $params){
-      
-    if(!empty($settingsDb) && !empty($params)){
-      $phone = $params["datos"]["lea_phone"];
+  public function sendLeadToWebservice($lead){
+    if(!empty($lead)){
+      // $phone = $lead["datos"]["lea_phone"];
 
-      $db = new \App\Libraries\Connection($settingsDb);
-      $query = $db->insertStatementPrepared($this->container->leads_table, $params);
-      $sp = 'CALL wsInsertLead("'.$phone.'", "'.$query.'");';
-      $result = $db->Query($sp);   
-      
-      if($db->AffectedRows() > 0){
-        $resultSP = $result->fetch_assoc();
-        $lastid = $resultSP["@result"];
-        $db->NextResult();
-        $result->close();
-                        
-        $db->close();
-        $db = null;
-        return json_encode(['success'=> true, 'message'=> $lastid]);
-      }else{
-        $db = null;
-        return json_encode(['success'=> false, 'message'=> $db->LastError()]);
-      }  
+      $this->prepareAndSendLeadLeontel($lead, null, true);
     }
     return json_encode(['success'=> false, 'message'=> 'Error in params.']);
   }
@@ -658,4 +630,4 @@ class Functions {
     }
     return false;
   }
-}
+}  

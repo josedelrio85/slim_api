@@ -567,7 +567,10 @@ $app->group('/rcable', function(){
         "lea_ip" => $ip,
         "lea_destiny" => $destiny,
         "sou_id" => $sou_id,
-        "leatype_id" => $leatype_id
+        "leatype_id" => $leatype_id,
+        "utm_source" => array_key_exists("utm_source", $data) ? $data->utm_source : null,
+        "sub_source" => array_key_exists("sub_source", $data) ? $data->sub_source : null,
+        "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
       ];
 
       $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos), true);

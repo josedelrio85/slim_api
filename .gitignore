@@ -1,8 +1,4 @@
+/.vscode/*
 /logs/*
-/src/app/libraries/logs/*
 api.code-workspace
-src/settings_dev.php
-/tests/*
-/CONTRIBUTING.md
-/docker-compose.yml
-/logs
+/vendor/*

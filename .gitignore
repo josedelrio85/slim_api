@@ -1,4 +1,4 @@
-/.vscode/*
-/logs/*
+.vscode/
+logs/
 api.code-workspace
-/vendor/*
+vendor/

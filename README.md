@@ -12,6 +12,13 @@ To install, run
 
 ```
 
+## Launch web server
+
+```
+php -S localhost:8888 index.php
+```
+
+Use -c flag with the path to a php.ini file to use its configuration
 
 
 ## Short Description Usecase

@@ -1,7 +1,8 @@
-/vendor/*
 /logs/*
-/tests/*
-#!/logs/README.md
-/github*
 /src/app/libraries/logs/*
-/api.code-workspace
+api.code-workspace
+src/settings_dev.php
+/tests/*
+/CONTRIBUTING.md
+/docker-compose.yml
+/logs

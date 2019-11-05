@@ -21,14 +21,7 @@ return [
       "dbname" => "webservice",
       "user" => "admin",
       "password" => "dalema22"
-    ],
-    
-    'db_report_panel' => [
-      "host" => "192.168.50.21",
-      "dbname" => "report_panel",
-      "user" => "admin",
-      "password" => "dalema22"
-    ],           
+    ],    
     
     'db_crmti' => [
       "host" => "192.168.50.109",
@@ -39,7 +32,7 @@ return [
 
     'sou_id_test' => 15,
     
-    'dev' => false,
+    'dev' => true,
 
     'leads_table' => 'webservice.leads',
   ],

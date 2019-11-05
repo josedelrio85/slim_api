@@ -53,6 +53,131 @@ $app->group('/rcable', function(){
   });
 });
 
+$app->group('/sanitas', function(){
+
+  $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
+    
+    $this->utilities->infoLog("Sanitas incomingC2C request");
+
+    if($request->isPost()){
+
+      $data = $request->getParsedBody();
+
+      $sou_id = 57;
+      $lea_type = 1;
+      list($url, $ip) = $this->funciones->getServerParams($request);
+
+      $datos = [
+        "lea_destiny" => 'GSS',
+        "sou_id" => $sou_id,
+        "leatype_id" => $lea_type,
+        "utm_source" => $data->utm_source,
+        "sub_source" => $data->sub_source,
+        "lea_phone" => $data->phone,
+        "lea_url" => $url,
+        "lea_ip" => $ip,
+        "lea_aux2" => $data->producto,
+        "lea_name" => $data->name
+        // acepCond ??
+        // acepBd ??
+      ];
+
+      $db = $this->db_webservice;
+      $parametros = UtilitiesConnection::getParametros($datos,null);
+      $salida = json_decode($db->insertPrepared($this->leads_table, $parametros),true);
+
+      if(!$salida['success'])
+        $salida['message'] = 'KO';
+
+      return $response->withJson($salida);
+    }
+  });
+
+  $this->post('/statusLeadGSS', function(Request $request, Response $response, array $args){
+    $this->utilities->infoLog('GSS status lead request');
+
+    if($request->isPost()){
+      $data = (object) $request->getParsedBody();
+
+      $datos = [
+        // "lea_id" => $data->idLead,
+        // "lea_phone" => $data->Telefono,
+        "__status" => $data->codEstado,
+        "__resultado" => $data->codResultado,
+        "__motivo" => $data->codMotivo,
+      ];
+
+      // nombre de los campos a actualizar¿¿¿????
+      // HABRÁ QUE ACTUALIZAR EL ESTADO DEL LEAD, PERO COMO HACEMOS ESTO??? EL LEAD ESTÁ ALMACENADO EN webservice.leads
+      // USAR COMO REFERENCIA $lea_id y $lea_phone
+
+      $where = [
+        "lea_id" => $data->lea_id,
+        "lea_phone" => $data->Telefono
+      ];
+
+      $parametros = UtilitiesConnection::getParametros($datos, $where);
+
+      $tabla = $this->leads_table;
+      $salida = json_decode($db->updatePrepared($tabla, $parametros), true);
+
+      return $response->withJson($salida);
+    }
+  });
+});
+
+$app->group('/clients', function(){
+  // This handler returns the status from some records from the EVO Banco End
+  // to End, it has been created to provide lead status information to a third
+  // party agency (Nivoria).
+  $this->get('/status/{provider}', function(Request $request, Response $response, array $args){
+    $providers = array("EVO");
+    $provider = strtoupper($args['provider']);
+    if (!in_array($provider, $providers)) {
+      return $response->withStatus(422)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('Provider not found or available.');
+    }
+
+    $client_id = $request->getParam('client_id');
+    if ($client_id == "") {
+      return $response->withStatus(422)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('Client ID not provided!');
+    }
+
+    $query = "";
+    switch ($provider){
+      case "EVO":
+        $query = $this->db_webservice->Query(
+          "SELECT clientid, createddate, fecha_formalizacion
+           FROM evo_events_sf_v2_pro
+           WHERE clientid = '" . $client_id . "'
+           ORDER BY even_ts desc
+           LIMIT 1;");
+        break;
+    }
+
+    if ($query == "") {
+      return $response->withStatus(500)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('Error finding the proper query for the provider!');
+    }
+
+    $row = $query->fetch_assoc();
+    if (!$row) {
+      return $response->withStatus(404)
+      ->withHeader('Content-Type', 'text/html')
+      ->write('No status information found for that client_id!');
+    }
+
+    $result = [];
+    $result[] = $row;
+
+    return $response->withJson($result);
+  });
+});
+
 $app->group('/evobanco', function(){
 
   /* 
@@ -400,133 +525,6 @@ $app->group('/evobanco', function(){
     }
   });
 });
-
-$app->group('/sanitas', function(){
-
-  $this->post('/incomingC2C', function(Request $request, Response $response, array $args){
-    
-    $this->utilities->infoLog("Sanitas incomingC2C request");
-
-    if($request->isPost()){
-
-      $data = $request->getParsedBody();
-
-      $sou_id = 57;
-      $lea_type = 1;
-      list($url, $ip) = $this->funciones->getServerParams($request);
-
-      $datos = [
-        "lea_destiny" => 'GSS',
-        "sou_id" => $sou_id,
-        "leatype_id" => $lea_type,
-        "utm_source" => $data->utm_source,
-        "sub_source" => $data->sub_source,
-        "lea_phone" => $data->phone,
-        "lea_url" => $url,
-        "lea_ip" => $ip,
-        "lea_aux2" => $data->producto,
-        "lea_name" => $data->name
-        // acepCond ??
-        // acepBd ??
-      ];
-
-      $db = $this->db_webservice;
-      $parametros = UtilitiesConnection::getParametros($datos,null);
-      $salida = json_decode($db->insertPrepared($this->leads_table, $parametros),true);
-
-      if(!$salida['success'])
-        $salida['message'] = 'KO';
-
-      return $response->withJson($salida);
-    }
-  });
-
-  $this->post('/statusLeadGSS', function(Request $request, Response $response, array $args){
-    $this->utilities->infoLog('GSS status lead request');
-
-    if($request->isPost()){
-      $data = (object) $request->getParsedBody();
-
-      $datos = [
-        // "lea_id" => $data->idLead,
-        // "lea_phone" => $data->Telefono,
-        "__status" => $data->codEstado,
-        "__resultado" => $data->codResultado,
-        "__motivo" => $data->codMotivo,
-      ];
-
-      // nombre de los campos a actualizar¿¿¿????
-      // HABRÁ QUE ACTUALIZAR EL ESTADO DEL LEAD, PERO COMO HACEMOS ESTO??? EL LEAD ESTÁ ALMACENADO EN webservice.leads
-      // USAR COMO REFERENCIA $lea_id y $lea_phone
-
-      $where = [
-        "lea_id" => $data->lea_id,
-        "lea_phone" => $data->Telefono
-      ];
-
-      $parametros = UtilitiesConnection::getParametros($datos, $where);
-
-      $tabla = $this->leads_table;
-      $salida = json_decode($db->updatePrepared($tabla, $parametros), true);
-
-      return $response->withJson($salida);
-    }
-  });
-});
-
-$app->group('/clients', function(){
-  // This handler returns the status from some records from the EVO Banco End
-  // to End, it has been created to provide lead status information to a third
-  // party agency (Nivoria).
-  $this->get('/status/{provider}', function(Request $request, Response $response, array $args){
-    $providers = array("EVO");
-    $provider = strtoupper($args['provider']);
-    if (!in_array($provider, $providers)) {
-      return $response->withStatus(422)
-      ->withHeader('Content-Type', 'text/html')
-      ->write('Provider not found or available.');
-    }
-
-    $client_id = $request->getParam('client_id');
-    if ($client_id == "") {
-      return $response->withStatus(422)
-      ->withHeader('Content-Type', 'text/html')
-      ->write('Client ID not provided!');
-    }
-
-    $query = "";
-    switch ($provider){
-      case "EVO":
-        $query = $this->db_webservice->Query(
-          "SELECT clientid, createddate, fecha_formalizacion
-           FROM evo_events_sf_v2_pro
-           WHERE clientid = '" . $client_id . "'
-           ORDER BY even_ts desc
-           LIMIT 1;");
-        break;
-    }
-
-    if ($query == "") {
-      return $response->withStatus(500)
-      ->withHeader('Content-Type', 'text/html')
-      ->write('Error finding the proper query for the provider!');
-    }
-
-    $row = $query->fetch_assoc();
-    if (!$row) {
-      return $response->withStatus(404)
-      ->withHeader('Content-Type', 'text/html')
-      ->write('No status information found for that client_id!');
-    }
-
-    $result = [];
-    $result[] = $row;
-
-    return $response->withJson($result);
-  });
-});
-
-
 
 
 

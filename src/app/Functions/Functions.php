@@ -402,7 +402,11 @@ class Functions {
    *  @array => key => result | value => bool
    */
   public function isCampaignOnTime($sou_id) {
-    $url = "https://ws.bysidecar.es/smartcenter/timetable/isCampaignOnTime";
+    $url = $this->container->dev ? 
+    "https://ws.bysidecar.es/smartcenter/timetable/isCampaignOnTime"
+    :
+    "http://127.0.0.1:80/report-panel-api/index.php/timetable/isCampaignOnTime";
+
     $data = [
       "sou_id" => $this->getSouIdcrm($sou_id),
     ];

@@ -27,7 +27,7 @@ Use -c flag with the path to a php.ini file to use its configuration
 
  ```json
  {
-  "phone":"665932355",
+  "phone":"666666666",
   "utm_source": "",
   "sub_source": "",
   "gclid": "",
@@ -40,7 +40,7 @@ Use -c flag with the path to a php.ini file to use its configuration
 
  ```json
  {
-   "phone": "665932355",
+   "phone": "666666666",
    "utm_source": "default",
    "sub_source": null,
    "producto": "Bysidecar test",

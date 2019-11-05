@@ -20,88 +20,11 @@ class Functions {
     $this->container = $container;
   }
   
-  /*
-    * Función para obtener horario de atención para C2C.
-    * Params: 
-    * @data: (1) array que puede contener sou_id + num_dia + hora => para consultar si hay atención en un momento determinado
-    *  ó bien
-    * (2) array que contiene sou_id => obtener horario de la semana
-    * @db => instancia bd
-    * return:
-    * si (1)  => array
-    * si (2) => array que contiene horario con indices 'primerDia' y 'ultimoDia' en caso de que exista horario para el sou_id, hora y dia recibido, 
-    * o null en caso contrario
-  */
-  public function consultaTimeTableC2C($data){  
-    $laborable = 1;
-    $settings = $this->container->settings_db_report_panel;
-    $db = new \App\Libraries\Connection($settings);
-    if(array_key_exists('hora', $data)){
-      $datos = [
-        0 => $laborable, 
-        1 => $data->sou_id,
-        2 => $data->num_dia, 
-        3 => $data->hora, 
-        4 => $data->hora
-      ];
-      $sql = "SELECT * FROM report_panel.c2c_timetable WHERE  laborable = ? and sou_id  = ? and num_dia = ? and h_ini <= ? and h_fin >= ? ;";
-    }else{                       
-      $datos = [
-        0 => $laborable, 
-        1 => $data->sou_id, 
-        2 => $laborable, 
-        3 => $data->sou_id, 
-        4 => $laborable, 
-        5 => $data->sou_id
-      ];
 
-      $sql = "SELECT * FROM report_panel.c2c_timetable WHERE laborable = ? and sou_id  = ? and
-      (num_dia = (select min(num_dia) from report_panel.c2c_timetable where laborable = ? and sou_id= ? )
-      or num_dia = (select max(num_dia) from report_panel.c2c_timetable where laborable = ? and sou_id= ? ));";
-    }
-    
-    $r = $db->selectPrepared($sql, $datos);
-    
-    if(!is_null($r)){
-      $aux = 0;
-      $i = 0;
-      $indice = "primerDia";
-      
-      foreach($r as $obj){
-        if($i == 0){
-          $elements[$indice][$i] = $obj;
-        }else{
-          if($aux == $obj->num_dia){
-            $elements[$indice][$i] = $obj;
-          }else{
-            $indice = "ultimoDia";
-            $i = 0;
-            $elements[$indice][$i] = $obj;
-          }
-        }
-        $aux = $obj->num_dia;
-        $i++;
-      }
-      return $elements;
-    }
-    return null;
-  }
-  
-  public function horarioEntradaLeads($sou_id){
-    $diaSemana = intval(date('N'));
-    $horaActual = date('H:i');
 
-    //sou_id de report_panel!!!
-    $data = (object) ['sou_id'=> $sou_id, 'num_dia'=> $diaSemana, 'hora'=> $horaActual];
 
-    $result = $this->consultaTimeTableC2C($data);
+  /** REMOVE CREDITEA 8/11/2019 09:00 AM */
 
-    if(is_array($result)){
-      return true;
-    }
-    return false;
-  }
-  
   /*
     *  Se evalúa en la tabla crmti.lea_leads y crmti.his_history la existencia de algún registro 
     * 	que cumpla con las siguiente condiciones:
@@ -267,6 +190,25 @@ class Functions {
   }
   
   /**
+    * Sends a lead to webservice.leads_oldschool table throw wsInsertLead stored procedure
+    * @params
+    *  - params (array) => array with the data to insert. One of the params must be phone.
+    * @return (array) => success (bool); message (string)
+  */
+  public function sendLeadToWebservice($lead){
+    if(!empty($lead)){
+      // $phone = $lead["datos"]["lea_phone"];
+
+      $this->prepareAndSendLeadLeontel($lead, null, true);
+    }
+    return json_encode(['success'=> false, 'message'=> 'Error in params.']);
+  }
+  /** */
+
+
+  
+
+  /**
     * Lead insert logic. Previous checks to decide if it is an allowed lead.
     * @array lead: lead data
     * @object db: [optional] database instance
@@ -324,6 +266,7 @@ class Functions {
     return json_decode($db->insertPrepared($this->container->leads_table, $params));
   }
 
+  /*******************   EVO BANCO ******************************************/
   /*
     * Encapsulación de la lógica de inserción de lead Evo Banco (inserción en webservice.evo_events_sf_v2_pro 
     * + envío a la cola de Leontel a través de WS SOAP de Leontel con credenciales).
@@ -372,6 +315,8 @@ class Functions {
     return null;
   }
   
+  /***************************************************************************/
+
   /**
     * Returns smartcenter sou_id for the provided input
     * @params:
@@ -434,190 +379,6 @@ class Functions {
     return null;
   }
   
-  /*
-    * Devuelve el sou_id apropiado en función del contenido recibido para
-    * los parámetros gclid, domain y utm_source
-  */
-  public function getSouidMicrosoft($utm_source, $tipo, $gclid){
-    if(!empty($gclid)){
-      //Google
-      switch($tipo){
-        // Recomendador => 1
-        case 1:
-          $sou_id = 49;
-        break;
-        // Ofertas => 2
-        case 2:
-          $sou_id = 50;
-        break;
-        //FichaProducto => 3
-        case 3:
-          $sou_id = 51;
-        break;
-        case 4:
-          //Microsoft Mundo R
-          $sou_id = 25;
-        case 5:
-          //Microsoft Hazelcambio
-          $sou_id = 46;
-        break;
-        case 6:
-          //Calculadora
-          $sou_id = 48;
-        break;
-      }
-    }else{
-      switch($tipo){
-        // Recomendador
-        case 1:
-          $sou_id = 49;
-        break;
-        // Ofertas
-        case 2:
-          $sou_id = 50;
-        break;
-        // FichaProducto
-        case 3:
-          $sou_id = 51;
-        break;
-        //Microsoft Mundo R
-        case 4:
-          $sou_id = 25;
-        break;
-        //Microsoft Hazelcambio
-        case 5:
-          $sou_id = 46;
-        break;
-        //Calculadora
-        case 6:
-          $sou_id = 48;
-        break;
-      }
-    }      
-    return $sou_id;
-  }
-  
-  private function getSouidMicrosoft_beforeIncidenciaLeontel($utm_source, $tipo, $gclid){
-    if(!empty($gclid)){
-      switch($tipo){
-        // Recomendador => 1
-        case 1:
-          $sou_id = 28;
-        break;
-        // Ofertas => 2
-        case 2:
-          $sou_id = 31;
-        break;
-        // FichaProducto => 3
-        case 3:
-          $sou_id = 37;
-        break;
-      }
-    }else{
-      switch($tipo){
-        // Recomendador
-        case 1:
-          switch($utm_source){
-            case "34":
-              //RRSS
-              $sou_id = 26;
-              break;
-            case "1":
-            case "41":
-            case "46":
-              //EMAILING
-              $sou_id = 29;
-              break;
-            case "16":
-            case "17":
-            case "43":
-            case "44":                            
-              //PROGRAMATICA
-              $sou_id = 30;
-              break;
-            default:
-              //SEO
-              $sou_id = 27;
-              break;
-          }
-        break;
-        // Ofertas
-        case 2:
-          switch($utm_source){
-            case "34":
-              //RRSS
-              $sou_id = 35;
-              break;
-            case "1":
-            case "41":
-            case "46":
-              //EMAILING
-              $sou_id = 32;
-              break;
-            case "16":
-            case "17":
-            case "43":
-            case "44":
-              //PROGRAMATICA
-              $sou_id = 34;
-              break;
-            default:
-              //SEO
-              $sou_id = 33;
-              break;
-          }
-        break;
-        // FichaProducto
-        case 3:
-          switch($utm_source){
-            case "34":
-              //RRSS
-              $sou_id = 40;
-              break;
-            case "1":
-            case "41":
-            case "46":
-              //EMAILING
-              $sou_id = 38;
-              break;
-            case "16":
-            case "17":
-            case "43":
-            case "44":
-              //PROGRAMATICA
-              $sou_id = 39;
-              break;
-            default:
-              //SEO
-              $sou_id = 36;
-              break;
-          }
-        break;
-        //Microsoft Mundo R
-        case 4:
-          $sou_id = 25;
-        break;
-      }
-    }      
-    return $sou_id;
-  }
-  
-  /**
-    * Sends a lead to webservice.leads_oldschool table throw wsInsertLead stored procedure
-    * @params
-    *  - params (array) => array with the data to insert. One of the params must be phone.
-    * @return (array) => success (bool); message (string)
-  */
-  public function sendLeadToWebservice($lead){
-    if(!empty($lead)){
-      // $phone = $lead["datos"]["lea_phone"];
-
-      $this->prepareAndSendLeadLeontel($lead, null, true);
-    }
-    return json_encode(['success'=> false, 'message'=> 'Error in params.']);
-  }
-
-
   public function checkGclid($data) {
     if(is_object($data)){
       $gclid = array_key_exists("gclid", $data) ? $data->gclid : null;
@@ -631,5 +392,51 @@ class Functions {
       } 
     }
     return false;
+  }
+
+  /**
+   * isCampaignOnTime checks if the campaign is on time for the actual day
+   * @param
+   *  @int => sou_id of the campaign (webservice)
+   * @return
+   *  @array => key => result | value => bool
+   */
+  public function isCampaignOnTime($sou_id) {
+    $url = "https://ws.bysidecar.es/smartcenter/timetable/isCampaignOnTime";
+    $data = [
+      "sou_id" => $this->getSouIdcrm($sou_id),
+    ];
+    $response = $this->curlRequest($data, $url);
+    return json_encode($response);
+  }
+  
+  /**
+   * curlRequest makes a POST request to an external endpoint
+   * @param
+   *  @data => array with the input data
+   *  @url => URL endpoint
+   * @return
+   *   @string => response of the endpoint
+   */
+  public function curlRequest($data, $url) { 
+    $params = json_encode($data);
+    $headers = array("Content-Type: application/json;");
+    $options = array(
+      CURLOPT_RETURNTRANSFER => true,   // return web page
+      CURLOPT_HEADER         => false,  // don't return headers
+      CURLOPT_MAXREDIRS      => 10,     // stop after 10 redirects
+      CURLOPT_CONNECTTIMEOUT => 10,    // time-out on connect
+      CURLOPT_TIMEOUT        => 10,    // time-out on response
+      CURLOPT_POST           => true,
+      CURLOPT_POSTFIELDS     => $params,
+      CURLOPT_HTTPHEADER      => array('Content-Type:application/json'),   
+    );
+  
+    $ch = curl_init($url);
+    curl_setopt_array($ch, $options);
+    $content  = curl_exec($ch);
+    curl_close($ch);
+  
+    return $content;
   }
 }  

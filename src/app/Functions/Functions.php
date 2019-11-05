@@ -250,8 +250,8 @@ class Functions {
           return json_encode(['success'=> true, 'message'=> $lastid]);
         }
       }
-      return json_encode(['success'=> false, 'message'=> $error]);
     }
+    return json_encode(['success'=> false, 'message'=> $error]);
   }
   
 

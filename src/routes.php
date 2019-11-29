@@ -36,6 +36,9 @@ $app->group('/rcable', function(){
 
       $datos = [
         "lea_phone" => $phone,
+        "lea_mail" => array_key_exists("mail", $data) ? $data->mail : null,
+        "lea_name" => array_key_exists("name", $data) ? $data->name : null,
+        "observations" => array_key_exists("observations", $data) ? $data->observations : null,
         "lea_url" => $url,
         "lea_ip" => $ip,
         "lea_destiny" => $destiny,

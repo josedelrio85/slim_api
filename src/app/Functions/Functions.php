@@ -248,7 +248,7 @@ class Functions {
     $url = $this->container->dev ?
     "https://ws.bysidecar.es/smartcenter/timetable/isCampaignOnTime"
     :
-    "http://127.0.0.1:80/report-panel-api/index.php/timetable/isCampaignOnTime";
+    "http://127.0.0.1:80/report-panel-api/timetable/isCampaignOnTime";
     // this is the URL for prod environment!
 
     $data = [
@@ -271,7 +271,7 @@ class Functions {
     $url = $this->container->dev ?
     "https://ws.bysidecar.es/lead/smartcenter/isopen"
     :
-    "http://127.0.0.1:80/send-lead-leontel-api/index.php/smartcenter/isopen";
+    "http://127.0.0.1:80/send-lead-leontel-api/smartcenter/isopen";
     // this is the URL for prod environment!
 
     $data = [

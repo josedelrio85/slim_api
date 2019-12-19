@@ -30,8 +30,12 @@ $app->group('/rcable', function(){
 
       list($url, $ip) = $this->funciones->getServerParams($request);
 
-      $sou_id = $this->dev ? $this->sou_id_test : 5;    
-      $leatype_id = $this->funciones->isCampaignOnTime($sou_id) ? 1 : 9;
+      $sou_id = (int)$this->dev ? $this->sou_id_test: array_key_exists("sou_id", $data) ? $data->sou_id : 5;
+      $valid_sou_id = [5, 15, 14, 71];
+      if (!in_array($sou_id, $valid_sou_id)){
+        return $response->withJson(['success' => false, 'message' => 'Not valid source'])->withStatus(422);
+      }
+      $leatype_id = $this->funciones->isCampaignOnTime($sou_id) ? 1 : 8;
       $destiny = $this->dev ? 'TEST' : 'LEONTEL';
 
       $datos = [

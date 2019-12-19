@@ -1,6 +1,6 @@
 <?php
 
-/* 
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -25,7 +25,7 @@ class Functions {
     * @array lead: lead data
     * @object db: [optional] database instance
     * @bool leontel: [optional] if smartcenter insert is not needed
-    * @return array with success result (bool) and a descriptive message (string)  
+    * @return array with success result (bool) and a descriptive message (string)
   */
   public function prepareAndSendLeadLeontel($lead, $dbinput = null, $leontel = false){
     if(is_array($lead)){
@@ -36,33 +36,43 @@ class Functions {
       if (empty($lead['lea_phone']) || is_null($lead['lea_phone'])){
         return json_encode(['success'=> false, 'message'=> $error]);
       }
-  
+
       $data = [
-        0 => $lead['lea_phone']
+        0 => $lead['lea_phone'],
+        1 => $lead['sou_id'],
+        2 => $lead['leatype_id'],
       ];
-  
-      $sqlone = "SELECT count(*) as phoneExists FROM {$this->container->leads_table} where lea_phone = ? and date(lea_ts) = curdate();";
+
+      $sqlone = "
+        SELECT count(*) as phoneExists 
+        FROM {$this->container->leads_table} 
+        where lea_phone = ? 
+        and sou_id = ? 
+        and leatype_id = ? 
+        and date(lea_ts) = curdate()
+        and TIME_TO_SEC(timediff(CURRENT_TIME(), time(lea_ts))) < 180;";
       $rone = $db->selectPrepared($sqlone, $data, true);
-  
-      if($rone[0]['phoneExists'] > 0) {
-        $sqltwo = "SELECT TIMESTAMPDIFF(SECOND, lea_ts, NOW()) as diff FROM {$this->container->leads_table} where lea_phone = ? and date(lea_ts) = curdate() ORDER BY lea_id desc limit 1;";
-        $rtwo = $db->selectPrepared($sqltwo, $data, true);
-  
-        if($rtwo[0]['diff'] > 60) {
-          // If the difference between last lead and actual interaction is > 60 seconds, insert the lead but not send to Leontel as it is a duplicated one.
+
+      if($rone[0]['phoneExists'] == 0) {
+        // not duplicated in webservice => if not exists in Leontel => create and send Leontel
+        $open = $this->isLeadOpen($lead);
+        if(!$open){
+          // store in webservice and send to Leontel
           $resp = $this->createLead($lead);
-          $message = 'DUPLICATED-'.$resp->message;
-          return json_encode(['success'=> true, 'message'=> $message]);
+          if ($resp->success) {
+            $smartcenter = $leontel ? LeadLeontel::sendLead($lead, $db, $this->container) : null;
+            $message = $resp->message;
+            return json_encode(['success'=> true, 'message'=> $message]);
+          }
+        } else {
+          $error = "Not allowed, lead already open.";
         }
       } else {
-        $resp = $this->createLead($lead);
-        if ($resp->success) {
-          $smartcenter = $leontel ? LeadLeontel::sendLead($lead, $db, $this->container) : null;
-          $lastid = $resp->message;
-          return json_encode(['success'=> true, 'message'=> $lastid]);
-        }
+        $error = "Max attempts limit reached ".$lead['sou_id']." -- ".$lead['leatype_id']." -- ".$lead["lea_phone"];
       }
     }
+    $this->sendAlarm($error);
+
     return json_encode(['success'=> false, 'message'=> $error]);
   }
 
@@ -79,7 +89,7 @@ class Functions {
 
   /*******************   EVO BANCO ******************************************/
   /*
-    * Encapsulación de la lógica de inserción de lead Evo Banco (inserción en webservice.evo_events_sf_v2_pro 
+    * Encapsulación de la lógica de inserción de lead Evo Banco (inserción en webservice.evo_events_sf_v2_pro
     * + envío a la cola de Leontel a través de WS SOAP de Leontel con credenciales).
     * params:
     * @datos: array con conjunto de datos a insertar en bd
@@ -90,14 +100,14 @@ class Functions {
     if($tabla == null){
       $tabla = "evo_events_sf_v2_pro";
     }
-    
+
     if(is_array($datos) && !is_null($db)){
-      $parametros = UtilitiesConnection::getParametros($datos,null); 
+      $parametros = UtilitiesConnection::getParametros($datos,null);
       $result = $db->insertPrepared($tabla, $parametros);
 
       $r = json_decode($result);
 
-      if($r->success){   
+      if($r->success){
         LeadLeontel::sendLeadEvo($datos,$db, $this->dev);
         exit(json_encode(['success'=> true, 'message'=> $r->message]));
       }else{
@@ -107,14 +117,14 @@ class Functions {
       return json_encode(['success'=> false, 'message'=> '??']);
     }
   }
-  
+
   /*
     * Invocación tarea recovery Evo Banco
   */
   public function sendLeadToLeontelRecovery($db){
     LeadLeontel::recoveryEvoBancoLeontel($db, $this->dev);
   }
-  
+
   /*
     * Invocación tarea C2C Leontel (usada mayormente para cron Evo Banco)
   */
@@ -125,13 +135,13 @@ class Functions {
     }
     return null;
   }
-  
+
   /***************************************************************************/
 
   /**
     * Returns smartcenter sou_id for the provided input
     * @params:
-    *  @sou_id: webservice sou_id 
+    *  @sou_id: webservice sou_id
     * @return
     *  sou_idcrm: smartcenter source id
   */
@@ -140,16 +150,38 @@ class Functions {
       $data = [ 0 => $sou_id];
       $db = $this->container->db_webservice;
       $sql = "SELECT sou_idcrm FROM webservice.sources WHERE sou_id = ?;";
-      
+
       $r = $db->selectPrepared($sql, $data);
-      
+
       if(!is_null($r)){
         return $r[0]->sou_idcrm;
       }
     }
     return null;
   }
-  
+
+  /**
+    * Returns smartcenter leatype_id for the provided input
+    * @params:
+    *  @leatype_id: webservice type_id
+    * @return
+    *  leatype_idcrm: smartcenter type id
+  */
+  public function getTypeIdcrm($leatype_id){
+    if(!empty($leatype_id)){
+      $data = [ 0 => $leatype_id];
+      $db = $this->container->db_webservice;
+      $sql = "SELECT leatype_idcrm FROM webservice.leadtypes WHERE leatype_id = ?;";
+
+      $r = $db->selectPrepared($sql, $data);
+
+      if(!is_null($r)){
+        return $r[0]->leatype_idcrm;
+      }
+    }
+    return null;
+  }
+
   /*
     * Valida si el formato de un número de teléfono es válido.
     * Criterios: 9 números, empezando por 5,6,7,8 o 9
@@ -159,19 +191,19 @@ class Functions {
     * @boolean
   */
   public function phoneFormatValidator($valor){
-    $expresion = '/^[9|6|7|8|5][0-9]{8}$/'; 
+    $expresion = '/^[9|6|7|8|5][0-9]{8}$/';
 
-    if(preg_match($expresion, $valor)){ 
+    if(preg_match($expresion, $valor)){
       return true;
-    }else{ 
+    }else{
       return false;
-    } 
-  }   
-  
-  /* 
-    * Devuelve parametros url e ip. Ampliable a más parámetros en un futuro 
+    }
+  }
+
+  /*
+    * Devuelve parametros url e ip. Ampliable a más parámetros en un futuro
     * @params => objeto Request
-    * @returns => array con parametros url e ip 
+    * @returns => array con parametros url e ip
     *  o null si objeto Request está vacío
   */
   public function getServerParams($request){
@@ -179,28 +211,28 @@ class Functions {
       $serverParams = $request->getServerParams();
       $url = null;
       if(array_key_exists("HTTP_REFERER", $serverParams)){
-        $url = $serverParams["HTTP_REFERER"];            
+        $url = $serverParams["HTTP_REFERER"];
       }
       $ip = $serverParams["REMOTE_ADDR"];
-      
+
       $device = $serverParams["HTTP_USER_AGENT"];
-      
+
       return array($url, $ip, $device);
     }
     return null;
   }
-  
+
   public function checkGclid($data) {
     if(is_object($data)){
       $gclid = array_key_exists("gclid", $data) ? $data->gclid : null;
       if(!empty($gclid)){
         return true;
-      } 
+      }
     } else if (is_array($data)) {
       $gclid = array_key_exists("gclid", $data) ? $data['gclid'] : null;
       if(!empty($gclid)){
         return true;
-      } 
+      }
     }
     return false;
   }
@@ -213,18 +245,44 @@ class Functions {
    *  @array => key => result | value => bool
    */
   public function isCampaignOnTime($sou_id) {
-    $url = $this->container->dev ? 
+    $url = $this->container->dev ?
     "https://ws.bysidecar.es/smartcenter/timetable/isCampaignOnTime"
     :
-    "http://127.0.0.1:80/report-panel-api/index.php/timetable/isCampaignOnTime";
+    "http://127.0.0.1:80/report-panel-api/timetable/isCampaignOnTime";
+    // this is the URL for prod environment!
 
     $data = [
       "sou_id" => $this->getSouIdcrm($sou_id),
     ];
-    $response = $this->curlRequest($data, $url);
-    return json_encode($response);
+    $response = json_decode($this->curlRequest($data, $url));
+    return $response->result;
   }
-  
+
+  /**
+   * isLeadOpen checks if there is an open lead in smartcenter
+   * @param
+   *  @int => (sou_id) source of the campaign 
+   *  @int => (leatype_id) type of the campaign 
+   *  @string => (lea_phone) phone
+   * @return
+   *  @array => success => bool | data => object | error => string
+   */
+  public function isLeadOpen($data) {
+    $url = $this->container->dev ?
+    "https://ws.bysidecar.es/lead/smartcenter/isopen"
+    :
+    "http://127.0.0.1:80/send-lead-leontel-api/smartcenter/isopen";
+    // this is the URL for prod environment!
+
+    $data = [
+      "lea_source" => $this->getSouIdcrm($data['sou_id']),
+      "lea_type" => $this->getTypeIdcrm($data['leatype_id']),
+      "TELEFONO" => $data['lea_phone'],
+    ];
+    $response = json_decode($this->curlRequest($data, $url));
+    return $response->success;
+  }
+
   /**
    * curlRequest makes a POST request to an external endpoint
    * @param
@@ -233,7 +291,7 @@ class Functions {
    * @return
    *   @string => response of the endpoint
    */
-  public function curlRequest($data, $url) { 
+  public function curlRequest($data, $url) {
     $params = json_encode($data);
     $headers = array("Content-Type: application/json;");
     $options = array(
@@ -244,14 +302,36 @@ class Functions {
       CURLOPT_TIMEOUT        => 10,    // time-out on response
       CURLOPT_POST           => true,
       CURLOPT_POSTFIELDS     => $params,
-      CURLOPT_HTTPHEADER      => array('Content-Type:application/json'),   
+      CURLOPT_HTTPHEADER      => array('Content-Type:application/json'),
     );
-  
+
     $ch = curl_init($url);
     curl_setopt_array($ch, $options);
     $content  = curl_exec($ch);
     curl_close($ch);
-  
+
     return $content;
   }
-}  
+
+  /**
+   * sendAlarm send an alarm to VictorOps plattform
+   * @param
+   *  @data => array with the alarm data
+   */
+  public function sendAlarm($message) {
+    $url = "https://alert.victorops.com/integrations/generic/20131114/alert/2f616629-de63-4162-bb6f-11966bbb538d/test";
+
+    $state = "INFO";
+
+    $params = [
+      "message_type" => $state,
+      "entity_state" => $state,
+      "entity_id" => "API_webservice_exception",
+      "entity_display_name" => "API_webservice_exception",
+      "state_message" => $message,
+      "state_start_time" => time(),
+    ];
+
+    $this->curlRequest($params, $url);
+  }
+}

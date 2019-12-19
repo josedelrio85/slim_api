@@ -35,6 +35,7 @@ $app->group('/rcable', function(){
       if (!in_array($sou_id, $valid_sou_id)){
         return $response->withJson(['success' => false, 'message' => 'Not valid source'])->withStatus(422);
       }
+      
       $leatype_id = $this->funciones->isCampaignOnTime($sou_id) ? 1 : 8;
       $destiny = $this->dev ? 'TEST' : 'LEONTEL';
 
@@ -53,9 +54,13 @@ $app->group('/rcable', function(){
         "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
       ];
 
-      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos), true);
+      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos));
 
-      return $response->withJson($resultLeontel);
+      if($resultLeontel->success){
+        return $response->withJson($resultLeontel);
+      } else {
+        return $response->withJson($resultLeontel)->withStatus(422);
+      }
     }
   });
 });

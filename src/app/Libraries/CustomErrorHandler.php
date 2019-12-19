@@ -53,8 +53,8 @@ final class CustomErrorHandler extends \Slim\Handlers\Error {
     $params = [
       "message_type" => $state,
       "entity_state" => $state,
-      "entity_id" => "webservice_exception",
-      "entity_display_name" => "webservice_exception",
+      "entity_id" => "API_webservice_exception",
+      "entity_display_name" => "API_webservice_exception",
       "state_message" => json_encode($exception->__toString()),
       "state_start_time" => time(),
     ];

@@ -68,9 +68,11 @@ class Functions {
           $error = "Not allowed, lead already open.";
         }
       } else {
-        $error = "Max attempts limit reached ".$lead['sou_id']." ".$lead['leatype_id']." ".$lead["lea_phone"];
+        $error = "Max attempts limit reached ".$lead['sou_id']." -- ".$lead['leatype_id']." -- ".$lead["lea_phone"];
       }
     }
+    $this->sendAlarm($error);
+
     return json_encode(['success'=> false, 'message'=> $error]);
   }
 
@@ -309,5 +311,27 @@ class Functions {
     curl_close($ch);
 
     return $content;
+  }
+
+  /**
+   * sendAlarm send an alarm to VictorOps plattform
+   * @param
+   *  @data => array with the alarm data
+   */
+  public function sendAlarm($message) {
+    $url = "https://alert.victorops.com/integrations/generic/20131114/alert/2f616629-de63-4162-bb6f-11966bbb538d/test";
+
+    $state = "INFO";
+
+    $params = [
+      "message_type" => $state,
+      "entity_state" => $state,
+      "entity_id" => "API_webservice_exception",
+      "entity_display_name" => "API_webservice_exception",
+      "state_message" => $message,
+      "state_start_time" => time(),
+    ];
+
+    $this->curlRequest($params, $url);
   }
 }

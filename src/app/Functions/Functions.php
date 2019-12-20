@@ -26,7 +26,7 @@ class Functions {
     * @object db: [optional] database instance
     * @bool leontel: [optional] if smartcenter insert is not needed
     * @return array with success result (bool) and a descriptive message (string)
-  */
+   */
   public function prepareAndSendLeadLeontel($lead, $dbinput = null, $leontel = false){
     if(is_array($lead)){
 
@@ -95,7 +95,7 @@ class Functions {
     * @datos: array con conjunto de datos a insertar en bd
     * @db: instancia bd
     * @tabla: por si hay que hacer la inserción en otra tabla
-  */
+   */
   public function prepareAndSendLeadEvoBancoLeontel($datos,$db,$tabla = null){
     if($tabla == null){
       $tabla = "evo_events_sf_v2_pro";
@@ -120,14 +120,14 @@ class Functions {
 
   /*
     * Invocación tarea recovery Evo Banco
-  */
+   */
   public function sendLeadToLeontelRecovery($db){
     LeadLeontel::recoveryEvoBancoLeontel($db, $this->dev);
   }
 
   /*
     * Invocación tarea C2C Leontel (usada mayormente para cron Evo Banco)
-  */
+   */
   public function sendC2CToLeontel($data){
     if(!empty($data)){
       $db = $this->container->db_webservice;
@@ -144,7 +144,7 @@ class Functions {
     *  @sou_id: webservice sou_id
     * @return
     *  sou_idcrm: smartcenter source id
-  */
+   */
   public function getSouIdcrm($sou_id){
     if(!empty($sou_id)){
       $data = [ 0 => $sou_id];
@@ -166,7 +166,7 @@ class Functions {
     *  @leatype_id: webservice type_id
     * @return
     *  leatype_idcrm: smartcenter type id
-  */
+   */
   public function getTypeIdcrm($leatype_id){
     if(!empty($leatype_id)){
       $data = [ 0 => $leatype_id];
@@ -189,7 +189,7 @@ class Functions {
     * @valor: nº telefono a validar
     * return:
     * @boolean
-  */
+   */
   public function phoneFormatValidator($valor){
     $expresion = '/^[9|6|7|8|5][0-9]{8}$/';
 
@@ -205,7 +205,7 @@ class Functions {
     * @params => objeto Request
     * @returns => array con parametros url e ip
     *  o null si objeto Request está vacío
-  */
+   */
   public function getServerParams($request){
     if(!empty($request)){
       $serverParams = $request->getServerParams();

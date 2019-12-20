@@ -38,7 +38,7 @@ $app->group('/rcable', function(){
       
       $leatype_id = $this->funciones->isCampaignOnTime($sou_id) ? 1 : 8;
       $destiny = $this->dev ? 'TEST' : 'LEONTEL';
-
+      
       $datos = [
         "lea_phone" => $phone,
         "lea_mail" => array_key_exists("mail", $data) ? $data->mail : null,
@@ -54,7 +54,7 @@ $app->group('/rcable', function(){
         "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
       ];
 
-      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos));
+      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, null, $this->dev));
 
       if($resultLeontel->success){
         return $response->withJson($resultLeontel);

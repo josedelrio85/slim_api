@@ -15,7 +15,7 @@ $app->group('/rcable', function(){
     *    "phone": "XXXXXX",
     * }
     *   
-  */
+   */
   $this->post('/incomingC2C', function (Request $request, Response $response, array $args){
 
     $this->utilities->infoLog('WS incoming C2C RCable');
@@ -54,7 +54,7 @@ $app->group('/rcable', function(){
         "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
       ];
 
-      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, null, $this->dev));
+      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, null, !$this->dev));
 
       if($resultLeontel->success){
         return $response->withJson($resultLeontel);
@@ -198,7 +198,7 @@ $app->group('/evobanco', function(){
    * @JSON salida:
    *      success:boolean
    *      message:string
-  */
+   */
   $this->post('/userTracking', function (Request $request, Response $response, array $args){
     $this->utilities->infoLog('WS user tracking Evo Banco');
 
@@ -232,7 +232,7 @@ $app->group('/evobanco', function(){
     * @JSON salida:
    *      success:boolean
    *      message:string
-  */
+   */
   $this->post('/eventSF_v2', function (Request $request, Response $response, array $args){
     
     $this->utilities->infoLog('WS EventSF_V2 Evo Banco');
@@ -315,7 +315,7 @@ $app->group('/evobanco', function(){
    * @JSON salida:
    *      success:boolean
    *      message:string
-  */
+   */
   $this->post('/event_sf_v2_pro', function(Request $request, Response $response, array $args){
 
     $this->utilities->infoLog('WS EVO Banco event_sf_v2_pro');
@@ -391,7 +391,7 @@ $app->group('/evobanco', function(){
 
   /*
    * Tarea cron para C2C Evo Banco Leontel
-  */
+   */
   $this->post('/sendC2CToLeontel', function (Request $request, Response $response, array $args){
 
       $this->utilities->infoLog('WS sendC2CToLeontel Evo Banco');
@@ -420,7 +420,7 @@ $app->group('/evobanco', function(){
    * @JSON salida:
    *      success:boolean
    *      message:string
-  */
+   */
   $this->post('/incomingC2C', function (Request $request, Response $response, array $args){
 
     $this->utilities->infoLog('WS incoming C2C EVO Banco');
@@ -492,7 +492,7 @@ $app->group('/evobanco', function(){
    * @JSON salida:
    *      success:boolean
    *      message:string
-  */
+   */
   $this->post('/setFullOnline', function (Request $request, Response $response, array $args){
 
     $this->utilities->infoLog('WS Set Full Online Evo Banco');
@@ -526,7 +526,7 @@ $app->group('/evobanco', function(){
 
   /*
    * Tarea cron para recovery Leontel
-  */
+   */
   $this->post('/sendLeadToLeontelRecovery', function (Request $request, Response $response, array $args){
 
     $this->utilities->infoLog('WS sendLeadToLeontelRecovery Evo Banco');

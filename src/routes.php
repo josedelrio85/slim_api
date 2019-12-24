@@ -28,14 +28,14 @@ $app->group('/rcable', function(){
         return $response->withJson(['success' => false, 'message' => 'Malformed phone'])->withStatus(422);
       }
 
-      list($url, $ip) = $this->funciones->getServerParams($request);
-
       $sou_id = (int)$this->dev ? $this->sou_id_test: array_key_exists("sou_id", $data) ? $data->sou_id : 5;
       $valid_sou_id = [5, 15, 14, 71];
       if (!in_array($sou_id, $valid_sou_id)){
         return $response->withJson(['success' => false, 'message' => 'Not valid source'])->withStatus(422);
       }
-      
+
+      list($url, $ip) = $this->funciones->getServerParams($request);
+
       $leatype_id = $this->funciones->isCampaignOnTime($sou_id) ? 1 : 8;
       $destiny = $this->dev ? 'TEST' : 'LEONTEL';
       
@@ -54,8 +54,10 @@ $app->group('/rcable', function(){
         "lea_aux4" => array_key_exists("gclid", $data) ? $data->gclid : null,
       ];
 
-      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($datos, null, !$this->dev));
+      $lead = $this->utilities->arrayToClass($datos, "\\App\\Model\\Lead");
 
+      $resultLeontel = json_decode($this->funciones->prepareAndSendLeadLeontel($lead, null, !$this->dev));
+      
       if($resultLeontel->success){
         return $response->withJson($resultLeontel);
       } else {

@@ -62,4 +62,51 @@ class Utilities {
     }
     return true;
   }
+
+  /**
+   * arrayToClass creates an array of objects typed as class param indicates
+   * @param array $parsedBody data from POST method
+   * @param string $class fully qualified name of the class. Ex: \\Foo\\Bar\\MyClass
+   * @return array of objects of the indicated class
+   */
+  public function arrayToClass($parsedBody, $class) {
+    if(is_array($parsedBody)){
+      $instance = new $class();
+      foreach ($parsedBody as $i => $ld) {
+        if(is_object($ld) || is_array($ld)){
+          foreach ($ld as $key => $value) {
+            if(property_exists($class, $key)){
+              $instance->{$key} = $value;
+            }
+          }
+          $output[] = $instance;
+        } else {
+          if(property_exists($class, $i)){
+            $instance->{$i} = $ld;
+          }
+          $output[0] = $instance;
+        }
+      }
+      return $output[0];
+
+    } else if (is_object($parsedBody)){
+      $instance = new $class();
+      foreach ($parsedBody as $i => $ld) {
+        if(is_object($ld) || is_array($ld)){
+          foreach ($ld as $key => $value) {
+            if(property_exists($class, $key)){
+              $instance->{$key} = $value;
+            }
+          }
+        } else {
+          if(property_exists($class, $i)){
+            $instance->{$i} = $ld;
+          }
+        }
+      }
+      $output[0] = $instance;
+      return $output[0];
+    }
+    return null;
+  }
 }

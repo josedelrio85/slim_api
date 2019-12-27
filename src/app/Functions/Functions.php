@@ -22,26 +22,20 @@ class Functions {
 
   /**
     * Lead insert logic. Previous checks to decide if it is an allowed lead.
-    * @array lead: lead data
+    * @array lead: lead model
     * @object db: [optional] database instance
     * @bool leontel: [optional] if smartcenter insert is not needed
     * @return array with success result (bool) and a descriptive message (string)
-  */
+   */
   public function prepareAndSendLeadLeontel($lead, $dbinput = null, $leontel = false){
-    if(is_array($lead)){
+    if(!empty($lead)){
 
       $db = is_null($dbinput) ? $this->container->db_webservice : $dbinput;
       $error = 'KO';
 
-      if (empty($lead['lea_phone']) || is_null($lead['lea_phone'])){
+      if(empty($lead->getLeaPhone()) || is_null($lead->getLeaPhone())){
         return json_encode(['success'=> false, 'message'=> $error]);
       }
-
-      $data = [
-        0 => $lead['lea_phone'],
-        1 => $lead['sou_id'],
-        2 => $lead['leatype_id'],
-      ];
 
       $sqlone = "
         SELECT count(*) as phoneExists 
@@ -51,7 +45,7 @@ class Functions {
         and leatype_id = ? 
         and date(lea_ts) = curdate()
         and TIME_TO_SEC(timediff(CURRENT_TIME(), time(lea_ts))) < 180;";
-      $rone = $db->selectPrepared($sqlone, $data, true);
+      $rone = $db->selectPrepared($sqlone, $lead->getQueryParams(), true);
 
       if($rone[0]['phoneExists'] == 0) {
         // not duplicated in webservice => if not exists in Leontel => create and send Leontel
@@ -60,7 +54,8 @@ class Functions {
           // store in webservice and send to Leontel
           $resp = $this->createLead($lead);
           if ($resp->success) {
-            $smartcenter = $leontel ? LeadLeontel::sendLead($lead, $db, $this->container) : null;
+            $lead->setLeaId($resp->message);
+            $smartcenter = LeadLeontel::sendLead($lead, $db, $this->container);
             $message = $resp->message;
             return json_encode(['success'=> true, 'message'=> $message]);
           }
@@ -68,11 +63,10 @@ class Functions {
           $error = "Not allowed, lead already open.";
         }
       } else {
-        $error = "Max attempts limit reached ".$lead['sou_id']." -- ".$lead['leatype_id']." -- ".$lead["lea_phone"];
+        $error = "Max attempts limit reached ".$lead->getSouId()." -- ".$lead->getLeaType()." -- ".$lead->getLeaPhone();
       }
     }
     $this->sendAlarm($error);
-
     return json_encode(['success'=> false, 'message'=> $error]);
   }
 
@@ -83,7 +77,7 @@ class Functions {
    */
   public function createLead($lead) {
     $db = $this->container->db_webservice;
-    $params = UtilitiesConnection::getParametros($lead,null);
+    $params = UtilitiesConnection::getParametros($lead, null);
     return json_decode($db->insertPrepared($this->container->leads_table, $params));
   }
 
@@ -95,7 +89,7 @@ class Functions {
     * @datos: array con conjunto de datos a insertar en bd
     * @db: instancia bd
     * @tabla: por si hay que hacer la inserción en otra tabla
-  */
+   */
   public function prepareAndSendLeadEvoBancoLeontel($datos,$db,$tabla = null){
     if($tabla == null){
       $tabla = "evo_events_sf_v2_pro";
@@ -120,14 +114,14 @@ class Functions {
 
   /*
     * Invocación tarea recovery Evo Banco
-  */
+   */
   public function sendLeadToLeontelRecovery($db){
     LeadLeontel::recoveryEvoBancoLeontel($db, $this->dev);
   }
 
   /*
     * Invocación tarea C2C Leontel (usada mayormente para cron Evo Banco)
-  */
+   */
   public function sendC2CToLeontel($data){
     if(!empty($data)){
       $db = $this->container->db_webservice;
@@ -143,8 +137,8 @@ class Functions {
     * @params:
     *  @sou_id: webservice sou_id
     * @return
-    *  sou_idcrm: smartcenter source id
-  */
+    *  sou_idcrm: smartcenter source id | 0 if error
+   */
   public function getSouIdcrm($sou_id){
     if(!empty($sou_id)){
       $data = [ 0 => $sou_id];
@@ -157,16 +151,17 @@ class Functions {
         return $r[0]->sou_idcrm;
       }
     }
-    return null;
+    $this->sendAlarm("Can't retrieve Leontel source for {$sou_id} value.");
+    return 0;
   }
 
   /**
     * Returns smartcenter leatype_id for the provided input
     * @params:
-    *  @leatype_id: webservice type_id
+    *  @leatype_id: webservice leatype_id
     * @return
-    *  leatype_idcrm: smartcenter type id
-  */
+    *  leatype_idcrm: smartcenter type id | 0 if error
+   */
   public function getTypeIdcrm($leatype_id){
     if(!empty($leatype_id)){
       $data = [ 0 => $leatype_id];
@@ -179,7 +174,8 @@ class Functions {
         return $r[0]->leatype_idcrm;
       }
     }
-    return null;
+    $this->sendAlarm("Can't retrieve Leontel type for {$leatype_id} value.");
+    return 0;
   }
 
   /*
@@ -189,7 +185,7 @@ class Functions {
     * @valor: nº telefono a validar
     * return:
     * @boolean
-  */
+   */
   public function phoneFormatValidator($valor){
     $expresion = '/^[9|6|7|8|5][0-9]{8}$/';
 
@@ -205,7 +201,7 @@ class Functions {
     * @params => objeto Request
     * @returns => array con parametros url e ip
     *  o null si objeto Request está vacío
-  */
+   */
   public function getServerParams($request){
     if(!empty($request)){
       $serverParams = $request->getServerParams();
@@ -242,7 +238,7 @@ class Functions {
    * @param
    *  @int => sou_id of the campaign (webservice)
    * @return
-   *  @array => key => result | value => bool
+   *  @array => result => bool
    */
   public function isCampaignOnTime($sou_id) {
     $url = $this->container->dev ?
@@ -255,19 +251,20 @@ class Functions {
       "sou_id" => $this->getSouIdcrm($sou_id),
     ];
     $response = json_decode($this->curlRequest($data, $url));
-    return $response->result;
+    if(is_object($response)){
+      return $response->result;
+    }
+    return false;
   }
 
   /**
    * isLeadOpen checks if there is an open lead in smartcenter
    * @param
-   *  @int => (sou_id) source of the campaign 
-   *  @int => (leatype_id) type of the campaign 
-   *  @string => (lea_phone) phone
+   *  @object => Lead model
    * @return
-   *  @array => success => bool | data => object | error => string
+   *  @array => success => bool
    */
-  public function isLeadOpen($data) {
+  public function isLeadOpen($lead) {
     $url = $this->container->dev ?
     "https://ws.bysidecar.es/lead/smartcenter/isopen"
     :
@@ -275,12 +272,17 @@ class Functions {
     // this is the URL for prod environment!
 
     $data = [
-      "lea_source" => $this->getSouIdcrm($data['sou_id']),
-      "lea_type" => $this->getTypeIdcrm($data['leatype_id']),
-      "TELEFONO" => $data['lea_phone'],
+      "lea_source" => $this->getSouIdcrm($lead->getSouId()),
+      "lea_type" => $this->getTypeIdcrm($lead->getLeaType()),
+      "TELEFONO" => $lead->getLeaPhone(),
     ];
-    $response = json_decode($this->curlRequest($data, $url));
-    return $response->success;
+    
+    $response = $this->curlRequest($data, $url);
+    if(!is_null($response)){
+      $resp = json_decode($response);
+      return $resp->success;
+    }
+    return false;
   }
 
   /**

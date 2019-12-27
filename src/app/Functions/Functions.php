@@ -22,7 +22,7 @@ class Functions {
 
   /**
     * Lead insert logic. Previous checks to decide if it is an allowed lead.
-    * @array lead: lead data
+    * @array lead: lead model
     * @object db: [optional] database instance
     * @bool leontel: [optional] if smartcenter insert is not needed
     * @return array with success result (bool) and a descriptive message (string)
@@ -137,7 +137,7 @@ class Functions {
     * @params:
     *  @sou_id: webservice sou_id
     * @return
-    *  sou_idcrm: smartcenter source id
+    *  sou_idcrm: smartcenter source id | 0 if error
    */
   public function getSouIdcrm($sou_id){
     if(!empty($sou_id)){
@@ -151,15 +151,16 @@ class Functions {
         return $r[0]->sou_idcrm;
       }
     }
-    return null;
+    $this->sendAlarm("Can't retrieve Leontel source for {$sou_id} value.");
+    return 0;
   }
 
   /**
     * Returns smartcenter leatype_id for the provided input
     * @params:
-    *  @leatype_id: webservice type_id
+    *  @leatype_id: webservice leatype_id
     * @return
-    *  leatype_idcrm: smartcenter type id
+    *  leatype_idcrm: smartcenter type id | 0 if error
    */
   public function getTypeIdcrm($leatype_id){
     if(!empty($leatype_id)){
@@ -173,7 +174,8 @@ class Functions {
         return $r[0]->leatype_idcrm;
       }
     }
-    return null;
+    $this->sendAlarm("Can't retrieve Leontel type for {$leatype_id} value.");
+    return 0;
   }
 
   /*
@@ -236,7 +238,7 @@ class Functions {
    * @param
    *  @int => sou_id of the campaign (webservice)
    * @return
-   *  @array => key => result | value => bool
+   *  @array => result => bool
    */
   public function isCampaignOnTime($sou_id) {
     $url = $this->container->dev ?
@@ -249,17 +251,18 @@ class Functions {
       "sou_id" => $this->getSouIdcrm($sou_id),
     ];
     $response = json_decode($this->curlRequest($data, $url));
-    return $response->result;
+    if(is_object($response)){
+      return $response->result;
+    }
+    return false;
   }
 
   /**
    * isLeadOpen checks if there is an open lead in smartcenter
    * @param
-   *  @int => (sou_id) source of the campaign 
-   *  @int => (leatype_id) type of the campaign 
-   *  @string => (lea_phone) phone
+   *  @object => Lead model
    * @return
-   *  @array => success => bool | data => object | error => string
+   *  @array => success => bool
    */
   public function isLeadOpen($lead) {
     $url = $this->container->dev ?
@@ -273,8 +276,13 @@ class Functions {
       "lea_type" => $this->getTypeIdcrm($lead->getLeaType()),
       "TELEFONO" => $lead->getLeaPhone(),
     ];
-    $response = json_decode($this->curlRequest($data, $url));
-    return $response->success;
+    
+    $response = $this->curlRequest($data, $url);
+    if(!is_null($response)){
+      $resp = json_decode($response);
+      return $resp->success;
+    }
+    return false;
   }
 
   /**

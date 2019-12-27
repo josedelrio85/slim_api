@@ -38,7 +38,7 @@ class LeadLeontel {
         'url' => $lead->getLeaUrl(),
         'wsid' => $lead->getLeaId(),
         'ip' => $lead->getLeaIP(),
-        'observaciones2' => $lead->getObservations(),
+        'observaciones' => $lead->getObservations(),
         'Email' => $lead->getLeaMail(),
         'nombre' => $lead->getLeaName(),
         'url' => $lead->getLeaUrl(),

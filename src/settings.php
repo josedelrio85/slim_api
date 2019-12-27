@@ -21,14 +21,14 @@ return [
       "dbname" => "webservice",
       "user" => "admin",
       "password" => "dalema22"
-    ],    
+    ],
     
     'db_crmti' => [
       "host" => "192.168.50.109",
       "dbname" => "crmti",
       "user" => "crmti",
       "password" => "xp2222"
-    ],         
+    ],
 
     'sou_id_test' => 15,
     

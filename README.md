@@ -32,6 +32,7 @@ Use -c flag with the path to a php.ini file to use its configuration
   "sub_source": "",
   "gclid": "",
  }
+ // optional => if no sou_id param is provided value 5 is used.
  ```
 
  Sanitas incoming C2C

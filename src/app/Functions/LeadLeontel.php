@@ -63,7 +63,10 @@ class LeadLeontel {
 
       $where = ["lea_id" => $lead->getLeaId()];
       $parametros = UtilitiesConnection::getParametros($datos, $where);
+      
+      // $container->utilities->infoLog('date update Lead CRMID =>'.$datos['lea_extracted']);
       $container->utilities->infoLog('update Lead CRMID =>'.$datos['lea_crmid']);
+
       $result = json_decode($db->updatePrepared($leads_table, $parametros));
 
       return json_encode(['success'=> $result->success, 'message'=> $result->message]);      

@@ -60,7 +60,7 @@ class Functions {
             return json_encode(['success'=> true, 'message'=> $message]);
           }
         } else {
-          $error = "Not allowed, lead already open.";
+          $error = "Not allowed, lead already open ".$lead->getSouId()." -- ".$lead->getLeaType()." -- ".$lead->getLeaPhone();
         }
       } else {
         $error = "Max attempts limit reached ".$lead->getSouId()." -- ".$lead->getLeaType()." -- ".$lead->getLeaPhone();

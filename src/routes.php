@@ -34,7 +34,7 @@ $app->group('/rcable', function(){
         return $response->withJson(['success' => false, 'message' => 'Not valid source'])->withStatus(422);
       }
 
-      list($url, $ip) = $this->funciones->getServerParams($request);
+      list($urlserver, $ipserver) = $this->funciones->getServerParams($request);
 
       $leatype_id = $this->funciones->isCampaignOnTime($sou_id) ? 1 : 8;
       $destiny = $this->dev ? 'TEST' : 'LEONTEL';
@@ -44,8 +44,8 @@ $app->group('/rcable', function(){
         "lea_mail" => array_key_exists("mail", $data) ? $data->mail : null,
         "lea_name" => array_key_exists("name", $data) ? $data->name : null,
         "observations" => array_key_exists("observations", $data) ? $data->observations : null,
-        "lea_url" => $url,
-        "lea_ip" => $ip,
+        "lea_url" =>  array_key_exists("url", $data) ? $data->url : $urlserver,
+        "lea_ip" => array_key_exists("ip", $data) ? $data->ip : $ipserver,
         "lea_destiny" => $destiny,
         "sou_id" => $sou_id,
         "leatype_id" => $leatype_id,

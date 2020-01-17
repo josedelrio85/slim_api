@@ -145,6 +145,9 @@ $app->group('/clients', function(){
   // to End, it has been created to provide lead status information to a third
   // party agency (Nivoria).
   $this->get('/status/{provider}', function(Request $request, Response $response, array $args){
+    $this->utilities->infoLog('/clients/status/'.$args['provider'].' method requested ');
+    $this->utilities->infoLog('params[client_id] ' . $request->getParam('client_id'));
+
     $providers = array("EVO");
     $provider = strtoupper($args['provider']);
     if (!in_array($provider, $providers)) {

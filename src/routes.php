@@ -37,6 +37,9 @@ $app->group('/rcable', function(){
       list($urlserver, $ipserver) = $this->funciones->getServerParams($request);
 
       $leatype_id = $this->funciones->isCampaignOnTime($sou_id) ? 1 : 8;
+      // last modification in queue's => map from sources 5, 14, 71 types 1,8 => type 20
+      $leatype_id = 20;
+
       $destiny = $this->dev ? 'TEST' : 'LEONTEL';
       
       $datos = [

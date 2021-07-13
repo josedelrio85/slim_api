@@ -242,7 +242,7 @@ class Functions {
    */
   public function isCampaignOnTime($sou_id) {
     $url = $this->container->dev ?
-    "https://ws.bysidecar.es/smartcenter/timetable/isCampaignOnTime"
+    "https://ws.josedelrio85.es/smartcenter/timetable/isCampaignOnTime"
     :
     "http://127.0.0.1:80/report-panel-api/timetable/isCampaignOnTime";
     // this is the URL for prod environment!
@@ -266,7 +266,7 @@ class Functions {
    */
   public function isLeadOpen($lead) {
     $url = $this->container->dev ?
-    "https://ws.bysidecar.es/lead/smartcenter/isopen"
+    "https://ws.josedelrio85.es/lead/smartcenter/isopen"
     :
     "http://127.0.0.1:80/send-lead-leontel-api/smartcenter/isopen";
     // this is the URL for prod environment!

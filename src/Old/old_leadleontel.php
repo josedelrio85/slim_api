@@ -738,7 +738,6 @@ class OldLeadLeontel {
           break;
         default:
           /* case 5: case 12: case 7:case 14:case 8: case 6:*/
-          //R Cable + Euskaltel + Hercules + R Cable Empresas + SEGURO PARA MOVIL + Bysidecar + EvoBanco (sendC2CToLeontel)
           $querySource = "l.lea_mail,"
           . "l.lea_aux10,"
           . "l.lea_ip,"

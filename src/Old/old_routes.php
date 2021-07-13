@@ -93,7 +93,7 @@ $app->group('/test', function(){
     }
     $datos = [
       "lea_phone" => "666666664",
-      "lea_url" => "http://test.bysidecar.gal",
+      "lea_url" => "http://test.josedelrio85.gal",
       "lea_ip" => "127.0.0.1",
       "lea_destiny" => "LEONTEL",
       "sou_id" => $sou_id,
@@ -140,7 +140,7 @@ $app->group('/test', function(){
 
         $datos = [
           "lea_phone" => "666666664",
-          "lea_url" => "http://test.bysidecar.gal",
+          "lea_url" => "http://test.josedelrio85.gal",
           "lea_ip" => "127.0.0.1",
           "lea_destiny" => "LEONTEL",
           "sou_id" => $source->sou_id,

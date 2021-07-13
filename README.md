@@ -1,4 +1,4 @@
-# Bysidecar Webservice API
+# josedelrio85 Webservice API
 
   The goal of this API is to handle the requests received from different kind of environments and for the different campaigns implemented.
 
@@ -27,7 +27,7 @@ php -S localhost:8888 index.php -c C:\xampp\php\php.ini
 
  RCable incoming C2C
 
-- <https://ws.bysidecar.es/api/public/index.php/rcable/incomingC2C>
+- <https://ws.josedelrio85.es/api/public/index.php/rcable/incomingC2C>
 
  ```json
  {
@@ -41,21 +41,21 @@ php -S localhost:8888 index.php -c C:\xampp\php\php.ini
 
  Sanitas incoming C2C
 
-- <https://ws.bysidecar.es/api/public/index.php/sanitas/incomingC2C>
+- <https://ws.josedelrio85.es/api/public/index.php/sanitas/incomingC2C>
 
  ```json
  {
    "phone": "666666666",
    "utm_source": "default",
    "sub_source": null,
-   "producto": "Bysidecar test",
-   "name": "Bysidecar test",
+   "producto": "josedelrio85 test",
+   "name": "josedelrio85 test",
  }
  ```
 
  EVO status
 
-- <https://ws.bysidecar.es/api/public/index.php/clients/status/{provider}>
+- <https://ws.josedelrio85.es/api/public/index.php/clients/status/{provider}>
 
  ```json
  {
